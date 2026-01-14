@@ -1,6 +1,6 @@
 export async function GET() {
   const sheetUrl =
-    'https://docs.google.com/spreadsheets/d/1Zs1gQICeGx5C6lE8eAa6pZfuQNdO1WyrvqBE6cFJMQg/gviz/tq?tqx=out:json';
+    'https://docs.google.com/spreadsheets/d/1lz-zL2xB_wQLIeeKUblTlqRRo68qkHwRgx8w8G0CPWQ/gviz/tq?tqx=out:json';
 
   const res = await fetch(sheetUrl);
   const text = await res.text();
