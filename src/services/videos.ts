@@ -1,26 +1,45 @@
-// Construir URL base automáticamente
-function getBaseURL() {
-  // En servidor (SSR): usar la URL de Vercel
-  if (typeof window === 'undefined') {
-    const vercelUrl = import.meta.env.VERCEL_URL;
-    if (vercelUrl) {
-      return `https://${vercelUrl}`;
-    }
-    // Fallback para desarrollo local
-    return 'http://localhost:4321';
-  }
-  // En cliente: usar la URL actual del navegador
-  return window.location.origin;
-}
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1lz-zL2xB_wQLIeeKUblTlqRRo68qkHwRgx8w8G0CPWQ/gviz/tq?tqx=out:json';
 
-const BASE_URL = getBaseURL();
+// En SSR: llamar directamente al Google Sheets
+// En cliente: usar la API interna
+function getVideosURL() {
+  if (typeof window === 'undefined') {
+    // Servidor: ir directo al Sheet
+    return SHEET_URL;
+  }
+  // Cliente: usar API interna
+  return '/api/videos/all.json';
+}
 
 export async function getAllVideos() {
   try {
-    const url = `${BASE_URL}/api/videos/all.json`;
+    const url = getVideosURL();
     const response = await fetch(url);
-    const data = await response.json();
-    return data;
+    
+    // Si viene del Sheet, necesitamos parsear el formato especial
+    if (url === SHEET_URL) {
+      const text = await response.text();
+      const json = JSON.parse(text.substring(47).slice(0, -2));
+      
+      const videos = json.table.rows.map((row: any) => {
+        const cols = row.c;
+        const videoId = cols[2]?.v || '';
+        return {
+          slug: cols[0]?.v || '',
+          title: cols[1]?.v || '',
+          videoId: videoId,
+          client: cols[3]?.v || '',
+          date: cols[4]?.v || '',
+          thumbnail: `https://i.vimeocdn.com/video/${videoId}-d_640`,
+          image: `https://i.vimeocdn.com/video/${videoId}-d_1440`,
+        };
+      });
+      
+      return videos;
+    }
+    
+    // Si viene de la API interna, ya está procesado
+    return await response.json();
   } catch (err) {
     console.error('Error fetching videos:', err);
     return [];
@@ -29,8 +48,8 @@ export async function getAllVideos() {
 
 export async function getVideoBySlug(slug: string) {
   try {
-    const url = `${BASE_URL}/api/videos/${slug}.json`;
-    const response = await fetch(url);
+    // Siempre usar la API interna para slug específico
+    const response = await fetch(`/api/videos/${slug}.json`);
     const data = await response.json();
     return data;
   } catch (err) {
@@ -41,10 +60,8 @@ export async function getVideoBySlug(slug: string) {
 
 export async function getFirstVideoByDirector(director: string) {
   try {
-    const url = `${BASE_URL}/api/videos/all.json`;
-    const response = await fetch(url);
-    const data = await response.json();
-    const filteredVideos = data.filter((video: any) =>
+    const videos = await getAllVideos();
+    const filteredVideos = videos.filter((video: any) =>
       video.client.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').trim() ===
       director.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').trim()
     );
