@@ -21,39 +21,67 @@ export async function getAllVideos() {
       const text = await response.text();
       const json = JSON.parse(text.substring(47).slice(0, -2));
       
-      const videos = json.table.rows.map((row: any) => {
-        const cols = row.c;
-        const title = cols[0]?.v || '';
-        const director = cols[1]?.v || '';
-        const date = cols[2]?.f || cols[2]?.v || ''; // Usar formato o valor
-        const vimeoUrl = cols[3]?.v || '';
-        
-        // Extraer videoId de la URL de Vimeo
-        // URL ejemplo: https://vimeo.com/1090174353
-        const videoIdMatch = vimeoUrl.match(/vimeo\.com\/(\d+)/);
-        const videoId = videoIdMatch ? videoIdMatch[1] : '';
-        
-        // Generar slug desde el título
-        const slug = title
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
-          .replace(/[^\w\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .trim();
-        
-        return {
-          slug: slug,
-          title: title,
-          videoId: videoId,
-          client: director,
-          date: date,
-          thumbnail: `https://i.vimeocdn.com/video/${videoId}-d_640`,
-          image: `https://i.vimeocdn.com/video/${videoId}-d_1440`,
-          description_eng: '',
-          description_esp: ''
-        };
-      });
+      const videos = await Promise.all(
+        json.table.rows.map(async (row: any) => {
+          const cols = row.c;
+          const title = cols[0]?.v || '';
+          const director = cols[1]?.v || '';
+          const dateRaw = cols[2]?.v || '';
+          const vimeoUrl = cols[3]?.v || '';
+          
+          // Extraer videoId de la URL de Vimeo
+          const videoIdMatch = vimeoUrl.match(/vimeo\.com\/(\d+)/);
+          const videoId = videoIdMatch ? videoIdMatch[1] : '';
+          
+          // Generar slug desde el título
+          const slug = title
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .trim();
+          
+          // Formatear fecha
+          let formattedDate = '';
+          if (dateRaw) {
+            const match = dateRaw.match(/Date\((\d+),(\d+),(\d+)\)/);
+            if (match) {
+              const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+              formattedDate = date.toLocaleDateString('es-ES', {
+                month: "long",
+                year: "numeric",
+              }).replace(" de ", ", ");
+            }
+          }
+          
+          // Obtener thumbnail real de Vimeo
+          let thumbnail = '';
+          let image = '';
+          if (videoId) {
+            try {
+              const vimeoRes = await fetch(`https://vimeo.com/api/v2/video/${videoId}.json`);
+              const vimeoData = await vimeoRes.json();
+              thumbnail = vimeoData[0]?.thumbnail_large || '';
+              image = vimeoData[0]?.thumbnail_large?.replace("640", "1440") || '';
+            } catch (err) {
+              console.warn(`No se pudo obtener thumbnail de Vimeo para videoId: ${videoId}`);
+            }
+          }
+          
+          return {
+            slug,
+            title,
+            videoId,
+            client: director,
+            date: formattedDate,
+            thumbnail,
+            image,
+            description_eng: '',
+            description_esp: ''
+          };
+        })
+      );
       
       return videos;
     }
@@ -68,7 +96,6 @@ export async function getAllVideos() {
 
 export async function getVideoBySlug(slug: string) {
   try {
-    // Siempre usar la API interna para slug específico
     const response = await fetch(`/api/videos/${slug}.json`);
     const data = await response.json();
     return data;
