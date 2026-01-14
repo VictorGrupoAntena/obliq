@@ -7,6 +7,8 @@ import Cta from "@/components/organisms/Cta.astro";
 import Cursor from "@/components/organisms/Cursor.astro";
 import { getI18N } from "@/a18n/index.ts";
 
+export const prerender = false;
+
 const { currentLocale } = Astro;
 const t = getI18N({ currentLocale: currentLocale ?? "es" });
 ---
