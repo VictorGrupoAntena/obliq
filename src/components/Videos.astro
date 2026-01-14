@@ -4,10 +4,15 @@ import VideoItem from "./organisms/VideoItem.astro";
 import { getAllVideos } from "@/services/videos";
 
 const videos: Video[] = await getAllVideos();
+console.log('[VIDEOS COMPONENT] Videos length:', videos.length);
 ---
-
 <section class="pb-16" id="videos">
   <div class="container mx-auto px-4">
+    <!-- DEBUG: Mostrar cuántos vídeos hay -->
+    <p style="color: yellow; background: red; padding: 10px; font-size: 20px;">
+      DEBUG: Videos cargados = {videos.length}
+    </p>
+    
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       {videos.map((video: Video) => <VideoItem video={video} />)}
     </div>
