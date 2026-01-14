@@ -23,15 +23,35 @@ export async function getAllVideos() {
       
       const videos = json.table.rows.map((row: any) => {
         const cols = row.c;
-        const videoId = cols[2]?.v || '';
+        const title = cols[0]?.v || '';
+        const director = cols[1]?.v || '';
+        const date = cols[2]?.f || cols[2]?.v || ''; // Usar formato o valor
+        const vimeoUrl = cols[3]?.v || '';
+        
+        // Extraer videoId de la URL de Vimeo
+        // URL ejemplo: https://vimeo.com/1090174353
+        const videoIdMatch = vimeoUrl.match(/vimeo\.com\/(\d+)/);
+        const videoId = videoIdMatch ? videoIdMatch[1] : '';
+        
+        // Generar slug desde el título
+        const slug = title
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .trim();
+        
         return {
-          slug: cols[0]?.v || '',
-          title: cols[1]?.v || '',
+          slug: slug,
+          title: title,
           videoId: videoId,
-          client: cols[3]?.v || '',
-          date: cols[4]?.v || '',
+          client: director,
+          date: date,
           thumbnail: `https://i.vimeocdn.com/video/${videoId}-d_640`,
           image: `https://i.vimeocdn.com/video/${videoId}-d_1440`,
+          description_eng: '',
+          description_esp: ''
         };
       });
       
