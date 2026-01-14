@@ -3,15 +3,24 @@ import type { Video } from "@/types/videos";
 import VideoItem from "./organisms/VideoItem.astro";
 import { getAllVideos } from "@/services/videos";
 
-const videos: Video[] = await getAllVideos();
-console.log('[VIDEOS COMPONENT] Videos length:', videos.length);
+let videos: Video[] = [];
+let errorMsg = "";
+
+try {
+  videos = await getAllVideos();
+  errorMsg = videos.length > 0 ? "OK" : "Empty array returned";
+} catch (err) {
+  errorMsg = `Error: ${err.message || err}`;
+}
 ---
 <section class="pb-16" id="videos">
   <div class="container mx-auto px-4">
-    <!-- DEBUG: Mostrar cuántos vídeos hay -->
-    <p style="color: yellow; background: red; padding: 10px; font-size: 20px;">
-      DEBUG: Videos cargados = {videos.length}
-    </p>
+    <!-- DEBUG -->
+    <div style="color: yellow; background: red; padding: 10px; font-size: 16px; margin-bottom: 20px;">
+      <p>Videos: {videos.length}</p>
+      <p>Status: {errorMsg}</p>
+      <p>API_URL: {import.meta.env.PUBLIC_API_URL || "UNDEFINED"}</p>
+    </div>
     
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       {videos.map((video: Video) => <VideoItem video={video} />)}
