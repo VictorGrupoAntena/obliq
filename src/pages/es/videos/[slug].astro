@@ -3,9 +3,10 @@ import VideoLayout from "@/layouts/Video.astro";
 import { getVideoBySlug } from "@/services/videos";
 import VideoItem from "@/components/VideoItem.astro";
 
-const params = Astro.params;
-const slug = params.slug;
+const { slug } = Astro.params;
 const video = await getVideoBySlug(slug as string);
+
+if (!video) return Astro.redirect('/404');
 ---
 
 <VideoLayout title={video.title}>

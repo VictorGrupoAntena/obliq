@@ -1,12 +1,10 @@
-const API_URL = import.meta.env.PUBLIC_API_URL;
+import { getDirectorsFromSheet } from '@/lib/sheets';
 
 export async function getAllDirectors() {
   try {
-    const response = await fetch(`${API_URL}directors/all.json`);
-    const data = await response.json();
-    return data.directors || [];
+    return await getDirectorsFromSheet();
   } catch (error) {
-    console.error(`Error fetching directors:`, error);
+    console.error('Error fetching directors:', error);
     return [];
   }
 }
