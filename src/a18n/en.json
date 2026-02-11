@@ -34,7 +34,11 @@
     "RENTAL": {
         "SPECS": "Key specifications:",
         "BUTTON": "Rent",
-        "TITLE": "Do you need to rent",
+        "TITLE": "Audiovisual equipment and film gear rental in Valencia",
+        "SUBTITLE": "equipment for your shoots?",
+        "PAGE_TITLE": "Audiovisual equipment rental in Valencia - Film and advertising | Obliq",
+        "META_DESCRIPTION": "Professional rental catalogue of cinema cameras, lighting and grip in the Valencian Community. Inspected gear, technical advice and logistics for your shoot in Valencia.",
+        "DESCRIPTION": "At Obliq Productions we provide a comprehensive audiovisual equipment rental service for directors of photography and production companies across the Valencian Community. Our catalogue includes digital cinema cameras, precision lenses, lighting and grip equipment, with technical advice and logistical support for shoots in Valencia, Alicante and Castellón. All our gear undergoes quality checks before every delivery, ensuring the reliability you need on set.",
         "TEXT": "equipment for your shoots?",
         "CTA": "If you need any other material that you don't see here, please send us an email and we will get it for you."
     },

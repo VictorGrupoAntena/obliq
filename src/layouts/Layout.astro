@@ -9,23 +9,27 @@ import TransitionMask from "@/components/organisms/TransitionMask.astro";
 
 interface Props {
   title: string;
+  pageTitle?: string;
+  description?: string;
   pageColor?: string;
 }
 
 const { currentLocale } = Astro;
 const t = getI18N({ currentLocale: currentLocale ?? "es" });
-const { title, pageColor } = Astro.props;
+const { title, pageTitle, description, pageColor } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={currentLocale ?? "en"}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="generator" content={Astro.generator} />
-    <title>{t.GLOBAL.TITLE} | {title}</title>
+    <title>{pageTitle ?? `${t.GLOBAL.TITLE} | ${title}`}</title>
+    {description && <meta name="description" content={description} />}
     <ClientRouter />
+    <slot name="head" />
   </head>
   <body
     class:list={[

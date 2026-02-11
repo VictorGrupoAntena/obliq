@@ -34,7 +34,11 @@
     "RENTAL": {
         "SPECS": "Especificaciones clave:",
         "BUTTON": "Alquilar",
-        "TITLE": "¿Necesitas alquilar",
+        "TITLE": "Alquiler de equipos audiovisuales y material de cine en Valencia",
+        "SUBTITLE": "equipos para tus rodajes?",
+        "PAGE_TITLE": "Alquiler de equipos audiovisuales en Valencia - Cine y publicidad | Obliq",
+        "META_DESCRIPTION": "Catálogo profesional de alquiler de cámaras de cine, iluminación y grip en la Comunidad Valenciana. Material revisado, asesoramiento técnico y logística para tu rodaje en Valencia.",
+        "DESCRIPTION": "En Obliq Productions gestionamos un servicio integral de alquiler de equipos audiovisuales para directores de fotografía y productoras en la Comunidad Valenciana. Nuestro catálogo abarca cámaras de cine digital, ópticas de precisión, iluminación y maquinaria (grip), con asesoramiento técnico y soporte logístico para rodajes en Valencia, Alicante y Castellón. Todo nuestro material pasa por controles de calidad antes de cada entrega, garantizando la fiabilidad que necesitas en set.",
         "TEXT": "equipos para tus rodajes?",
         "CTA": "Si necesitas algún otro material que no ves aquí, por favor envíanos un correo y lo conseguiremos para ti."
     },

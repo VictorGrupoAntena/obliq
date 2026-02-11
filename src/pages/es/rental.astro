@@ -6,9 +6,41 @@ import { getI18N } from "@/a18n/index.ts";
 
 const { currentLocale } = Astro;
 const t = getI18N({ currentLocale: currentLocale ?? "es" });
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "Obliq Productions",
+  "url": "https://obliqproductions.com/es/rental",
+  "telephone": "+34675489980",
+  "email": "info@obliqproductions.com",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Valencia",
+    "addressRegion": "Comunidad Valenciana",
+    "addressCountry": "ES"
+  },
+  "areaServed": [
+    { "@type": "City", "name": "Valencia" },
+    { "@type": "City", "name": "Alicante" },
+    { "@type": "City", "name": "Castellón" },
+    { "@type": "AdministrativeArea", "name": "Comunidad Valenciana" }
+  ],
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Alquiler de equipos audiovisuales",
+    "itemListElement": [
+      { "@type": "OfferCatalog", "name": "Cámaras" },
+      { "@type": "OfferCatalog", "name": "Iluminación" },
+      { "@type": "OfferCatalog", "name": "Grip" }
+    ]
+  }
+};
 ---
 
-<Layout title="Alquiler de equipos" pageColor="white">
+<Layout title={t.RENTAL.TITLE} pageTitle={t.RENTAL.PAGE_TITLE} description={t.RENTAL.META_DESCRIPTION} pageColor="white">
+  <script type="application/ld+json" set:html={JSON.stringify(schema)} slot="head" />
+
   <section class="container mx-auto px-4 py-6 md:py-16">
     <h1
       class="text-5xl font-black leading-none text-balance italic uppercase"
@@ -16,7 +48,9 @@ const t = getI18N({ currentLocale: currentLocale ?? "es" });
     >
       {t.RENTAL.TITLE}
     </h1>
-    <p class="text-[38px]" id="rental-text">{t.RENTAL.TEXT}</p>
+    <p class="mt-4 max-w-3xl text-lg leading-relaxed text-gray-700" id="rental-description">
+      {t.RENTAL.DESCRIPTION}
+    </p>
   </section>
 
   <Products />
@@ -33,10 +67,9 @@ const t = getI18N({ currentLocale: currentLocale ?? "es" });
     const productItems = document.querySelectorAll(".product-item");
     const productSection = document.getElementById("products");
     const title = document.getElementById("rental-title");
-    const text = document.getElementById("rental-text");
+    const description = document.getElementById("rental-description");
 
     const titleSplit = SplitText.create(title, { type: "lines" });
-    const textSplit = SplitText.create(text, { type: "lines" });
 
     gsap
       .timeline()
@@ -47,10 +80,10 @@ const t = getI18N({ currentLocale: currentLocale ?? "es" });
         delay: 1,
         ease: "power2.out",
       })
-      .from(textSplit.lines, {
+      .from(description, {
         opacity: 0,
-        y: 30,
-        duration: 0.3,
+        y: 20,
+        duration: 0.4,
         ease: "power2.out",
       });
 
