@@ -12,7 +12,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const userLang = acceptLang.split(",")[0].toLowerCase();
 
   if (pathname === "/" && userLang.startsWith("es")) {
-    return Response.redirect(new URL("/es/", url), 302);
+    // Use X-Forwarded-Host/Proto from reverse proxy, fallback to request URL
+    const host = context.request.headers.get("x-forwarded-host") || context.request.headers.get("host") || url.host;
+    const proto = context.request.headers.get("x-forwarded-proto") || url.protocol.replace(":", "");
+    const redirectUrl = `${proto}://${host}/es/`;
+    return Response.redirect(redirectUrl, 302);
   }
 
   return next();
