@@ -1,0 +1,143 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/organisms/Breadcrumbs.astro';
+import HeroSection from '@/components/sections/HeroSection.astro';
+import SectionHeader from '@/components/sections/SectionHeader.astro';
+import FeaturesGrid from '@/components/sections/FeaturesGrid.astro';
+import PricingSection from '@/components/sections/PricingSection.astro';
+import CTASection from '@/components/sections/CTASection.astro';
+import Marquee from '@/components/organisms/Marquee.astro';
+import Paragraph from '@/components/atoms/Paragraph.astro';
+import Button from '@/components/atoms/Button.astro';
+import { t, localizedUrl } from '@/lib/i18n';
+import { serviceSchema, breadcrumbSchema } from '@/lib/schema';
+import { getServicesAsync } from '@/data/services';
+
+export async function getStaticPaths() {
+  const services = await getServicesAsync();
+  return services.map((svc) => ({
+    params: { slug: svc.slug.en },
+    props: { service: svc },
+  }));
+}
+
+const locale = 'en';
+const i18n = t(locale);
+const { service } = Astro.props;
+const svcI18n = i18n.SERVICES[service.key as keyof typeof i18n.SERVICES];
+const sp = i18n.SERVICE_PAGE;
+
+const breadcrumbItems = [
+  { label: i18n.BREADCRUMBS.HOME, href: '/en/' },
+  { label: i18n.NAV.SERVICES, href: localizedUrl('/services/', locale) },
+  { label: svcI18n.NAME },
+];
+
+const schema = serviceSchema(svcI18n.NAME, svcI18n.DESCRIPTION);
+---
+
+<BaseLayout
+  title={svcI18n.NAME + ' — ' + i18n.SERVICES_PAGE.TITLE}
+  description={svcI18n.DESCRIPTION}
+  locale={locale}
+  schema={schema}
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema(breadcrumbItems))} />
+  </Fragment>
+
+  <!-- Breadcrumbs -->
+  <Breadcrumbs items={breadcrumbItems} />
+
+  <!-- Hero -->
+  <HeroSection
+    tag={i18n.NAV.SERVICES}
+    title={svcI18n.NAME.toUpperCase()}
+    subtitle={svcI18n.DESCRIPTION}
+    backgroundImage={service.image}
+    height="min-h-[60vh] md:min-h-[70vh]"
+  >
+    <Button variant="primary" href={localizedUrl('/contact/', locale)}>
+      {sp.CTA_BUTTON}
+    </Button>
+  </HeroSection>
+
+  <!-- Marquee -->
+  {service.marqueeText && (
+    <Marquee
+      items={[service.marqueeText.en, service.marqueeText.en, service.marqueeText.en, service.marqueeText.en]}
+      size="large"
+    />
+  )}
+
+  <!-- Service Description -->
+  <section class="bg-black py-spacing-section px-4 md:px-spacing-section">
+    <div class="max-w-4xl">
+      <Paragraph class="text-secondary text-[20px] leading-relaxed">
+        {service.longDescription.en}
+      </Paragraph>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <FeaturesGrid
+    tag={sp.FEATURES_TAG}
+    title={sp.FEATURES_TITLE}
+    features={service.features.en}
+  />
+
+  <!-- Pricing (optional) -->
+  {service.pricing && (
+    <PricingSection
+      tag={sp.PRICING_TAG}
+      title={sp.PRICING_TITLE}
+      plans={service.pricing.en}
+      ctaText={sp.PRICING_CTA}
+      ctaHref={localizedUrl('/contact/', locale)}
+    />
+  )}
+
+  <!-- Case Study (optional) -->
+  {service.caseStudy && (
+    <section class="bg-surface-dark py-spacing-section px-4 md:px-spacing-section">
+      <SectionHeader tag={sp.CASE_STUDY_TAG} title={service.caseStudy.title.en} />
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div>
+          <Paragraph class="text-secondary">
+            {service.caseStudy.description.en}
+          </Paragraph>
+        </div>
+        <div class="aspect-video overflow-hidden">
+          <img
+            src={service.caseStudy.image}
+            alt={service.caseStudy.title.en}
+            class="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- CTA -->
+  <CTASection title={sp.CTA_TITLE} background="dark">
+    <Button variant="primary" href={localizedUrl('/contact/', locale)}>
+      {sp.CTA_BUTTON}
+    </Button>
+  </CTASection>
+</BaseLayout>
+
+<script>
+  import { initScrollFadeInAll, initTextReveal } from '@/lib/gsap';
+
+  function initServiceAnimations() {
+    initScrollFadeInAll([
+      ['.feature-card', '[data-animate="section"]', { stagger: 0.08 }],
+      ['.pricing-card', undefined, { stagger: 0.1 }],
+    ]);
+    initTextReveal('.bg-black .max-w-4xl');
+  }
+
+  initServiceAnimations();
+  document.addEventListener('astro:after-swap', initServiceAnimations);
+</script>

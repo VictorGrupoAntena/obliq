@@ -1,0 +1,22 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Heading from '@/components/atoms/Heading.astro';
+import Paragraph from '@/components/atoms/Paragraph.astro';
+import Button from '@/components/atoms/Button.astro';
+---
+
+<BaseLayout title="Página no encontrada" noindex={true}>
+  <section class="bg-black flex-1 flex items-center justify-center min-h-[70vh] px-4 text-center">
+    <div>
+      <p class="text-[120px] md:text-[200px] font-black italic text-white/5 leading-none select-none">404</p>
+      <Heading level={2} class="text-white mb-4 -mt-8 md:-mt-16">PÁGINA NO ENCONTRADA</Heading>
+      <Paragraph class="text-secondary mb-8 max-w-md mx-auto">
+        La página que buscas no existe o ha sido movida.
+      </Paragraph>
+      <div class="flex justify-center gap-4 flex-wrap">
+        <Button variant="primary" href="/">VOLVER AL INICIO</Button>
+        <Button variant="outline" href="/contacto/">CONTACTAR</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

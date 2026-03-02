@@ -1,0 +1,71 @@
+---
+import Button from '@/components/atoms/Button.astro';
+
+interface Props {
+  name: string;
+  price: number;
+  image: string;
+  href: string;
+  specs?: string[];
+  ctaText: string;
+  perDay: string;
+  vat: string;
+  theme?: 'dark' | 'light';
+}
+
+const {
+  name,
+  price,
+  image,
+  href,
+  specs = [],
+  ctaText,
+  perDay,
+  vat,
+  theme = 'light',
+} = Astro.props;
+
+const isDark = theme === 'dark';
+---
+
+<a href={href} class:list={[
+  'group block overflow-hidden',
+  isDark ? 'bg-black' : 'bg-white border border-border-light',
+]}>
+  <div class="aspect-square overflow-hidden bg-surface-light p-4 flex items-center justify-center">
+    <img
+      src={image}
+      alt={name}
+      class="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105"
+      loading="lazy"
+    />
+  </div>
+  <div class="p-4">
+    {specs.length > 0 && (
+      <p class:list={['text-[11px] font-medium uppercase tracking-[2px] mb-2', isDark ? 'text-muted' : 'text-muted']}>
+        {specs[0]}
+      </p>
+    )}
+    <h3 class:list={['text-[18px] font-bold mb-2', isDark ? 'text-white' : 'text-black']}>
+      {name}
+    </h3>
+    <p class="mb-3">
+      <span class:list={['text-[20px] font-extrabold', isDark ? 'text-white' : 'text-black']}>
+        {price}€
+      </span>
+      <span class:list={['text-[13px] font-light', isDark ? 'text-muted' : 'text-muted']}>
+        {perDay}
+      </span>
+      <span class:list={['text-[11px] font-light ml-1', isDark ? 'text-muted' : 'text-muted']}>
+        {vat}
+      </span>
+    </p>
+    <Button
+      variant={isDark ? 'primary' : 'dark'}
+      size="small"
+      class="w-full justify-center pointer-events-none"
+    >
+      {ctaText}
+    </Button>
+  </div>
+</a>

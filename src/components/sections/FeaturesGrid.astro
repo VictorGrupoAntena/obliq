@@ -1,0 +1,38 @@
+---
+import SectionHeader from '@/components/sections/SectionHeader.astro';
+
+interface Feature {
+  title: string;
+  description: string;
+}
+
+interface Props {
+  tag?: string;
+  title: string;
+  features: Feature[];
+  theme?: 'dark' | 'light';
+  class?: string;
+}
+
+const { tag, title, features, theme = 'dark', class: className } = Astro.props;
+
+const bgClass = theme === 'dark' ? 'bg-surface-dark' : 'bg-surface-light';
+const textClass = theme === 'dark' ? 'text-white' : 'text-black';
+const mutedClass = theme === 'dark' ? 'text-secondary' : 'text-muted';
+const cardBg = theme === 'dark' ? 'bg-black/30' : 'bg-white';
+---
+
+<section class:list={['py-spacing-section px-4 md:px-spacing-section', bgClass, textClass, className]} data-animate="section">
+  <SectionHeader tag={tag} title={title} theme={theme} />
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {features.map((feature, i) => (
+      <div class:list={['feature-card p-6', cardBg]}>
+        <span class:list={['text-[12px] font-semibold tracking-[2px] block mb-3', mutedClass]}>
+          {String(i + 1).padStart(2, '0')}
+        </span>
+        <h3 class="text-[18px] font-bold mb-2">{feature.title}</h3>
+        <p class:list={['text-[14px] font-light', mutedClass]}>{feature.description}</p>
+      </div>
+    ))}
+  </div>
+</section>

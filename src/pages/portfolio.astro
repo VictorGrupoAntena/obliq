@@ -1,0 +1,121 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import HeroSection from '@/components/sections/HeroSection.astro';
+import CustomCursor from '@/components/organisms/CustomCursor.astro';
+import Button from '@/components/atoms/Button.astro';
+import { t } from '@/lib/i18n';
+import { getPortfolioProjectsAsync } from '@/data/portfolio';
+
+const locale = 'es';
+const i18n = t(locale);
+const p = i18n.PORTFOLIO_PAGE;
+
+const projects = await getPortfolioProjectsAsync();
+
+const filters = [
+  { key: 'all', label: p.FILTER_ALL },
+  { key: 'Spots', label: p.FILTER_SPOTS },
+  { key: 'Corporativo', label: p.FILTER_CORPORATE },
+  { key: 'Videoclips', label: p.FILTER_MUSIC_VIDEOS },
+  { key: 'Streaming', label: p.FILTER_STREAMING },
+  { key: 'Eventos', label: p.FILTER_EVENTS },
+];
+---
+
+<BaseLayout title={p.TITLE} description={p.HERO_SUBTITLE} locale={locale}>
+  <!-- Hero -->
+  <HeroSection
+    tag={p.HERO_TAG}
+    title={p.HERO_TITLE}
+    subtitle={p.HERO_SUBTITLE}
+    height="min-h-[50vh] md:min-h-[60vh]"
+  />
+
+  <!-- Filter + Grid -->
+  <section class="bg-white py-spacing-section px-4 md:px-spacing-section">
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-3 mb-10" id="portfolio-filters">
+      {filters.map((filter) => (
+        <button
+          data-filter={filter.key}
+          class:list={[
+            'px-5 py-2 text-[11px] font-semibold uppercase tracking-[3px] border transition-colors cursor-pointer',
+            filter.key === 'all'
+              ? 'bg-black text-white border-black'
+              : 'bg-transparent text-black border-border-light hover:border-black',
+          ]}
+        >
+          {filter.label}
+        </button>
+      ))}
+    </div>
+
+    <!-- Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="portfolio-grid">
+      {projects.map((project) => (
+        <div class="portfolio-item custom-cursor-target group relative overflow-hidden aspect-[4/3] cursor-pointer" data-category={project.category}>
+          <img
+            src={project.image}
+            alt={project.title.es}
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          <div class="absolute bottom-0 left-0 right-0 p-6">
+            <p class="text-[12px] font-medium uppercase tracking-[2px] text-muted mb-2">{project.category}</p>
+            <h3 class="text-[20px] font-bold italic text-white">{project.title.es}</h3>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <CustomCursor />
+</BaseLayout>
+
+<script>
+  function initPortfolioFilters() {
+    const filters = document.querySelectorAll('#portfolio-filters button');
+    const items = document.querySelectorAll('#portfolio-grid .portfolio-item');
+
+    filters.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const filter = (btn as HTMLButtonElement).dataset.filter;
+
+        // Update active state
+        filters.forEach((f) => {
+          f.classList.remove('bg-black', 'text-white', 'border-black');
+          f.classList.add('bg-transparent', 'text-black', 'border-border-light');
+        });
+        btn.classList.add('bg-black', 'text-white', 'border-black');
+        btn.classList.remove('bg-transparent', 'text-black', 'border-border-light');
+
+        // Filter items
+        items.forEach((item) => {
+          const category = (item as HTMLElement).dataset.category;
+          if (filter === 'all' || category === filter) {
+            (item as HTMLElement).style.display = '';
+          } else {
+            (item as HTMLElement).style.display = 'none';
+          }
+        });
+      });
+    });
+  }
+
+  initPortfolioFilters();
+  document.addEventListener('astro:after-swap', initPortfolioFilters);
+</script>
+
+<script>
+  import { initScrollFadeInAll } from '@/lib/gsap';
+
+  function initPortfolioAnimations() {
+    initScrollFadeInAll([
+      ['.portfolio-item', '#portfolio-grid', { stagger: 0.06, y: 40 }],
+    ]);
+  }
+
+  initPortfolioAnimations();
+  document.addEventListener('astro:after-swap', initPortfolioAnimations);
+</script>

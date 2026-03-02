@@ -1,0 +1,101 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import HeroSection from '@/components/sections/HeroSection.astro';
+import SectionHeader from '@/components/sections/SectionHeader.astro';
+import Heading from '@/components/atoms/Heading.astro';
+import Paragraph from '@/components/atoms/Paragraph.astro';
+import Marquee from '@/components/organisms/Marquee.astro';
+import { t } from '@/lib/i18n';
+import { getTeamAsync } from '@/data/team';
+import { getClientNamesAsync } from '@/data/clients';
+
+const locale = 'es';
+const i18n = t(locale);
+const a = i18n.ABOUT_PAGE;
+
+const values = [
+  { num: '01', title: a.VALUE_1_TITLE, text: a.VALUE_1_TEXT },
+  { num: '02', title: a.VALUE_2_TITLE, text: a.VALUE_2_TEXT },
+  { num: '03', title: a.VALUE_3_TITLE, text: a.VALUE_3_TEXT },
+];
+
+const team = await getTeamAsync();
+const clients = await getClientNamesAsync();
+---
+
+<BaseLayout title={a.TITLE} description={a.HERO_SUBTITLE} locale={locale}>
+  <!-- Hero -->
+  <HeroSection
+    tag={a.HERO_TAG}
+    title={a.HERO_TITLE}
+    subtitle={a.HERO_SUBTITLE}
+    height="min-h-[50vh] md:min-h-[60vh]"
+  />
+
+  <!-- Story -->
+  <section class="bg-white py-spacing-section px-4 md:px-spacing-section" id="about-story">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16 items-center">
+      <div class="about-story-col">
+        <Heading level={2} italic={true} class="text-black mb-6">{a.STORY_TITLE}</Heading>
+        <Paragraph class="text-muted">{a.STORY_TEXT}</Paragraph>
+      </div>
+      <div class="about-story-col aspect-[4/3] overflow-hidden">
+        <img src="/hero.jpg" alt="Obliq Productions team" class="w-full h-full object-cover" loading="lazy" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Values -->
+  <section class="bg-black py-spacing-section px-4 md:px-spacing-section" id="about-values">
+    <SectionHeader tag={a.VALUES_TAG} title={a.VALUES_TITLE} />
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {values.map((v) => (
+        <div class="about-value">
+          <span class="text-[48px] font-black text-white/10 block mb-2">{v.num}</span>
+          <h3 class="text-[24px] font-bold mb-3">{v.title}</h3>
+          <Paragraph size="small" class="text-secondary">{v.text}</Paragraph>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Team -->
+  <section class="bg-white py-spacing-section px-4 md:px-spacing-section" id="about-team">
+    <SectionHeader tag={a.TEAM_TAG} title={a.TEAM_TITLE} theme="light" />
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {team.map((member) => (
+        <div class="about-team-member text-center">
+          <div class="aspect-square bg-surface-light mb-4 overflow-hidden">
+            {member.photo ? (
+              <img src={member.photo} alt={member.name} class="w-full h-full object-cover" loading="lazy" />
+            ) : (
+              <div class="w-full h-full bg-border/20 flex items-center justify-center text-[48px] text-muted">
+                {member.name.charAt(0)}
+              </div>
+            )}
+          </div>
+          <h3 class="text-[16px] font-bold text-black">{member.name}</h3>
+          <p class="text-[13px] font-light text-muted">{member.role.es}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Clients Marquee -->
+  <Marquee items={clients} size="small" />
+</BaseLayout>
+
+<script>
+  import { initScrollFadeInAll } from '@/lib/gsap';
+
+  function initAboutAnimations() {
+    initScrollFadeInAll([
+      ['.about-story-col', '#about-story', { stagger: 0.15, y: 40 }],
+      ['.about-value', '#about-values', { stagger: 0.12 }],
+      ['.about-team-member', '#about-team', { stagger: 0.1 }],
+    ]);
+  }
+
+  initAboutAnimations();
+  document.addEventListener('astro:after-swap', initAboutAnimations);
+</script>

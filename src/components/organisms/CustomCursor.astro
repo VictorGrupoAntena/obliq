@@ -1,0 +1,71 @@
+---
+/**
+ * Custom cursor — SVG "plus" icon that follows the mouse
+ * on elements with `.custom-cursor-target` class.
+ * Uses GSAP for smooth positioning and scale transitions.
+ */
+---
+
+<div
+  id="customCursor"
+  class="fixed top-0 left-0 z-[999] pointer-events-none hidden md:block"
+  style="transform: scale(0);"
+  aria-hidden="true"
+>
+  <svg width="75" height="75" viewBox="0 0 75 75" fill="none">
+    <circle cx="37.5" cy="37.5" r="37.5" fill="white" />
+    <path d="M37.5 22V53" stroke="black" stroke-width="2" />
+    <path d="M22 37.5H53" stroke="black" stroke-width="2" />
+  </svg>
+</div>
+
+<script>
+  import { gsap, prefersReducedMotion } from '@/lib/gsap';
+
+  function initCustomCursor() {
+    if (prefersReducedMotion()) return;
+
+    const cursor = document.getElementById('customCursor');
+    if (!cursor) return;
+
+    const targets = document.querySelectorAll('.custom-cursor-target');
+    if (!targets.length) return;
+
+    let showTimeout: ReturnType<typeof setTimeout>;
+    let hideTimeout: ReturnType<typeof setTimeout>;
+    let rafId: number;
+
+    function moveCursor(e: MouseEvent) {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        gsap.set(cursor, {
+          x: e.clientX - 37.5,
+          y: e.clientY - 37.5,
+        });
+      });
+    }
+
+    targets.forEach((target) => {
+      target.addEventListener('pointerenter', () => {
+        clearTimeout(hideTimeout);
+        showTimeout = setTimeout(() => {
+          document.addEventListener('pointermove', moveCursor);
+          gsap.to(cursor, { scale: 1, duration: 0.2, ease: 'power3.out' });
+        }, 100);
+        (target as HTMLElement).style.cursor = 'none';
+      });
+
+      target.addEventListener('pointerleave', () => {
+        clearTimeout(showTimeout);
+        hideTimeout = setTimeout(() => {
+          document.removeEventListener('pointermove', moveCursor);
+          gsap.to(cursor, { scale: 0, duration: 0.2, ease: 'power3.inOut' });
+        }, 50);
+        (target as HTMLElement).style.cursor = '';
+      });
+    });
+  }
+
+  initCustomCursor();
+  document.addEventListener('astro:after-swap', initCustomCursor);
+</script>

@@ -4,32 +4,20 @@ import HeroSection from '@/components/sections/HeroSection.astro';
 import SectionHeader from '@/components/sections/SectionHeader.astro';
 import CTASection from '@/components/sections/CTASection.astro';
 import Marquee from '@/components/organisms/Marquee.astro';
+import CustomCursor from '@/components/organisms/CustomCursor.astro';
 import Button from '@/components/atoms/Button.astro';
 import Paragraph from '@/components/atoms/Paragraph.astro';
 import { t, localizedUrl } from '@/lib/i18n';
+import { getServicesAsync } from '@/data/services';
+import { getFeaturedProjectsAsync } from '@/data/portfolio';
+import { getClientNamesAsync } from '@/data/clients';
 
 const locale = 'en';
 const i18n = t(locale);
 
-// Mock data — 9 services
-const services = [
-  { key: 'STREAMING', slug: 'streaming' },
-  { key: 'SOCIAL_CONTENT', slug: 'social-media-content' },
-  { key: 'CORPORATE_VIDEO', slug: 'corporate-video' },
-  { key: 'SPOTS', slug: 'advertising-spots' },
-  { key: 'MUSIC_VIDEOS', slug: 'music-videos' },
-  { key: 'EVENTS', slug: 'event-coverage' },
-  { key: 'PHOTOGRAPHY', slug: 'photography' },
-  { key: 'POST_PRODUCTION', slug: 'post-production' },
-  { key: 'CONSULTING', slug: 'consulting' },
-] as const;
-
-// Mock data — 3 portfolio projects
-const portfolioProjects = [
-  { title: 'MasterChef — Digital Campaign', category: 'Spots', image: '/hero.jpg' },
-  { title: 'Loewe — Fashion Film', category: 'Music Videos', image: '/hero.jpg' },
-  { title: 'Samsung — Launch Event', category: 'Events', image: '/hero.jpg' },
-];
+const services = await getServicesAsync();
+const portfolioProjects = await getFeaturedProjectsAsync();
+const clientNames = await getClientNamesAsync();
 ---
 
 <BaseLayout
@@ -59,10 +47,10 @@ const portfolioProjects = [
     <SectionHeader tag={i18n.HOME.SERVICES_TAG} title={i18n.HOME.SERVICES_TITLE} />
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       {services.map((svc) => {
-        const data = i18n.SERVICES[svc.key];
+        const data = i18n.SERVICES[svc.key as keyof typeof i18n.SERVICES];
         return (
           <a
-            href={localizedUrl('/servicios/' + svc.slug + '/', locale)}
+            href={localizedUrl('/servicios/' + svc.slug.en + '/', locale)}
             class="service-card bg-surface-dark p-6 flex flex-col justify-between min-h-[151px] group transition-colors hover:bg-border"
           >
             <div>
@@ -89,16 +77,16 @@ const portfolioProjects = [
     <SectionHeader tag={i18n.HOME.PORTFOLIO_TAG} title={i18n.HOME.PORTFOLIO_TITLE} />
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
       {portfolioProjects.map((project) => (
-        <a href={localizedUrl('/portfolio/', locale)} class="portfolio-card relative overflow-hidden group aspect-[4/3]">
+        <a href={localizedUrl('/portfolio/', locale)} class="portfolio-card custom-cursor-target relative overflow-hidden group aspect-[4/3]">
           <img
             src={project.image}
-            alt={project.title}
+            alt={project.title.en}
             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           <div class="absolute bottom-0 left-0 right-0 p-6">
             <p class="text-[12px] font-medium uppercase tracking-[2px] text-muted mb-2">{project.category}</p>
-            <h3 class="text-[20px] font-bold italic">{project.title}</h3>
+            <h3 class="text-[20px] font-bold italic">{project.title.en}</h3>
           </div>
         </a>
       ))}
@@ -111,7 +99,7 @@ const portfolioProjects = [
   </section>
 
   <!-- 5. Marquee — Brands -->
-  <Marquee items={i18n.HOME.MARQUEE_BRANDS} size="small" />
+  <Marquee items={clientNames} size="small" />
 
   <!-- 6. About Teaser -->
   <section class="bg-surface-dark py-spacing-section px-4 md:px-spacing-section">
@@ -123,6 +111,8 @@ const portfolioProjects = [
       {i18n.HOME.ABOUT_CTA}
     </Button>
   </section>
+
+  <CustomCursor />
 
   <!-- 7. CTA -->
   <CTASection title={i18n.HOME.CTA_TITLE}>

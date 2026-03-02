@@ -1,0 +1,81 @@
+---
+import Button from '@/components/atoms/Button.astro';
+
+interface PackProduct {
+  name: string;
+  price: number;
+}
+
+interface Props {
+  name: string;
+  description: string;
+  products: PackProduct[];
+  dailyPrice: number;
+  individualTotal: number;
+  savings: number;
+  ctaText: string;
+  ctaHref?: string;
+  perDay: string;
+  vat: string;
+  savingsLabel: string;
+  includesLabel: string;
+}
+
+const {
+  name,
+  description,
+  products,
+  dailyPrice,
+  individualTotal,
+  savings,
+  ctaText,
+  ctaHref = '#',
+  perDay,
+  vat,
+  savingsLabel,
+  includesLabel,
+} = Astro.props;
+---
+
+<div class="pack-card bg-surface-dark p-8 flex flex-col h-full">
+  <p class="text-[12px] font-semibold uppercase tracking-[3px] text-muted mb-3">
+    {name}
+  </p>
+  <p class="text-secondary text-[14px] font-light mb-6">
+    {description}
+  </p>
+
+  <!-- Price -->
+  <div class="mb-6">
+    <span class="text-[48px] font-black text-white">{dailyPrice}€</span>
+    <span class="text-[14px] font-light text-muted">{perDay}</span>
+    <span class="text-[12px] font-light text-muted ml-1">{vat}</span>
+  </div>
+
+  <!-- Savings badge -->
+  <div class="flex items-center gap-3 mb-6">
+    <span class="bg-white text-black text-[11px] font-bold uppercase tracking-[2px] px-3 py-1">
+      {savingsLabel.replace('{n}', String(savings))}
+    </span>
+    <span class="text-[13px] text-muted line-through">
+      {individualTotal}€{perDay}
+    </span>
+  </div>
+
+  <!-- Included items -->
+  <p class="text-[11px] font-semibold uppercase tracking-[2px] text-muted mb-3">
+    {includesLabel}
+  </p>
+  <ul class="flex-1 space-y-2 mb-8">
+    {products.map((product) => (
+      <li class="flex items-center justify-between text-[14px] border-b border-border/30 pb-2">
+        <span class="text-white font-light">{product.name}</span>
+        <span class="text-muted text-[12px]">{product.price}€</span>
+      </li>
+    ))}
+  </ul>
+
+  <Button variant="primary" href={ctaHref} class="w-full justify-center">
+    {ctaText}
+  </Button>
+</div>

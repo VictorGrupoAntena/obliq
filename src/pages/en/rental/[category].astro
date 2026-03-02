@@ -1,0 +1,91 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SectionHeader from '@/components/sections/SectionHeader.astro';
+import CTASection from '@/components/sections/CTASection.astro';
+import QuoteCartPreview from '@/components/sections/QuoteCartPreview.astro';
+import ProductCard from '@/components/cards/ProductCard.astro';
+import Breadcrumbs from '@/components/organisms/Breadcrumbs.astro';
+import Heading from '@/components/atoms/Heading.astro';
+import Paragraph from '@/components/atoms/Paragraph.astro';
+import Button from '@/components/atoms/Button.astro';
+import { t, localizedUrl } from '@/lib/i18n';
+import { breadcrumbSchema } from '@/lib/schema';
+import { getCategoriesAsync } from '@/data/rental';
+
+export async function getStaticPaths() {
+  const categories = await getCategoriesAsync();
+  return categories.map((cat) => ({
+    params: { category: cat.slug.en },
+    props: { category: cat },
+  }));
+}
+
+const locale = 'en';
+const i18n = t(locale);
+const r = i18n.RENTAL;
+const { category } = Astro.props;
+const categorySlug = category.slug.en;
+
+const breadcrumbItems = [
+  { label: i18n.BREADCRUMBS.HOME, href: '/en/' },
+  { label: i18n.NAV.RENTAL, href: localizedUrl('/rental/', locale) },
+  { label: category.name.en },
+];
+---
+
+<BaseLayout
+  title={category.name.en + ' — ' + r.TITLE}
+  description={category.description.en}
+  locale={locale}
+  pageColor="white"
+  schema={breadcrumbSchema(breadcrumbItems)}
+>
+  <Breadcrumbs items={breadcrumbItems} />
+
+  <section class="bg-surface-dark py-spacing-section px-4 md:px-spacing-section">
+    <Heading level={1} class="text-white mb-4">{category.name.en.toUpperCase()}</Heading>
+    <Paragraph class="text-secondary max-w-2xl">{category.description.en}</Paragraph>
+  </section>
+
+  <section class="bg-surface-light py-spacing-section px-4 md:px-spacing-section">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {category.products.map((product) => (
+        <ProductCard
+          name={product.name}
+          price={product.price}
+          image={product.image}
+          href={localizedUrl('/rental/' + categorySlug + '/' + product.slug + '/', locale)}
+          specs={product.specs.en}
+          ctaText={r.ADD_TO_QUOTE}
+          perDay={r.PER_DAY}
+          vat={r.VAT}
+          theme="light"
+        />
+      ))}
+    </div>
+  </section>
+
+  <QuoteCartPreview
+    title={r.QUOTE_TITLE}
+    description={r.QUOTE_DESCRIPTION}
+    ctaText={r.QUOTE_CTA}
+    ctaHref={localizedUrl('/contact/', locale)}
+  />
+
+  <CTASection title={r.CTA_TITLE} background="white">
+    <Button variant="dark" href={localizedUrl('/contact/', locale)}>{r.CTA_BUTTON}</Button>
+  </CTASection>
+</BaseLayout>
+
+<script>
+  import { initScrollFadeInAll } from '@/lib/gsap';
+
+  function initCategoryAnimations() {
+    initScrollFadeInAll([
+      ['.grid > *', '.bg-surface-light', { stagger: 0.08 }],
+    ]);
+  }
+
+  initCategoryAnimations();
+  document.addEventListener('astro:after-swap', initCategoryAnimations);
+</script>

@@ -1,0 +1,72 @@
+---
+import Button from '@/components/atoms/Button.astro';
+
+interface Props {
+  name: string;
+  price: string;
+  features: string[];
+  highlighted?: boolean;
+  ctaText: string;
+  ctaHref?: string;
+  currency?: string;
+}
+
+const {
+  name,
+  price,
+  features,
+  highlighted = false,
+  ctaText,
+  ctaHref = '#',
+  currency = '€',
+} = Astro.props;
+---
+
+<div
+  class:list={[
+    'pricing-card flex flex-col p-8 h-full',
+    highlighted
+      ? 'bg-surface-light text-black border border-white/20'
+      : 'bg-surface-dark text-white',
+  ]}
+>
+  <p class="text-[12px] font-semibold uppercase tracking-[3px] mb-4 text-muted">
+    {name}
+  </p>
+  <p class="mb-6">
+    <span class="text-[48px] font-black">{price}{currency}</span>
+    <span class:list={['text-[14px] font-light', highlighted ? 'text-black/60' : 'text-muted']}>
+      /mes
+    </span>
+  </p>
+  <ul class="flex-1 mb-8 space-y-3">
+    {features.map((feature) => (
+      <li class="flex items-start gap-3 text-[14px] font-light">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          class="mt-0.5 shrink-0"
+          aria-hidden="true"
+        >
+          <path
+            d="M13.3 4.3L6.5 11.1L2.7 7.3"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span>{feature}</span>
+      </li>
+    ))}
+  </ul>
+  <Button
+    variant={highlighted ? 'dark' : 'primary'}
+    href={ctaHref}
+    class="w-full justify-center"
+  >
+    {ctaText}
+  </Button>
+</div>

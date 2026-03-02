@@ -1,0 +1,163 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import CTASection from '@/components/sections/CTASection.astro';
+import SectionHeader from '@/components/sections/SectionHeader.astro';
+import QuoteCartPreview from '@/components/sections/QuoteCartPreview.astro';
+import ProductCompactCard from '@/components/cards/ProductCompactCard.astro';
+import Breadcrumbs from '@/components/organisms/Breadcrumbs.astro';
+import Heading from '@/components/atoms/Heading.astro';
+import Paragraph from '@/components/atoms/Paragraph.astro';
+import Button from '@/components/atoms/Button.astro';
+import { t, localizedUrl } from '@/lib/i18n';
+import { productSchema, breadcrumbSchema } from '@/lib/schema';
+import { getCategoriesAsync, discountTiers, getDiscountedPrice } from '@/data/rental';
+
+export async function getStaticPaths() {
+  const categories = await getCategoriesAsync();
+  return categories.flatMap((cat) =>
+    cat.products.map((product) => ({
+      params: { category: cat.slug.es, product: product.slug },
+      props: { category: cat, product },
+    }))
+  );
+}
+
+const locale = 'es';
+const i18n = t(locale);
+const r = i18n.RENTAL;
+const { category, product } = Astro.props;
+const categorySlug = category.slug.es;
+const relatedProducts = category.products.filter((p) => p.slug !== product.slug).slice(0, 3);
+
+const breadcrumbItems = [
+  { label: i18n.BREADCRUMBS.HOME, href: '/' },
+  { label: i18n.NAV.RENTAL, href: localizedUrl('/alquiler/', locale) },
+  { label: category.name.es, href: localizedUrl('/alquiler/' + categorySlug + '/', locale) },
+  { label: product.name },
+];
+
+const schema = productSchema(product.name, String(product.price), product.image);
+---
+
+<BaseLayout
+  title={product.name + ' — ' + r.TITLE}
+  description={product.description.es}
+  locale={locale}
+  pageColor="white"
+  schema={schema}
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema(breadcrumbItems))} />
+  </Fragment>
+
+  <!-- Breadcrumbs -->
+  <Breadcrumbs items={breadcrumbItems} />
+
+  <!-- Product Detail -->
+  <section class="bg-surface-light py-spacing-section px-4 md:px-spacing-section">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
+      <!-- Gallery -->
+      <div class="bg-white p-8 flex items-center justify-center aspect-square">
+        <img
+          src={product.image}
+          alt={product.name}
+          class="max-w-full max-h-full object-contain"
+        />
+      </div>
+
+      <!-- Info -->
+      <div>
+        <Heading level={1} italic={false} class="text-black mb-4">{product.name}</Heading>
+        <p class="mb-6">
+          <span class="text-[32px] font-extrabold text-black">{product.price}€</span>
+          <span class="text-[16px] font-light text-muted">{r.PER_DAY}</span>
+          <span class="text-[13px] font-light text-muted ml-1">{r.VAT}</span>
+        </p>
+        <Paragraph class="text-muted mb-8">{product.description.es}</Paragraph>
+
+        <!-- Specs -->
+        <h2 class="text-[14px] font-semibold uppercase tracking-[2px] text-black mb-4">{r.SPECS}</h2>
+        <div class="space-y-0 mb-8">
+          {product.specs.es.map((spec, i) => (
+            <div class:list={['flex items-start gap-3 py-3 text-[14px]', i > 0 && 'border-t border-border-light']}>
+              <span class="text-muted font-light">{spec}</span>
+            </div>
+          ))}
+        </div>
+
+        <!-- Multi-day discounts -->
+        <h2 class="text-[14px] font-semibold uppercase tracking-[2px] text-black mb-4">{r.DISCOUNTS_TITLE}</h2>
+        <div class="mb-8 border border-border-light">
+          <div class="grid grid-cols-4 text-[11px] font-semibold uppercase tracking-[2px] text-muted bg-surface-light px-4 py-3">
+            <span>{r.DISCOUNTS_DURATION}</span>
+            <span>{r.DISCOUNTS_PRICE_DAY}</span>
+            <span>{r.DISCOUNTS_TOTAL}</span>
+            <span>{r.DISCOUNTS_SAVE}</span>
+          </div>
+          {discountTiers.map((tier) => {
+            const dailyDiscounted = tier.discount > 0 ? Math.round(product.price * (1 - tier.discount / 100)) : product.price;
+            const total = getDiscountedPrice(product.price, tier.days);
+            return (
+              <div class:list={['grid grid-cols-4 px-4 py-3 text-[14px] border-t border-border-light', tier.discount > 0 && 'bg-surface-light/50']}>
+                <span class="font-medium text-black">{tier.label.es}</span>
+                <span class="text-black">{dailyDiscounted}€</span>
+                <span class="font-bold text-black">{total}€</span>
+                <span class:list={[tier.discount > 0 ? 'text-black font-semibold' : 'text-muted']}>
+                  {tier.discount > 0 ? '-' + tier.discount + '%' : '—'}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        <Button variant="dark" href={localizedUrl('/contacto/', locale)} class="w-full justify-center md:w-auto">
+          {r.ADD_TO_QUOTE}
+        </Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Related Products -->
+  {relatedProducts.length > 0 && (
+    <section class="bg-surface-light pb-spacing-section px-4 md:px-spacing-section">
+      <SectionHeader tag={r.RELATED_TAG} title={r.RELATED_TITLE} theme="light" />
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {relatedProducts.map((rp) => (
+          <ProductCompactCard
+            name={rp.name}
+            price={rp.price}
+            image={rp.image}
+            href={localizedUrl('/alquiler/' + categorySlug + '/' + rp.slug + '/', locale)}
+            perDay={r.PER_DAY}
+          />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- Quote Cart -->
+  <QuoteCartPreview
+    title={r.QUOTE_TITLE}
+    description={r.QUOTE_DESCRIPTION}
+    ctaText={r.QUOTE_CTA}
+    ctaHref={localizedUrl('/contacto/', locale)}
+  />
+
+  <!-- CTA -->
+  <CTASection title={r.CTA_TITLE} background="white">
+    <Button variant="dark" href={localizedUrl('/contacto/', locale)}>
+      {r.CTA_BUTTON}
+    </Button>
+  </CTASection>
+</BaseLayout>
+
+<script>
+  import { initScrollFadeIn } from '@/lib/gsap';
+
+  function initProductAnimations() {
+    initScrollFadeIn('.grid.grid-cols-1.md\\:grid-cols-2 > *', undefined, { stagger: 0.2, y: 30 });
+  }
+
+  initProductAnimations();
+  document.addEventListener('astro:after-swap', initProductAnimations);
+</script>

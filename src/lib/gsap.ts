@@ -9,11 +9,18 @@ export function prefersReducedMotion(): boolean {
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+interface FadeInOptions {
+  stagger?: number;
+  y?: number;
+  duration?: number;
+  start?: string;
+}
+
 /** Scroll fade-in animation for a set of elements */
 export function initScrollFadeIn(
   selector: string,
   triggerSelector?: string,
-  options?: { stagger?: number; y?: number; duration?: number },
+  options?: FadeInOptions,
 ) {
   if (prefersReducedMotion()) return;
 
@@ -32,10 +39,44 @@ export function initScrollFadeIn(
     stagger: options?.stagger ?? 0.1,
     scrollTrigger: {
       trigger: trigger as Element,
-      start: 'top 80%',
-      end: 'bottom 20%',
+      start: options?.start ?? 'top 85%',
       toggleActions: 'play none none reverse',
     },
+  });
+}
+
+/** Batch init scroll fade-in for multiple selectors */
+export function initScrollFadeInAll(selectors: Array<string | [string, string?, FadeInOptions?]>) {
+  if (prefersReducedMotion()) return;
+  for (const entry of selectors) {
+    if (typeof entry === 'string') {
+      initScrollFadeIn(entry);
+    } else {
+      initScrollFadeIn(entry[0], entry[1], entry[2]);
+    }
+  }
+}
+
+/** Text reveal animation — free alternative to SplitText using clip-path */
+export function initTextReveal(selector: string) {
+  if (prefersReducedMotion()) return;
+
+  const elements = document.querySelectorAll(selector);
+  if (!elements.length) return;
+
+  elements.forEach((el) => {
+    gsap.from(el, {
+      clipPath: 'inset(100% 0% 0% 0%)',
+      opacity: 0,
+      y: 20,
+      duration: 0.8,
+      ease: 'power3.out',
+      scrollTrigger: {
+        trigger: el,
+        start: 'top 90%',
+        toggleActions: 'play none none reverse',
+      },
+    });
   });
 }
 

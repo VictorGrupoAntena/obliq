@@ -1,0 +1,38 @@
+---
+import SectionHeader from '@/components/sections/SectionHeader.astro';
+import PricingCard from '@/components/cards/PricingCard.astro';
+
+interface PricingPlan {
+  name: string;
+  price: string;
+  features: string[];
+  highlighted?: boolean;
+}
+
+interface Props {
+  tag?: string;
+  title: string;
+  plans: PricingPlan[];
+  ctaText: string;
+  ctaHref?: string;
+  class?: string;
+}
+
+const { tag, title, plans, ctaText, ctaHref = '#', class: className } = Astro.props;
+---
+
+<section class:list={['bg-black py-spacing-section px-4 md:px-spacing-section', className]}>
+  <SectionHeader tag={tag} title={title} />
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+    {plans.map((plan) => (
+      <PricingCard
+        name={plan.name}
+        price={plan.price}
+        features={plan.features}
+        highlighted={plan.highlighted}
+        ctaText={ctaText}
+        ctaHref={ctaHref}
+      />
+    ))}
+  </div>
+</section>

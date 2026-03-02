@@ -1,0 +1,29 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Heading from '@/components/atoms/Heading.astro';
+
+const locale = 'es';
+---
+
+<BaseLayout title="Política de Privacidad" locale={locale} noindex={true} pageColor="white">
+  <section class="bg-white py-spacing-section px-4 md:px-spacing-section max-w-3xl mx-auto">
+    <Heading level={1} italic={false} class="text-black mb-8">Política de Privacidad</Heading>
+    <div class="prose prose-lg text-muted space-y-6 text-[16px] font-light leading-relaxed">
+      <h2 class="text-[24px] font-bold text-black">Responsable del tratamiento</h2>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong class="text-black">Identidad:</strong> Obliq Audiovisual SL</li>
+        <li><strong class="text-black">CIF:</strong> B19377019</li>
+        <li><strong class="text-black">Dirección:</strong> C/ Pintor Navarro Llorens bajo 3, 46008 Valencia</li>
+        <li><strong class="text-black">Email:</strong> info@obliqproductions.com</li>
+      </ul>
+      <h2 class="text-[24px] font-bold text-black mt-8">Finalidad del tratamiento</h2>
+      <p>Los datos personales recabados a través de los formularios de contacto serán tratados con la finalidad de atender sus consultas y proporcionarle la información solicitada sobre nuestros servicios.</p>
+      <h2 class="text-[24px] font-bold text-black mt-8">Legitimación</h2>
+      <p>La base legal para el tratamiento de sus datos es el consentimiento del interesado y/o la ejecución de un contrato.</p>
+      <h2 class="text-[24px] font-bold text-black mt-8">Conservación de datos</h2>
+      <p>Los datos se conservarán mientras se mantenga la relación comercial o durante el tiempo necesario para cumplir con las obligaciones legales.</p>
+      <h2 class="text-[24px] font-bold text-black mt-8">Derechos</h2>
+      <p>Puede ejercer sus derechos de acceso, rectificación, supresión, limitación, portabilidad y oposición enviando un email a info@obliqproductions.com.</p>
+    </div>
+  </section>
+</BaseLayout>

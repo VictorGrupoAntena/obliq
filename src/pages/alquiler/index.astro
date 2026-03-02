@@ -1,0 +1,145 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import HeroSection from '@/components/sections/HeroSection.astro';
+import SectionHeader from '@/components/sections/SectionHeader.astro';
+import CTASection from '@/components/sections/CTASection.astro';
+import QuoteCartPreview from '@/components/sections/QuoteCartPreview.astro';
+import CategoryCard from '@/components/cards/CategoryCard.astro';
+import ProductCard from '@/components/cards/ProductCard.astro';
+import Breadcrumbs from '@/components/organisms/Breadcrumbs.astro';
+import Button from '@/components/atoms/Button.astro';
+import PackCard from '@/components/cards/PackCard.astro';
+import { t, localizedUrl } from '@/lib/i18n';
+import { getCategoriesAsync, getFeaturedProductsAsync, getPacksAsync, getPackWithProducts } from '@/data/rental';
+
+const locale = 'es';
+const i18n = t(locale);
+const r = i18n.RENTAL;
+const categories = await getCategoriesAsync();
+const featured = await getFeaturedProductsAsync();
+const packs = await getPacksAsync();
+
+const breadcrumbItems = [
+  { label: i18n.BREADCRUMBS.HOME, href: '/' },
+  { label: i18n.NAV.RENTAL },
+];
+---
+
+<BaseLayout
+  title={r.TITLE}
+  description={r.HERO_SUBTITLE}
+  locale={locale}
+  pageColor="white"
+>
+  <!-- Breadcrumbs -->
+  <Breadcrumbs items={breadcrumbItems} />
+
+  <!-- Hero -->
+  <HeroSection
+    tag={r.HERO_TAG}
+    title={r.HERO_TITLE}
+    subtitle={r.HERO_SUBTITLE}
+    backgroundImage="/hero.jpg"
+    height="min-h-[50vh] md:min-h-[60vh]"
+  >
+    <Button variant="primary" href="#categories">
+      {r.VIEW_CATEGORY}
+    </Button>
+  </HeroSection>
+
+  <!-- Categories -->
+  <section id="categories" class="bg-white py-spacing-section px-4 md:px-spacing-section">
+    <SectionHeader tag={r.CATEGORIES_TAG} title={r.CATEGORIES_TITLE} theme="light" />
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {categories.map((cat) => (
+        <CategoryCard
+          name={cat.name.es}
+          description={cat.description.es}
+          count={cat.products.length}
+          href={localizedUrl('/alquiler/' + cat.slug.es + '/', locale)}
+          ctaText={r.VIEW_CATEGORY}
+          countLabel={r.PRODUCTS_COUNT}
+        />
+      ))}
+    </div>
+  </section>
+
+  <!-- Packs -->
+  <section class="bg-black py-spacing-section px-4 md:px-spacing-section" id="packs">
+    <SectionHeader tag={r.PACKS_TAG} title={r.PACKS_TITLE} />
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {packs.map((pack) => {
+        const resolved = getPackWithProducts(pack);
+        return (
+          <PackCard
+            name={pack.name.es}
+            description={pack.description.es}
+            products={resolved.products.map((p) => ({ name: p.name, price: p.price }))}
+            dailyPrice={pack.dailyPrice}
+            individualTotal={resolved.individualTotal}
+            savings={pack.savings}
+            ctaText={r.ADD_TO_QUOTE}
+            ctaHref={localizedUrl('/contacto/', locale)}
+            perDay={r.PER_DAY}
+            vat={r.VAT}
+            savingsLabel={r.PACKS_SAVINGS}
+            includesLabel={r.PACKS_INCLUDES}
+          />
+        );
+      })}
+    </div>
+  </section>
+
+  <!-- Featured Products -->
+  <section class="bg-surface-light py-spacing-section px-4 md:px-spacing-section">
+    <SectionHeader tag={r.FEATURED_TAG} title={r.FEATURED_TITLE} theme="light" />
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {featured.map((product) => {
+        const cat = categories.find((c) => c.products.some((p) => p.slug === product.slug));
+        const catSlug = cat?.slug.es ?? '';
+        return (
+          <ProductCard
+            name={product.name}
+            price={product.price}
+            image={product.image}
+            href={localizedUrl('/alquiler/' + catSlug + '/' + product.slug + '/', locale)}
+            specs={product.specs.es}
+            ctaText={r.ADD_TO_QUOTE}
+            perDay={r.PER_DAY}
+            vat={r.VAT}
+            theme="light"
+          />
+        );
+      })}
+    </div>
+  </section>
+
+  <!-- Quote Cart -->
+  <QuoteCartPreview
+    title={r.QUOTE_TITLE}
+    description={r.QUOTE_DESCRIPTION}
+    ctaText={r.QUOTE_CTA}
+    ctaHref={localizedUrl('/contacto/', locale)}
+  />
+
+  <!-- CTA -->
+  <CTASection title={r.CTA_TITLE} background="white">
+    <Button variant="dark" href={localizedUrl('/contacto/', locale)}>
+      {r.CTA_BUTTON}
+    </Button>
+  </CTASection>
+</BaseLayout>
+
+<script>
+  import { initScrollFadeInAll } from '@/lib/gsap';
+
+  function initRentalAnimations() {
+    initScrollFadeInAll([
+      ['#categories .grid > *', '#categories', { stagger: 0.08 }],
+      ['#packs .pack-card', '#packs', { stagger: 0.1 }],
+    ]);
+  }
+
+  initRentalAnimations();
+  document.addEventListener('astro:after-swap', initRentalAnimations);
+</script>

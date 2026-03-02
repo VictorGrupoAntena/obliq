@@ -1,0 +1,93 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import HeroSection from '@/components/sections/HeroSection.astro';
+import Heading from '@/components/atoms/Heading.astro';
+import Button from '@/components/atoms/Button.astro';
+import { t, localizedUrl } from '@/lib/i18n';
+
+const locale = 'en';
+const i18n = t(locale);
+const c = i18n.CONTACT_PAGE;
+
+const serviceOptions = Object.values(i18n.SERVICES).map((s) => s.NAME);
+---
+
+<BaseLayout title={c.TITLE} description={c.HERO_SUBTITLE} locale={locale}>
+  <HeroSection tag={c.HERO_TAG} title={c.HERO_TITLE} subtitle={c.HERO_SUBTITLE} height="min-h-[40vh] md:min-h-[50vh]" />
+
+  <section class="bg-white py-spacing-section px-4 md:px-spacing-section">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+      <form class="space-y-6" id="contact-form">
+        <div>
+          <label for="name" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_NAME}</label>
+          <input type="text" id="name" name="name" required class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors" />
+        </div>
+        <div>
+          <label for="email" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_EMAIL}</label>
+          <input type="email" id="email" name="email" required class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors" />
+        </div>
+        <div>
+          <label for="phone" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_PHONE}</label>
+          <input type="tel" id="phone" name="phone" class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors" />
+        </div>
+        <div>
+          <label for="service" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_SERVICE}</label>
+          <select id="service" name="service" class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors">
+            <option value="">{c.FORM_SERVICE_PLACEHOLDER}</option>
+            {serviceOptions.map((name) => (
+              <option value={name}>{name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label for="message" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_MESSAGE}</label>
+          <textarea id="message" name="message" rows={5} required placeholder={c.FORM_MESSAGE_PLACEHOLDER} class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors resize-none"></textarea>
+        </div>
+        <p class="text-[12px] text-muted">
+          {c.FORM_PRIVACY}{' '}
+          <a href={localizedUrl('/privacy-policy/', locale)} class="underline hover:text-black transition-colors">{c.FORM_PRIVACY_LINK}</a>.
+        </p>
+        <Button variant="dark" class="w-full justify-center md:w-auto">{c.FORM_SUBMIT}</Button>
+      </form>
+
+      <div>
+        <Heading level={3} italic={false} class="text-black mb-8">{c.INFO_TITLE}</Heading>
+        <div class="space-y-6">
+          <div>
+            <p class="text-[12px] font-semibold uppercase tracking-[2px] text-muted mb-1">Email</p>
+            <a href={'mailto:' + c.INFO_EMAIL} class="text-[18px] text-black hover:underline">{c.INFO_EMAIL}</a>
+          </div>
+          <div>
+            <p class="text-[12px] font-semibold uppercase tracking-[2px] text-muted mb-1">{c.FORM_PHONE}</p>
+            <a href={'tel:' + c.INFO_PHONE.replace(/\s/g, '')} class="text-[18px] text-black hover:underline">{c.INFO_PHONE}</a>
+          </div>
+          <div>
+            <p class="text-[12px] font-semibold uppercase tracking-[2px] text-muted mb-1">{c.INFO_HOURS_TITLE}</p>
+            <p class="text-[18px] text-black">{c.INFO_HOURS}</p>
+          </div>
+          <div>
+            <p class="text-[12px] font-semibold uppercase tracking-[2px] text-muted mb-1">Address</p>
+            <p class="text-[18px] text-black">{c.INFO_ADDRESS}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-[#E8E8E8] h-[400px] flex items-center justify-center">
+    <p class="text-muted text-[14px] uppercase tracking-[2px]">Google Maps — Valencia</p>
+  </section>
+</BaseLayout>
+
+<script>
+  import { initScrollFadeInAll } from '@/lib/gsap';
+
+  function initContactAnimations() {
+    initScrollFadeInAll([
+      ['#contact-form', undefined, { y: 30, duration: 0.5 }],
+    ]);
+  }
+
+  initContactAnimations();
+  document.addEventListener('astro:after-swap', initContactAnimations);
+</script>

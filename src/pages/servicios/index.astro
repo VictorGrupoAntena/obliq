@@ -1,0 +1,66 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import HeroSection from '@/components/sections/HeroSection.astro';
+import CTASection from '@/components/sections/CTASection.astro';
+import ServiceCard from '@/components/cards/ServiceCard.astro';
+import Button from '@/components/atoms/Button.astro';
+import { t, localizedUrl } from '@/lib/i18n';
+import { getServicesAsync } from '@/data/services';
+
+const locale = 'es';
+const i18n = t(locale);
+const services = await getServicesAsync();
+const sp = i18n.SERVICES_PAGE;
+---
+
+<BaseLayout
+  title={sp.TITLE}
+  description={i18n.GLOBAL.DESCRIPTION}
+  locale={locale}
+>
+  <!-- Hero -->
+  <HeroSection
+    tag={sp.HERO_TAG}
+    title={sp.HERO_TITLE}
+    subtitle={sp.HERO_SUBTITLE}
+    height="min-h-[50vh] md:min-h-[60vh]"
+  />
+
+  <!-- Services Grid -->
+  <section class="bg-black py-spacing-section px-4 md:px-spacing-section">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {services.map((svc) => {
+        const data = i18n.SERVICES[svc.key as keyof typeof i18n.SERVICES];
+        return (
+          <ServiceCard
+            title={data.NAME}
+            description={data.DESCRIPTION}
+            image={svc.image}
+            href={localizedUrl('/servicios/' + svc.slug.es + '/', locale)}
+            ctaText={i18n.SERVICE_PAGE.VIEW_SERVICE}
+          />
+        );
+      })}
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <CTASection title={sp.CTA_TITLE} background="dark">
+    <Button variant="primary" href={localizedUrl('/contacto/', locale)}>
+      {sp.CTA_BUTTON}
+    </Button>
+  </CTASection>
+</BaseLayout>
+
+<script>
+  import { initScrollFadeInAll } from '@/lib/gsap';
+
+  function initServicesAnimations() {
+    initScrollFadeInAll([
+      ['.bg-black .grid > *', '.bg-black .grid', { stagger: 0.06 }],
+    ]);
+  }
+
+  initServicesAnimations();
+  document.addEventListener('astro:after-swap', initServicesAnimations);
+</script>

@@ -1,0 +1,24 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Heading from '@/components/atoms/Heading.astro';
+
+const locale = 'es';
+---
+
+<BaseLayout title="Política de Cookies" locale={locale} noindex={true} pageColor="white">
+  <section class="bg-white py-spacing-section px-4 md:px-spacing-section max-w-3xl mx-auto">
+    <Heading level={1} italic={false} class="text-black mb-8">Política de Cookies</Heading>
+    <div class="prose prose-lg text-muted space-y-6 text-[16px] font-light leading-relaxed">
+      <h2 class="text-[24px] font-bold text-black">¿Qué son las cookies?</h2>
+      <p>Las cookies son pequeños archivos de texto que se almacenan en su dispositivo cuando visita un sitio web. Se utilizan para mejorar la experiencia de navegación y proporcionar información analítica.</p>
+      <h2 class="text-[24px] font-bold text-black mt-8">Cookies utilizadas</h2>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong class="text-black">Google Analytics (_ga, _gid):</strong> Cookies analíticas que nos permiten medir y analizar la navegación de los usuarios. Duración: 2 años / 24 horas.</li>
+      </ul>
+      <h2 class="text-[24px] font-bold text-black mt-8">Gestión de cookies</h2>
+      <p>Puede configurar su navegador para rechazar las cookies o para que le avise cuando un sitio web intente colocar una cookie. Sin embargo, si deshabilita las cookies, es posible que algunas funcionalidades no estén disponibles.</p>
+      <h2 class="text-[24px] font-bold text-black mt-8">Más información</h2>
+      <p>Para más información sobre el uso de cookies, puede contactarnos en info@obliqproductions.com.</p>
+    </div>
+  </section>
+</BaseLayout>
