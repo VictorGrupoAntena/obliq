@@ -1,0 +1,102 @@
+{
+  "GLOBAL": {
+    "TITLE": "Obliq Productions",
+    "OWNER": "Obliq Productions",
+    "DESCRIPTION": "Audiovisual production company in Valencia. Video production, streaming, social media content and professional equipment rental.",
+    "CONTACT": "Contact us"
+  },
+  "NAV": {
+    "SERVICES": "Services",
+    "PORTFOLIO": "Portfolio",
+    "RENTAL": "Rental",
+    "ABOUT": "About",
+    "CONTACT": "Contact",
+    "OPEN_MENU": "Open menu",
+    "CLOSE_MENU": "Close menu"
+  },
+  "HOME": {
+    "TITLE": "Audiovisual production company in Valencia",
+    "HERO_TAG": "AUDIOVISUAL PRODUCTION",
+    "HERO_TITLE": "WHERE DREAMS LIVE",
+    "HERO_SUBTITLE": "We create stories that matter. Professional audiovisual production in Valencia.",
+    "HERO_CTA_PRIMARY": "VIEW SERVICES",
+    "HERO_CTA_SECONDARY": "CONTACT US",
+    "SERVICES_TAG": "SERVICES",
+    "SERVICES_TITLE": "Comprehensive audiovisual solutions",
+    "MARQUEE_WORK": ["OUR WORK", "OUR WORK", "OUR WORK", "OUR WORK"],
+    "PORTFOLIO_TAG": "PORTFOLIO",
+    "PORTFOLIO_TITLE": "Projects that speak for themselves",
+    "PORTFOLIO_CTA": "VIEW ALL PROJECTS",
+    "MARQUEE_BRANDS": ["MasterChef", "Loewe", "Samsung", "Estrella Damm", "Netflix", "MasterChef", "Loewe", "Samsung", "Estrella Damm", "Netflix"],
+    "ABOUT_TAG": "ABOUT US",
+    "ABOUT_TITLE": "We create stories that matter",
+    "ABOUT_TEXT": "We are an audiovisual production company formed by a versatile and experienced team. We understand the nature of each project and effectively adapt to its needs.",
+    "ABOUT_CTA": "ABOUT US",
+    "CTA_TITLE": "GOT A PROJECT?",
+    "CTA_BUTTON": "LET'S TALK"
+  },
+  "SERVICES": {
+    "STREAMING": {
+      "NAME": "Streaming",
+      "DESCRIPTION": "Professional live streaming for events, conferences and shows."
+    },
+    "SOCIAL_CONTENT": {
+      "NAME": "Social Media Content",
+      "DESCRIPTION": "Audiovisual content creation optimized for digital platforms."
+    },
+    "CORPORATE_VIDEO": {
+      "NAME": "Corporate Video",
+      "DESCRIPTION": "Corporate video production that communicates the essence of your brand."
+    },
+    "SPOTS": {
+      "NAME": "Advertising Spots",
+      "DESCRIPTION": "Creative and high-impact advertising production."
+    },
+    "MUSIC_VIDEOS": {
+      "NAME": "Music Videos",
+      "DESCRIPTION": "Direction and production of music videos with unique visual narrative."
+    },
+    "EVENTS": {
+      "NAME": "Event Coverage",
+      "DESCRIPTION": "Audiovisual recording and production of corporate and social events."
+    },
+    "PHOTOGRAPHY": {
+      "NAME": "Photography",
+      "DESCRIPTION": "Professional photography for campaigns, products and events."
+    },
+    "POST_PRODUCTION": {
+      "NAME": "Post-production",
+      "DESCRIPTION": "Editing, color grading, VFX and professional finishing."
+    },
+    "CONSULTING": {
+      "NAME": "Audiovisual Consulting",
+      "DESCRIPTION": "Technical and strategic advice for audiovisual projects."
+    }
+  },
+  "FOOTER": {
+    "BRAND_TAGLINE": "We focus your content",
+    "SERVICES_TITLE": "Services",
+    "COMPANY_TITLE": "Company",
+    "ABOUT_LINK": "About",
+    "PORTFOLIO_LINK": "Portfolio",
+    "CONTACT_LINK": "Contact",
+    "LEGAL_TITLE": "Legal",
+    "PRIVACY": "Privacy policy",
+    "COOKIES": "Cookie policy",
+    "LEGAL": "Legal notice",
+    "COPYRIGHT": "© 2026 Obliq Productions. All rights reserved.",
+    "SOCIAL": {
+      "INSTAGRAM": "Instagram",
+      "TIKTOK": "TikTok",
+      "VIMEO": "Vimeo",
+      "LINKEDIN": "LinkedIn"
+    }
+  },
+  "CTA": {
+    "WHATSAPP": "Need help?",
+    "WHATSAPP_MESSAGE": "Hello, I would like information about your services."
+  },
+  "BREADCRUMBS": {
+    "HOME": "Home"
+  }
+}

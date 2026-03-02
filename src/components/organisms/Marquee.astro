@@ -1,0 +1,75 @@
+---
+interface Props {
+  items: string[];
+  size?: 'large' | 'small';
+}
+
+const { items, size = 'large' } = Astro.props;
+---
+
+<section class="marquee overflow-hidden py-8 cursor-default whitespace-nowrap" aria-hidden="true">
+  <div class:list={[
+    'marquee-track flex',
+    size === 'small' ? 'gap-1' : 'gap-5 md:gap-20',
+  ]}>
+    {items.map((text) => (
+      <div class:list={[
+        'marquee-content flex items-center',
+        size === 'small' ? 'gap-4' : 'gap-5 md:gap-20',
+      ]}>
+        <span class:list={[
+          'uppercase font-black italic leading-none',
+          size === 'small'
+            ? 'text-[32px] md:text-[48px] text-secondary'
+            : 'text-[80px] md:text-[200px]',
+        ]}>
+          {text}
+        </span>
+        <svg
+          width="92"
+          height="140"
+          viewBox="0 0 92 140"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          class:list={[
+            'flex-none',
+            size === 'small'
+              ? 'h-6 md:h-10 w-6 md:w-10 text-secondary'
+              : 'h-14 md:h-[140px]',
+          ]}
+        >
+          <path d="M0 139L50.6272 0H92L41.3728 139H0Z" fill="currentColor" />
+        </svg>
+      </div>
+    ))}
+  </div>
+</section>
+
+<script>
+  import gsap from 'gsap';
+
+  function initMarquee() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    document.querySelectorAll('.marquee').forEach((el) => {
+      const track = el.querySelector('.marquee-track') as HTMLElement;
+      if (!track) return;
+
+      const distance = track.offsetWidth / 2;
+      if (distance <= 0) return;
+
+      gsap.to(track, {
+        x: `-=${distance}`,
+        duration: 8,
+        ease: 'linear',
+        repeat: -1,
+        modifiers: {
+          x: gsap.utils.unitize((x) => parseFloat(x) % distance),
+        },
+      });
+    });
+  }
+
+  initMarquee();
+  document.addEventListener('astro:after-swap', initMarquee);
+</script>

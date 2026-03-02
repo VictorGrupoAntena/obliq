@@ -8,27 +8,27 @@ import Button from '@/components/atoms/Button.astro';
 import Paragraph from '@/components/atoms/Paragraph.astro';
 import { t, localizedUrl } from '@/lib/i18n';
 
-const locale = 'es';
+const locale = 'en';
 const i18n = t(locale);
 
 // Mock data — 9 services
 const services = [
   { key: 'STREAMING', slug: 'streaming' },
-  { key: 'SOCIAL_CONTENT', slug: 'contenido-redes-sociales' },
-  { key: 'CORPORATE_VIDEO', slug: 'video-corporativo' },
-  { key: 'SPOTS', slug: 'spots-publicitarios' },
-  { key: 'MUSIC_VIDEOS', slug: 'videoclips' },
-  { key: 'EVENTS', slug: 'eventos' },
-  { key: 'PHOTOGRAPHY', slug: 'fotografia' },
-  { key: 'POST_PRODUCTION', slug: 'postproduccion' },
-  { key: 'CONSULTING', slug: 'consultoria' },
+  { key: 'SOCIAL_CONTENT', slug: 'social-media-content' },
+  { key: 'CORPORATE_VIDEO', slug: 'corporate-video' },
+  { key: 'SPOTS', slug: 'advertising-spots' },
+  { key: 'MUSIC_VIDEOS', slug: 'music-videos' },
+  { key: 'EVENTS', slug: 'event-coverage' },
+  { key: 'PHOTOGRAPHY', slug: 'photography' },
+  { key: 'POST_PRODUCTION', slug: 'post-production' },
+  { key: 'CONSULTING', slug: 'consulting' },
 ] as const;
 
 // Mock data — 3 portfolio projects
 const portfolioProjects = [
-  { title: 'MasterChef — Campaña Digital', category: 'Spots', image: '/hero.jpg' },
-  { title: 'Loewe — Fashion Film', category: 'Videoclips', image: '/hero.jpg' },
-  { title: 'Samsung — Evento Lanzamiento', category: 'Eventos', image: '/hero.jpg' },
+  { title: 'MasterChef — Digital Campaign', category: 'Spots', image: '/hero.jpg' },
+  { title: 'Loewe — Fashion Film', category: 'Music Videos', image: '/hero.jpg' },
+  { title: 'Samsung — Launch Event', category: 'Events', image: '/hero.jpg' },
 ];
 ---
 
@@ -70,7 +70,7 @@ const portfolioProjects = [
               <p class="text-[13px] font-light text-secondary line-clamp-2">{data.DESCRIPTION}</p>
             </div>
             <span class="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[3px] mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              VER SERVICIO
+              VIEW SERVICE
               <svg width="12" height="12" viewBox="0 0 18 18" fill="none" class="transition-transform group-hover:translate-x-1" aria-hidden="true">
                 <path d="M12.3461 0.839999L17.9061 9.04L12.3461 17.32H8.86609L14.1061 9.04L8.86609 0.839999H12.3461ZM14.9061 7.6V10.52H0.426094V7.6H14.9061Z" fill="currentColor" />
               </svg>
@@ -138,7 +138,6 @@ const portfolioProjects = [
   function initHomeAnimations() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    // Service cards fade in
     const serviceCards = document.querySelectorAll('.service-card');
     if (serviceCards.length) {
       gsap.from(serviceCards, {
@@ -155,7 +154,6 @@ const portfolioProjects = [
       });
     }
 
-    // Portfolio cards fade in
     const portfolioCards = document.querySelectorAll('.portfolio-card');
     if (portfolioCards.length) {
       gsap.from(portfolioCards, {

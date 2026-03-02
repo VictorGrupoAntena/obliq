@@ -1,0 +1,138 @@
+---
+import LangSwitcher from '@/components/atoms/LangSwitcher.astro';
+import { t, localizedUrl } from '@/lib/i18n';
+
+interface Props {
+  pageColor?: 'black' | 'white';
+  locale?: string;
+}
+
+const { pageColor = 'black', locale = 'es' } = Astro.props;
+const i18n = t(locale);
+
+const navItems = [
+  { label: i18n.NAV.SERVICES, href: localizedUrl('/servicios/', locale) },
+  { label: i18n.NAV.PORTFOLIO, href: localizedUrl('/portfolio/', locale) },
+  { label: i18n.NAV.RENTAL, href: localizedUrl('/alquiler/', locale) },
+  { label: i18n.NAV.ABOUT, href: localizedUrl('/nosotros/', locale) },
+  { label: i18n.NAV.CONTACT, href: localizedUrl('/contacto/', locale) },
+];
+
+const isCurrentLink = (href: string) => {
+  const current = Astro.url.pathname;
+  return current === href || current.startsWith(href);
+};
+---
+
+<header
+  class:list={[
+    'fixed top-0 w-full h-16 md:h-20 z-50',
+    pageColor === 'white' ? 'bg-white text-black' : 'bg-black text-white',
+  ]}
+  role="banner"
+>
+  <div class="container mx-auto flex items-center justify-between h-full px-4 md:px-spacing-section">
+    <!-- Logo -->
+    <a href={localizedUrl('/', locale)} class="flex-shrink-0" aria-label={i18n.GLOBAL.OWNER}>
+      <img
+        src="/logo.svg"
+        alt={i18n.GLOBAL.OWNER}
+        class:list={[
+          'w-28 md:w-32',
+          pageColor === 'white' && 'invert',
+        ]}
+        width="132"
+        height="34"
+      />
+    </a>
+
+    <!-- Desktop Nav -->
+    <nav class="hidden md:flex items-center gap-8" aria-label="Main navigation">
+      {navItems.map((item) => (
+        <a
+          href={item.href}
+          class:list={[
+            'text-[12px] font-medium uppercase tracking-[3px] transition-opacity hover:opacity-70',
+            isCurrentLink(item.href) ? 'font-bold italic opacity-100' : 'opacity-80',
+          ]}
+        >
+          {item.label}
+        </a>
+      ))}
+      <LangSwitcher />
+    </nav>
+
+    <!-- Mobile: Lang + Burger -->
+    <div class="flex items-center gap-4 md:hidden">
+      <LangSwitcher />
+      <button class="burger-menu" aria-label={i18n.NAV.OPEN_MENU}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" />
+          <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" />
+          <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div
+    class="main-menu fixed inset-0 z-50 bg-black text-white p-8 translate-x-full md:hidden"
+  >
+    <button class="close-button absolute top-4 right-4" aria-label={i18n.NAV.CLOSE_MENU}>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" />
+        <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" />
+      </svg>
+    </button>
+
+    <nav class="flex flex-col gap-6 mt-16" aria-label="Mobile navigation">
+      {navItems.map((item) => (
+        <a
+          href={item.href}
+          class:list={[
+            'text-2xl uppercase font-medium',
+            isCurrentLink(item.href) && 'font-bold italic',
+          ]}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+  </div>
+</header>
+
+<script>
+  import gsap from 'gsap';
+
+  function initMenu() {
+    const burger = document.querySelector('.burger-menu');
+    const menu = document.querySelector('.main-menu');
+    const close = document.querySelector('.close-button');
+    const links = document.querySelectorAll('.main-menu a');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const openMenu = () => {
+      if (reducedMotion) {
+        (menu as HTMLElement).style.transform = 'translateX(0)';
+        return;
+      }
+      gsap.to(menu, { x: 0, duration: 0.3, ease: 'power2.out' });
+    };
+
+    const closeMenu = () => {
+      if (reducedMotion) {
+        (menu as HTMLElement).style.transform = 'translateX(100%)';
+        return;
+      }
+      gsap.to(menu, { x: '100%', duration: 0.3, ease: 'power2.in' });
+    };
+
+    burger?.addEventListener('click', openMenu);
+    close?.addEventListener('click', closeMenu);
+    links.forEach((link) => link.addEventListener('click', closeMenu));
+  }
+
+  initMenu();
+  document.addEventListener('astro:after-swap', initMenu);
+</script>

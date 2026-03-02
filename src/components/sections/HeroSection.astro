@@ -1,0 +1,56 @@
+---
+import Tag from '@/components/atoms/Tag.astro';
+import Heading from '@/components/atoms/Heading.astro';
+import Paragraph from '@/components/atoms/Paragraph.astro';
+
+interface Props {
+  tag?: string;
+  title: string;
+  subtitle?: string;
+  backgroundImage?: string;
+  height?: string;
+  class?: string;
+}
+
+const {
+  tag,
+  title,
+  subtitle,
+  backgroundImage,
+  height = 'min-h-[80vh] md:min-h-[900px]',
+  class: className,
+} = Astro.props;
+---
+
+<section
+  class:list={[
+    'relative flex flex-col justify-end px-4 md:px-spacing-section pb-16 md:pb-24',
+    height,
+    className,
+  ]}
+>
+  {backgroundImage && (
+    <div class="absolute inset-0 z-0">
+      <img
+        src={backgroundImage}
+        alt=""
+        class="w-full h-full object-cover"
+        aria-hidden="true"
+      />
+      <div class="absolute inset-0 bg-black/40" />
+    </div>
+  )}
+
+  <div class="relative z-10 max-w-4xl">
+    {tag && <Tag text={tag} class="mb-4 block" />}
+    <Heading level={1} class="mb-6 text-white">
+      {title}
+    </Heading>
+    {subtitle && (
+      <Paragraph class="text-secondary max-w-2xl mb-8">
+        {subtitle}
+      </Paragraph>
+    )}
+    <slot />
+  </div>
+</section>

@@ -1,0 +1,179 @@
+---
+import '@/styles/global.css';
+import '@fontsource-variable/montserrat';
+import Header from '@/components/organisms/Header.astro';
+import Footer from '@/components/organisms/Footer.astro';
+import TransitionMask from '@/components/organisms/TransitionMask.astro';
+import WhatsAppFAB from '@/components/organisms/WhatsAppFAB.astro';
+import { getLocale, alternateUrl } from '@/lib/i18n';
+import { localBusinessSchema } from '@/lib/schema';
+import { ClientRouter } from 'astro:transitions';
+
+interface Props {
+  title: string;
+  description?: string;
+  locale?: string;
+  ogImage?: string;
+  schema?: Record<string, unknown>;
+  noindex?: boolean;
+  pageColor?: 'black' | 'white';
+}
+
+const {
+  title,
+  description,
+  locale: localeProp,
+  ogImage = '/hero.jpg',
+  schema,
+  noindex = false,
+  pageColor = 'black',
+} = Astro.props;
+
+const locale = localeProp ?? getLocale(Astro.url);
+const altLocale = locale === 'es' ? 'en' : 'es';
+const altPath = alternateUrl(Astro.url.pathname, locale);
+const siteUrl = 'https://obliqproductions.com';
+const canonicalUrl = siteUrl + Astro.url.pathname;
+const fullTitle = title + ' | Obliq Productions';
+const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{fullTitle}</title>
+    {description && <meta name="description" content={description} />}
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang={locale} href={canonicalUrl} />
+    <link rel="alternate" hreflang={altLocale} href={siteUrl + altPath} />
+    <link rel="alternate" hreflang="x-default" href={siteUrl + (locale === 'es' ? Astro.url.pathname : altPath)} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content={locale === 'es' ? 'es_ES' : 'en_US'} />
+    <meta property="og:site_name" content="Obliq Productions" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    {description && <meta name="twitter:description" content={description} />}
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-896V9YZVME" is:inline></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-896V9YZVME');
+    </script>
+
+    <!-- Google Site Verification -->
+    <meta name="google-site-verification" content="bcIGNgcRlmTeFWASR-elUipgGBy9_WO9lzsvy-Vbq4A" />
+
+    <!-- Schema.org LocalBusiness -->
+    <script type="application/ld+json" set:html={JSON.stringify(localBusinessSchema())} />
+    {schema && (
+      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+    )}
+
+    <ClientRouter />
+    <slot name="head" />
+  </head>
+  <body
+    class:list={[
+      'flex flex-col min-h-screen pt-16 md:pt-20',
+      pageColor === 'white' ? 'bg-white text-black' : 'bg-black text-white',
+    ]}
+  >
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[1000] focus:bg-white focus:text-black focus:px-4 focus:py-2">
+      {locale === 'es' ? 'Ir al contenido principal' : 'Skip to main content'}
+    </a>
+
+    <TransitionMask enterColor={pageColor} />
+    <Header pageColor={pageColor} locale={locale} />
+
+    <main id="main-content">
+      <slot />
+    </main>
+
+    <Footer locale={locale} />
+    <WhatsAppFAB locale={locale} />
+
+    <script>
+      import gsap from 'gsap';
+
+      function initTransitionMask() {
+        const mask = document.getElementById('transition-mask') as HTMLDivElement;
+        if (!mask) return;
+
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const slideIn = (pageColor: string) =>
+          new Promise((resolve) => {
+            if (reducedMotion) { resolve(undefined); return; }
+            gsap.timeline()
+              .to(mask, {
+                y: 0,
+                duration: 1,
+                ease: 'power2.inOut',
+                onStart: () => mask.classList.remove('pointer-events-none'),
+              })
+              .to(mask, {
+                duration: 0.5,
+                backgroundColor: pageColor,
+                onComplete: resolve,
+              });
+          });
+
+        const slideOut = () => {
+          if (reducedMotion) {
+            mask.style.transform = 'translateY(-100%)';
+            return;
+          }
+          gsap.to(mask, {
+            y: '-100%',
+            duration: 1,
+            ease: 'power2.inOut',
+            onStart: () => mask.classList.remove('pointer-events-none'),
+          });
+        };
+
+        document.querySelectorAll('a[href]').forEach((link) => {
+          const anchor = link as HTMLAnchorElement;
+          const url = new URL(anchor.href, location.origin);
+          const isSameOrigin = location.origin === url.origin;
+          const pageColor = anchor.dataset.pageColor || 'black';
+
+          if (!isSameOrigin || anchor.target === '_blank') return;
+
+          anchor.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await slideIn(pageColor);
+            window.location.href = anchor.href;
+          });
+        });
+
+        if (location.pathname === '/' || location.pathname === '/en/') {
+          mask.style.transform = 'translateY(-100%)';
+          return;
+        }
+        slideOut();
+      }
+
+      initTransitionMask();
+      document.addEventListener('astro:after-swap', initTransitionMask);
+    </script>
+  </body>
+</html>

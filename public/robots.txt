@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://obliqproductions.com/sitemap-index.xml

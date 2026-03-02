@@ -1,0 +1,29 @@
+---
+import Tag from '@/components/atoms/Tag.astro';
+import Heading from '@/components/atoms/Heading.astro';
+
+interface Props {
+  tag?: string;
+  title: string;
+  level?: 2 | 3;
+  theme?: 'dark' | 'light';
+  class?: string;
+}
+
+const { tag, title, level = 2, theme = 'dark', class: className } = Astro.props;
+---
+
+<div class:list={['mb-spacing-gap-lg', className]}>
+  {tag && (
+    <Tag
+      text={tag}
+      class:list={['mb-4 block', theme === 'light' ? 'text-muted' : 'text-muted']}
+    />
+  )}
+  <Heading
+    level={level}
+    class={theme === 'light' ? 'text-black' : 'text-white'}
+  >
+    {title}
+  </Heading>
+</div>

@@ -1,0 +1,32 @@
+---
+import Heading from '@/components/atoms/Heading.astro';
+
+interface Props {
+  title: string;
+  background?: 'black' | 'dark' | 'white';
+  class?: string;
+}
+
+const { title, background = 'black', class: className } = Astro.props;
+
+const bgClasses = {
+  black: 'bg-black text-white',
+  dark: 'bg-surface-dark text-white',
+  white: 'bg-white text-black',
+};
+---
+
+<section
+  class:list={[
+    'py-spacing-section px-4 md:px-spacing-section text-center',
+    bgClasses[background],
+    className,
+  ]}
+>
+  <Heading level={2} class="mb-10 mx-auto max-w-3xl">
+    {title}
+  </Heading>
+  <div class="flex justify-center gap-4 flex-wrap">
+    <slot />
+  </div>
+</section>

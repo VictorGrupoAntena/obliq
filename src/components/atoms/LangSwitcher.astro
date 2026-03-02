@@ -1,0 +1,15 @@
+---
+import { getLocale, alternateUrl } from '@/lib/i18n';
+
+const locale = getLocale(Astro.url);
+const altLocale = locale === 'es' ? 'en' : 'es';
+const altUrl = alternateUrl(Astro.url.pathname, locale);
+---
+
+<a
+  href={altUrl}
+  class="text-[12px] font-medium uppercase tracking-[3px] opacity-60 hover:opacity-100 transition-opacity"
+  aria-label={locale === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+>
+  {altLocale.toUpperCase()}
+</a>

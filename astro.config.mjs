@@ -1,25 +1,22 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-
 import tailwindcss from '@tailwindcss/vite';
-
-import vercel from '@astrojs/vercel';
+import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  output: 'server',
+  site: 'https://obliqproductions.com',
 
   i18n: {
-    locales: ["en", "es"],
-    defaultLocale: "en",
+    locales: ['es', 'en'],
+    defaultLocale: 'es',
     routing: {
       prefixDefaultLocale: false,
-      redirectToDefaultLocale: true,
     },
   },
 
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
   },
 
-  adapter: vercel()
+  integrations: [sitemap()],
 });

@@ -1,28 +1,56 @@
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
 
 @theme {
-  --font-sans: 'Montserrat Variable', sans-serif;
+  /* Colors */
+  --color-black: #000000;
+  --color-white: #FFFFFF;
+  --color-surface-dark: #111111;
+  --color-surface-light: #F5F5F5;
+  --color-border: #333333;
+  --color-muted: #888888;
+  --color-secondary: #CCCCCC;
+  --color-border-light: #DDDDDD;
 
-  --animate-enlarge: enlarge .5s ease-in-out;
+  /* Typography — Montserrat Variable */
+  --font-family-sans: 'Montserrat Variable', sans-serif;
+
+  /* Spacing */
+  --spacing-section: 80px;
+  --spacing-gap-lg: 48px;
+  --spacing-gap-md: 24px;
+  --spacing-gap-sm: 16px;
+  --spacing-gap-xs: 8px;
+
+  /* Animations */
+  --animate-enlarge: enlarge 0.5s ease-in-out;
 
   @keyframes enlarge {
-    0% {
-      transform: scale(0);
-    }
-    100% {
-      transform: scale(1);
-    }
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
   }
 }
 
-/* Estilos para la transición de página */
+/* Base styles */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Montserrat Variable', sans-serif;
+  font-weight: 300;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+/* View Transitions */
 ::view-transition-old(page),
 ::view-transition-new(page) {
-  animation-duration: 4s;
+  animation-duration: 0.5s;
   animation-timing-function: ease-in-out;
   animation-fill-mode: both;
-  animation: delay 0s, slide-out-left 0.5s forwards, slide-in-right 0.5s forwards;
 }
 
 ::view-transition-old(page) {
@@ -34,19 +62,32 @@
 }
 
 @keyframes slide-out-left {
-  from {
-    transform: translateX(0%);
-  }
-  to {
-    transform: translateX(-100%);
-  }
+  from { transform: translateX(0%); }
+  to { transform: translateX(-100%); }
 }
 
 @keyframes slide-in-right {
-  from {
-    transform: translateX(100%);
+  from { transform: translateX(100%); }
+  to { transform: translateX(0%); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
-  to {
-    transform: translateX(0%);
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  ::view-transition-old(page),
+  ::view-transition-new(page) {
+    animation: none;
   }
 }

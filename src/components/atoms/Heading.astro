@@ -1,21 +1,29 @@
 ---
 interface Props {
-  level?: 1 | 2 | 3 | 4 | 5 | 6;
+  level: 1 | 2 | 3 | 4;
+  italic?: boolean;
+  class?: string;
 }
 
-const { level = 2 } = Astro.props;
-const Tag = `h${level}`;
+const { level, italic, class: className } = Astro.props;
+const Tag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4';
 
-const styles = {
-  h1: "text-4xl font-bold mb-4",
-  h2: "text-3xl font-semibold mb-3",
-  h3: "text-2xl font-medium mb-2",
-  h4: "text-xl font-normal mb-1",
-  h5: "text-lg mb-1",
-  h6: "text-base mb-1",
+const isItalic = italic ?? (level <= 2);
+
+const levelClasses = {
+  1: 'text-[40px] md:text-[72px] font-black tracking-[-3px] leading-none',
+  2: 'text-[32px] md:text-[48px] font-black tracking-[-2px] leading-none',
+  3: 'text-[24px] md:text-[32px] font-bold leading-tight',
+  4: 'text-[20px] md:text-[24px] font-semibold leading-tight',
 };
 ---
 
-<Tag class:list={[styles[`h${level}`]]}>
+<Tag
+  class:list={[
+    levelClasses[level],
+    isItalic && 'italic',
+    className,
+  ]}
+>
   <slot />
 </Tag>

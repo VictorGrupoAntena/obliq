@@ -1,0 +1,133 @@
+---
+import { t, localizedUrl } from '@/lib/i18n';
+
+interface Props {
+  locale?: string;
+}
+
+const { locale = 'es' } = Astro.props;
+const i18n = t(locale);
+
+const serviceLinks = [
+  { label: i18n.SERVICES.STREAMING.NAME, href: localizedUrl('/servicios/streaming/', locale) },
+  { label: i18n.SERVICES.SOCIAL_CONTENT.NAME, href: localizedUrl('/servicios/contenido-redes-sociales/', locale) },
+  { label: i18n.SERVICES.CORPORATE_VIDEO.NAME, href: localizedUrl('/servicios/video-corporativo/', locale) },
+  { label: i18n.SERVICES.SPOTS.NAME, href: localizedUrl('/servicios/spots-publicitarios/', locale) },
+  { label: i18n.SERVICES.MUSIC_VIDEOS.NAME, href: localizedUrl('/servicios/videoclips/', locale) },
+  { label: i18n.SERVICES.EVENTS.NAME, href: localizedUrl('/servicios/eventos/', locale) },
+  { label: i18n.SERVICES.PHOTOGRAPHY.NAME, href: localizedUrl('/servicios/fotografia/', locale) },
+  { label: i18n.SERVICES.POST_PRODUCTION.NAME, href: localizedUrl('/servicios/postproduccion/', locale) },
+  { label: i18n.SERVICES.CONSULTING.NAME, href: localizedUrl('/servicios/consultoria/', locale) },
+];
+
+const companyLinks = [
+  { label: i18n.FOOTER.ABOUT_LINK, href: localizedUrl('/nosotros/', locale) },
+  { label: i18n.FOOTER.PORTFOLIO_LINK, href: localizedUrl('/portfolio/', locale) },
+  { label: i18n.FOOTER.CONTACT_LINK, href: localizedUrl('/contacto/', locale) },
+];
+
+const socialLinks = [
+  { label: i18n.FOOTER.SOCIAL.INSTAGRAM, href: 'https://www.instagram.com/obliqproductions/' },
+  { label: i18n.FOOTER.SOCIAL.TIKTOK, href: 'https://www.tiktok.com/@obliqproductions' },
+  { label: i18n.FOOTER.SOCIAL.VIMEO, href: 'https://vimeo.com/obliproductions' },
+  { label: i18n.FOOTER.SOCIAL.LINKEDIN, href: 'https://www.linkedin.com/company/obliq-productions' },
+];
+---
+
+<footer class="bg-black text-white mt-auto py-spacing-section" role="contentinfo">
+  <div class="container mx-auto px-4 md:px-spacing-section">
+    <!-- Decorative slashes -->
+    <div class="flex justify-end mb-8 overflow-hidden">
+      <svg width="682" height="35" viewBox="0 0 682 35" fill="none" xmlns="http://www.w3.org/2000/svg" class="translate-x-4 md:translate-x-6" aria-hidden="true">
+        <path d="M47.3105 -52.0049H85.5061L38.9261 34.634H0.730469L47.3105 -52.0049Z" fill="white" />
+        <path d="M121.839 -52.0049H160.034L113.454 34.634H75.2585L121.839 -52.0049Z" fill="white" />
+        <path d="M196.367 -52.0049H234.562L187.982 34.634H149.787L196.367 -52.0049Z" fill="white" />
+        <path d="M270.895 -52.0049H309.09L262.51 34.634H224.315L270.895 -52.0049Z" fill="white" />
+        <path d="M345.423 -52.0049H383.618L337.038 34.634H298.843L345.423 -52.0049Z" fill="white" />
+        <path d="M419.951 -52.0049H458.146L411.566 34.634H373.371L419.951 -52.0049Z" fill="white" />
+        <path d="M494.479 -52.0049H532.674L486.094 34.634H447.899L494.479 -52.0049Z" fill="white" />
+        <path d="M569.007 -52.0049H607.202L560.622 34.634H522.427L569.007 -52.0049Z" fill="white" />
+        <path d="M643.535 -52.0049H681.73L635.15 34.634H596.955L643.535 -52.0049Z" fill="white" />
+      </svg>
+    </div>
+
+    <!-- 3-column grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+      <!-- Brand column -->
+      <div>
+        <a href={localizedUrl('/', locale)} class="inline-block mb-6" aria-label={i18n.GLOBAL.OWNER}>
+          <img src="/logo.svg" alt={i18n.GLOBAL.OWNER} class="w-28" width="132" height="34" />
+        </a>
+        <p class="text-secondary text-[14px] font-light mb-4">{i18n.FOOTER.BRAND_TAGLINE}</p>
+        <p class="text-secondary text-[14px] font-light">info@obliqproductions.com</p>
+        <p class="text-secondary text-[14px] font-light">+34 675 489 980</p>
+        <div class="flex gap-4 mt-6">
+          {socialLinks.map((link) => (
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-[12px] uppercase tracking-[3px] text-secondary hover:text-white transition-colors"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <!-- Services column -->
+      <div>
+        <h3 class="text-[10px] font-semibold uppercase tracking-widest text-muted mb-6">
+          {i18n.FOOTER.SERVICES_TITLE}
+        </h3>
+        <ul class="flex flex-col gap-3">
+          {serviceLinks.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class="text-[14px] font-light text-secondary hover:text-white transition-colors"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Company + Legal column -->
+      <div>
+        <h3 class="text-[10px] font-semibold uppercase tracking-widest text-muted mb-6">
+          {i18n.FOOTER.COMPANY_TITLE}
+        </h3>
+        <ul class="flex flex-col gap-3 mb-8">
+          {companyLinks.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class="text-[14px] font-light text-secondary hover:text-white transition-colors"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        <h3 class="text-[10px] font-semibold uppercase tracking-widest text-muted mb-6">
+          {i18n.FOOTER.LEGAL_TITLE}
+        </h3>
+        <ul class="flex flex-col gap-3">
+          <li><a href={localizedUrl('/aviso-legal/', locale)} class="text-[14px] font-light text-secondary hover:text-white transition-colors">{i18n.FOOTER.LEGAL}</a></li>
+          <li><a href={localizedUrl('/politica-privacidad/', locale)} class="text-[14px] font-light text-secondary hover:text-white transition-colors">{i18n.FOOTER.PRIVACY}</a></li>
+          <li><a href={localizedUrl('/politica-cookies/', locale)} class="text-[14px] font-light text-secondary hover:text-white transition-colors">{i18n.FOOTER.COOKIES}</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Copyright -->
+    <div class="border-t border-border pt-6">
+      <p class="text-[12px] text-muted text-center">
+        {i18n.FOOTER.COPYRIGHT}
+      </p>
+    </div>
+  </div>
+</footer>

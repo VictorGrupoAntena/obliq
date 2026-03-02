@@ -1,18 +1,37 @@
 ---
 interface Props {
-  tag: "a" | "button";
+  variant?: 'primary' | 'dark' | 'outline' | 'ghost';
   href?: string;
-  disabled?: boolean;
+  size?: 'default' | 'small';
+  class?: string;
 }
 
-const { tag = "a", href, disabled } = Astro.props;
-const Tag = tag;
+const { variant = 'primary', href, size = 'default', class: className } = Astro.props;
+const Tag = href ? 'a' : 'button';
+
+const baseClasses = 'inline-flex items-center gap-3 uppercase font-semibold tracking-[3px] transition-all cursor-pointer group';
+
+const sizeClasses = {
+  default: 'h-[52px] px-8 text-[11px]',
+  small: 'h-10 px-5 text-[10px]',
+};
+
+const variantClasses = {
+  primary: 'bg-white text-black hover:bg-surface-light',
+  dark: 'bg-black text-white hover:bg-surface-dark',
+  outline: 'bg-transparent text-white border border-white hover:bg-white hover:text-black',
+  ghost: 'bg-transparent text-white hover:opacity-70 px-0 h-auto',
+};
 ---
 
 <Tag
   href={href}
-  class="inline-flex items-center gap-5 text-[28px] md:text-[38px] leading-none disabled:cursor-no-allowed disabled:opacity-50 cursor-pointer group disabled:pointer-events-none"
-  disabled={disabled}
+  class:list={[
+    baseClasses,
+    sizeClasses[size],
+    variantClasses[variant],
+    className,
+  ]}
 >
   <slot />
   <svg
@@ -22,9 +41,11 @@ const Tag = tag;
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     class="transition-transform group-hover:translate-x-2"
+    aria-hidden="true"
   >
     <path
       d="M12.3461 0.839999L17.9061 9.04L12.3461 17.32H8.86609L14.1061 9.04L8.86609 0.839999H12.3461ZM14.9061 7.6V10.52H0.426094V7.6H14.9061Z"
-      fill="currentColor"></path>
+      fill="currentColor"
+    />
   </svg>
 </Tag>
