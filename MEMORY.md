@@ -1,6 +1,6 @@
 # Obliq Productions — Project Memory
 
-## Fase actual: REDISEÑO — Sprint 2 completado
+## Fase actual: REDISEÑO — Sprint 2.5 (bugs + polish) completado
 
 ### Sprint 0 (Fundamentos) ✅ 2-Mar-2026
 - Rama `redesign` — i18n invertido, tokens, atoms, organisms, sections
@@ -53,31 +53,48 @@
 - Sin imágenes reales (placeholder /hero.jpg) — pendiente subida por cliente
 - 7/9 servicios sin pricing (solo streaming y redes tienen packs productizados)
 
+### Sprint 2.5 (Bugs críticos + Polish) ✅ 3-Mar-2026
+- **Commit:** `5f3f9d7` en rama `redesign`
+- **GSAP no pre-bundleaba en Vite:** Añadido `optimizeDeps.include` en `astro.config.mjs`
+- **TransitionMask cubría toda la página (pantalla negra):** Tailwind 4 `translate-y-full` usa CSS `translate` (no `transform`). JS usaba `style.transform` → propiedades separadas que se apilaban. Fix: inline `style="translate: 0 100%;"` + JS usa `style.translate` + animaciones por opacity
+- **Elementos invisibles tras scroll:** GSAP `toggleActions: 'play none none reverse'` → cambiado a `'play none none none'` en `gsap.ts` y ambos `index.astro`
+- **Spacing tokens rotos (0px):** En Tailwind 4, `--spacing-section` genera `py-section` (no `py-spacing-section`). Renombradas ~40 clases en 30 archivos
+- **Header rediseñado:** Grid 3 columnas con `navLeft | logo.gif centrado | navRight + LangSwitcher`
+- **TransitionMask:** Simplificada a fade negro limpio (sin logo/slash)
+- **logo.svg copiado a public/** — eliminado residuo `public/logo 2.svg`
+
+#### Lecciones aprendidas (Tailwind 4)
+- `--spacing-X: Npx` en `@theme` → genera utility `py-X`, NO `py-spacing-X`
+- CSS `translate` y `transform` son propiedades SEPARADAS que se apilan — no mezclar clases Tailwind `translate-*` con JS `style.transform`
+
 ### Backlog Sprint 3+ (próximas sesiones)
 
-**PRIORIDAD ALTA:**
-1. Imágenes reales: subir fotos producto/servicio a WP Media Library
-2. Webhook auto-rebuild: WP publish → GitHub Actions → build → SFTP a Plesk
+**PRIORIDAD ALTA — Revisión visual página por página:**
+1. Auditoría visual completa: recorrer cada página verificando espaciados, elementos, responsividad
+2. Imágenes reales: subir fotos producto/servicio a WP Media Library
 3. Deploy redesign a producción (rama redesign → build → httpdocs)
 4. Redirecciones 301 de URLs antiguas (EN default → ES default)
 
-**PRIORIDAD MEDIA:**
-5. Portfolio: URLs Vimeo reales + thumbnails (cliente proporciona)
+**PRIORIDAD ALTA — Funcionalidad:**
+5. Webhook auto-rebuild: WP publish → GitHub Actions → build → SFTP a Plesk
 6. Formulario contacto: integrar Resend email
 7. Formulario alquiler: solicitud presupuesto con productos pre-rellenados
-8. WhatsApp mensaje contextual según página
-9. Carrito de presupuesto alquiler (lista productos + fechas)
+
+**PRIORIDAD MEDIA:**
+8. Portfolio: URLs Vimeo reales + thumbnails (cliente proporciona)
+9. WhatsApp mensaje contextual según página
+10. Carrito de presupuesto alquiler (lista productos + fechas)
 
 **PRIORIDAD BAJA:**
-10. Schema.org VideoObject en portfolio (cuando haya URLs Vimeo reales)
-11. Optimizar GSAP deduplication
-12. Migrar logo.gif → WebP/Lottie
-13. DNS/MX migration planning
-14. i18n admin WP (Polylang si cliente lo necesita — ahora campos `_es/_en`)
+11. Schema.org VideoObject en portfolio (cuando haya URLs Vimeo reales)
+12. Optimizar GSAP deduplication
+13. Migrar logo.gif → WebP/Lottie
+14. DNS/MX migration planning
+15. i18n admin WP (Polylang si cliente lo necesita — ahora campos `_es/_en`)
 
-**DEUDA TÉCNICA IDENTIFICADA:**
-- Archivos " 2" duplicados en repo (residuo) — limpiar
+**DEUDA TÉCNICA:**
 - Merge pendiente: plesk-migration → main → seguir con redesign
+- `public/favicon 2.svg` residuo — eliminar
 
 ## Project Overview
 
@@ -128,14 +145,14 @@ Estas decisiones son **zona roja** — no se cambian sin consultar al responsabl
 
 ### Servicios (9 páginas)
 1. `/servicios/streaming/` — Servicio estrella, baja competencia SEO
-2. `/servicios/produccion-audiovisual/` — Rodajes profesionales medio-alto presupuesto
+2. `/servicios/contenido-redes-sociales/` — Packs productizados (Starter/Growth/Premium)
 3. `/servicios/video-corporativo/` — Mayor volumen de búsqueda tras "productora audiovisual"
-4. `/servicios/spots-publicitarios/`
-5. `/servicios/videoclips/`
-6. `/servicios/postproduccion/`
-7. `/servicios/eventos/`
-8. `/servicios/contenido-redes-sociales/` — SERVICIO NUEVO con packs productizados
-9. `/servicios/alquiler/` — Página de servicio que enlaza al catálogo en /alquiler/
+4. `/servicios/spots-publicitarios/` — EN: `advertising-spots`
+5. `/servicios/videoclips/` — EN: `music-videos`
+6. `/servicios/eventos/`
+7. `/servicios/fotografia/` — EN: `photography`
+8. `/servicios/postproduccion/` — EN: `post-production`
+9. `/servicios/consultoria/` — EN: `consulting`
 
 ### Packs y tarifas (precios del cliente)
 
