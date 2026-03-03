@@ -21,7 +21,7 @@ interface Props {
 const { tag, title, plans, ctaText, ctaHref = '#', class: className } = Astro.props;
 ---
 
-<section class:list={['bg-black py-spacing-section px-4 md:px-spacing-section', className]}>
+<section class:list={['bg-black py-section px-4 md:px-section', className]}>
   <SectionHeader tag={tag} title={title} />
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
     {plans.map((plan) => (

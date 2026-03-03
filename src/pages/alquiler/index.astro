@@ -48,7 +48,7 @@ const breadcrumbItems = [
   </HeroSection>
 
   <!-- Categories -->
-  <section id="categories" class="bg-white py-spacing-section px-4 md:px-spacing-section">
+  <section id="categories" class="bg-white py-section px-4 md:px-section">
     <SectionHeader tag={r.CATEGORIES_TAG} title={r.CATEGORIES_TITLE} theme="light" />
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {categories.map((cat) => (
@@ -65,7 +65,7 @@ const breadcrumbItems = [
   </section>
 
   <!-- Packs -->
-  <section class="bg-black py-spacing-section px-4 md:px-spacing-section" id="packs">
+  <section class="bg-black py-section px-4 md:px-section" id="packs">
     <SectionHeader tag={r.PACKS_TAG} title={r.PACKS_TITLE} />
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       {packs.map((pack) => {
@@ -91,7 +91,7 @@ const breadcrumbItems = [
   </section>
 
   <!-- Featured Products -->
-  <section class="bg-surface-light py-spacing-section px-4 md:px-spacing-section">
+  <section class="bg-surface-light py-section px-4 md:px-section">
     <SectionHeader tag={r.FEATURED_TAG} title={r.FEATURED_TITLE} theme="light" />
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {featured.map((product) => {

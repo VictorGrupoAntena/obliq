@@ -120,33 +120,39 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
 
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+        const hideMask = () => { mask.style.translate = '0 -100%'; };
+        const showMask = () => { mask.style.translate = '0 0'; };
+
         const slideIn = (pageColor: string) =>
-          new Promise((resolve) => {
-            if (reducedMotion) { resolve(undefined); return; }
-            gsap.timeline()
-              .to(mask, {
-                y: 0,
-                duration: 1,
+          new Promise<void>((resolve) => {
+            if (reducedMotion) { showMask(); resolve(); return; }
+            showMask();
+            gsap.fromTo(mask,
+              { opacity: 0 },
+              {
+                opacity: 1,
+                duration: 0.4,
                 ease: 'power2.inOut',
                 onStart: () => mask.classList.remove('pointer-events-none'),
-              })
-              .to(mask, {
-                duration: 0.5,
-                backgroundColor: pageColor,
-                onComplete: resolve,
-              });
+                onComplete: () => {
+                  mask.style.backgroundColor = pageColor;
+                  resolve();
+                },
+              },
+            );
           });
 
         const slideOut = () => {
-          if (reducedMotion) {
-            mask.style.transform = 'translateY(-100%)';
-            return;
-          }
+          if (reducedMotion) { hideMask(); return; }
           gsap.to(mask, {
-            y: '-100%',
-            duration: 1,
+            opacity: 0,
+            duration: 0.4,
             ease: 'power2.inOut',
-            onStart: () => mask.classList.remove('pointer-events-none'),
+            onComplete: () => {
+              hideMask();
+              gsap.set(mask, { opacity: 1 });
+              mask.classList.add('pointer-events-none');
+            },
           });
         };
 
@@ -166,7 +172,7 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
         });
 
         if (location.pathname === '/' || location.pathname === '/en/') {
-          mask.style.transform = 'translateY(-100%)';
+          hideMask();
           return;
         }
         slideOut();

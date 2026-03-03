@@ -11,7 +11,7 @@ interface Props {
 const { items } = Astro.props;
 ---
 
-<nav class="bg-surface-dark py-4 px-4 md:px-spacing-section" aria-label="Breadcrumb">
+<nav class="bg-surface-dark py-4 px-4 md:px-section" aria-label="Breadcrumb">
   <ol class="flex items-center gap-2 text-[12px] font-medium tracking-[2px] uppercase">
     {items.map((item, i) => (
       <li class="flex items-center gap-2">

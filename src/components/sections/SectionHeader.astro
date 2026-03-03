@@ -13,7 +13,7 @@ interface Props {
 const { tag, title, level = 2, theme = 'dark', class: className } = Astro.props;
 ---
 
-<div class:list={['mb-spacing-gap-lg', className]}>
+<div class:list={['mb-gap-lg', className]}>
   {tag && (
     <Tag
       text={tag}

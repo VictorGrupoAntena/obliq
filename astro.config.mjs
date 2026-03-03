@@ -16,6 +16,9 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    optimizeDeps: {
+      include: ['gsap', 'gsap/ScrollTrigger'],
+    },
   },
 
   integrations: [sitemap()],

@@ -40,7 +40,7 @@ export function initScrollFadeIn(
     scrollTrigger: {
       trigger: trigger as Element,
       start: options?.start ?? 'top 85%',
-      toggleActions: 'play none none reverse',
+      toggleActions: 'play none none none',
     },
   });
 }
@@ -74,7 +74,7 @@ export function initTextReveal(selector: string) {
       scrollTrigger: {
         trigger: el,
         start: 'top 90%',
-        toggleActions: 'play none none reverse',
+        toggleActions: 'play none none none',
       },
     });
   });

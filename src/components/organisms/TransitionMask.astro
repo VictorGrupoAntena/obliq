@@ -8,8 +8,9 @@ const { enterColor = 'black' } = Astro.props;
 <div
   id="transition-mask"
   class:list={[
-    'fixed inset-0 z-[999] pointer-events-none translate-y-full',
+    'fixed inset-0 z-[999] pointer-events-none',
     enterColor === 'white' ? 'bg-white' : 'bg-black',
   ]}
+  style="translate: 0 100%;"
   aria-hidden="true"
 />

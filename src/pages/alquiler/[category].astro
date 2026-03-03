@@ -44,13 +44,13 @@ const breadcrumbItems = [
   <Breadcrumbs items={breadcrumbItems} />
 
   <!-- Hero -->
-  <section class="bg-surface-dark py-spacing-section px-4 md:px-spacing-section">
+  <section class="bg-surface-dark py-section px-4 md:px-section">
     <Heading level={1} class="text-white mb-4">{category.name.es.toUpperCase()}</Heading>
     <Paragraph class="text-secondary max-w-2xl">{category.description.es}</Paragraph>
   </section>
 
   <!-- Products Grid -->
-  <section class="bg-surface-light py-spacing-section px-4 md:px-spacing-section">
+  <section class="bg-surface-light py-section px-4 md:px-section">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {category.products.map((product) => (
         <ProductCard

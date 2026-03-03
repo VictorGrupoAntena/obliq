@@ -71,7 +71,7 @@ const schema = serviceSchema(svcI18n.NAME, svcI18n.DESCRIPTION);
   )}
 
   <!-- Service Description -->
-  <section class="bg-black py-spacing-section px-4 md:px-spacing-section">
+  <section class="bg-black py-section px-4 md:px-section">
     <div class="max-w-4xl">
       <Paragraph class="text-secondary text-[20px] leading-relaxed">
         {service.longDescription.es}
@@ -99,7 +99,7 @@ const schema = serviceSchema(svcI18n.NAME, svcI18n.DESCRIPTION);
 
   <!-- Case Study (optional) -->
   {service.caseStudy && (
-    <section class="bg-surface-dark py-spacing-section px-4 md:px-spacing-section">
+    <section class="bg-surface-dark py-section px-4 md:px-section">
       <SectionHeader tag={sp.CASE_STUDY_TAG} title={service.caseStudy.title.es} />
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
         <div>

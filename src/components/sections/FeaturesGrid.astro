@@ -22,7 +22,7 @@ const mutedClass = theme === 'dark' ? 'text-secondary' : 'text-muted';
 const cardBg = theme === 'dark' ? 'bg-black/30' : 'bg-white';
 ---
 
-<section class:list={['py-spacing-section px-4 md:px-spacing-section', bgClass, textClass, className]} data-animate="section">
+<section class:list={['py-section px-4 md:px-section', bgClass, textClass, className]} data-animate="section">
   <SectionHeader tag={tag} title={title} theme={theme} />
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     {features.map((feature, i) => (

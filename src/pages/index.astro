@@ -43,7 +43,7 @@ const clientNames = await getClientNamesAsync();
   </HeroSection>
 
   <!-- 2. Services Grid -->
-  <section class="bg-black py-spacing-section px-4 md:px-spacing-section">
+  <section class="bg-black py-section px-4 md:px-section">
     <SectionHeader tag={i18n.HOME.SERVICES_TAG} title={i18n.HOME.SERVICES_TITLE} />
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       {services.map((svc) => {
@@ -73,7 +73,7 @@ const clientNames = await getClientNamesAsync();
   <Marquee items={i18n.HOME.MARQUEE_WORK} size="large" />
 
   <!-- 4. Portfolio -->
-  <section class="bg-black py-spacing-section px-4 md:px-spacing-section">
+  <section class="bg-black py-section px-4 md:px-section">
     <SectionHeader tag={i18n.HOME.PORTFOLIO_TAG} title={i18n.HOME.PORTFOLIO_TITLE} />
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
       {portfolioProjects.map((project) => (
@@ -102,7 +102,7 @@ const clientNames = await getClientNamesAsync();
   <Marquee items={clientNames} size="small" />
 
   <!-- 6. About Teaser -->
-  <section class="bg-surface-dark py-spacing-section px-4 md:px-spacing-section">
+  <section class="bg-surface-dark py-section px-4 md:px-section">
     <SectionHeader tag={i18n.HOME.ABOUT_TAG} title={i18n.HOME.ABOUT_TITLE} />
     <Paragraph class="text-secondary max-w-3xl mb-10">
       {i18n.HOME.ABOUT_TEXT}
@@ -140,7 +140,7 @@ const clientNames = await getClientNamesAsync();
         scrollTrigger: {
           trigger: serviceCards[0],
           start: 'top 85%',
-          toggleActions: 'play none none reverse',
+          toggleActions: 'play none none none',
         },
       });
     }
@@ -157,7 +157,7 @@ const clientNames = await getClientNamesAsync();
         scrollTrigger: {
           trigger: portfolioCards[0],
           start: 'top 85%',
-          toggleActions: 'play none none reverse',
+          toggleActions: 'play none none none',
         },
       });
     }
