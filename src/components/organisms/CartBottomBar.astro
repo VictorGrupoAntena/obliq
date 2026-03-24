@@ -1,0 +1,314 @@
+---
+import { t } from '@/lib/i18n';
+
+interface Props {
+  locale?: string;
+}
+
+const { locale = 'es' } = Astro.props;
+const i18n = t(locale);
+const r = i18n.RENTAL;
+---
+
+<div
+  id="cart-bottom-bar"
+  class="fixed bottom-0 left-0 right-0 z-40 bg-black border-t border-white/30 translate-y-full transition-transform duration-300"
+  role="region"
+  aria-label={r.CART_TITLE}
+  data-locale={locale}
+  data-strings={JSON.stringify({
+    perDay: r.PER_DAY,
+    vat: r.VAT,
+    products: r.CART_PRODUCTS,
+    product: r.CART_PRODUCT,
+    total: r.CART_TOTAL,
+    days: r.CART_DAYS,
+    day: r.CART_DAY,
+    discount: r.CART_DISCOUNT,
+    remove: r.CART_REMOVE,
+    clear: r.CART_CLEAR,
+    cta: r.CART_CTA,
+    collapse: r.CART_COLLAPSE,
+    expand: r.CART_EXPAND,
+    empty: r.CART_EMPTY,
+    mailtoSubject: r.CART_MAILTO_SUBJECT,
+    mailtoGreeting: r.CART_MAILTO_GREETING,
+    mailtoProductList: r.CART_MAILTO_PRODUCT_LIST,
+    mailtoUnitPrice: r.CART_MAILTO_UNIT_PRICE,
+    mailtoSubtotal: r.CART_MAILTO_SUBTOTAL,
+    mailtoTotal: r.CART_MAILTO_TOTAL,
+    mailtoDiscount: r.CART_MAILTO_DISCOUNT,
+    mailtoDates: r.CART_MAILTO_DATES,
+    mailtoClosing: r.CART_MAILTO_CLOSING,
+  })}
+>
+  <!-- Collapsed bar -->
+  <div id="cart-collapsed" class="flex items-center justify-between h-16 px-4 md:px-8 cursor-pointer">
+    <div class="flex items-center gap-4">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white" aria-hidden="true">
+        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+      </svg>
+      <span id="cart-count-label" class="text-white text-[13px] font-medium">0 productos</span>
+    </div>
+    <div class="flex items-center gap-6">
+      <span id="cart-total-label" class="text-white text-[18px] font-bold">0€</span>
+      <a id="cart-cta-link" href="#" class="hidden md:inline-flex items-center gap-3 bg-white text-black uppercase font-semibold tracking-[3px] h-10 px-6 text-[10px] hover:bg-surface-light transition-colors">
+        <span>{r.CART_CTA}</span>
+      </a>
+      <button id="cart-toggle-btn" class="text-white p-2 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label={r.CART_EXPAND}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform" aria-hidden="true">
+          <polyline points="18 15 12 9 6 15"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Expanded panel -->
+  <div id="cart-expanded" class="hidden border-t border-white/10 max-h-[60vh] overflow-y-auto">
+    <div class="px-4 md:px-8 py-6">
+      <!-- Product list -->
+      <div id="cart-product-list" class="space-y-3 mb-6">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between pt-4 border-t border-white/10">
+        <button id="cart-clear-btn" class="text-dim text-[11px] uppercase tracking-[2px] hover:text-white transition-colors min-h-[44px] px-2" type="button">
+          {r.CART_CLEAR}
+        </button>
+        <div class="flex items-center gap-6">
+          <div class="text-right">
+            <span class="text-dim text-[11px] uppercase tracking-[2px] block">{r.CART_TOTAL}</span>
+            <span id="cart-expanded-total" class="text-white text-[24px] font-black">0€</span>
+            <span class="text-dim text-[11px] ml-1">{r.VAT}</span>
+          </div>
+          <a id="cart-cta-link-expanded" href="#" class="inline-flex items-center gap-3 bg-white text-black uppercase font-semibold tracking-[3px] h-[52px] px-8 text-[11px] hover:bg-surface-light transition-colors">
+            {r.CART_CTA}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import {
+    getCart, getCount, getTotal, removeFromCart, clearCart,
+    isRentalSection, getItemTotal, getDiscountPercent,
+    setItemDays, setPackDays, removePackFromCart, DAY_OPTIONS, generateMailtoLink
+  } from '@/lib/cart-store';
+
+  const DISCOUNT_MAP: Record<number, number> = { 1: 0, 3: 10, 5: 15, 7: 20 };
+
+  function initBottomBar() {
+    const bar = document.getElementById('cart-bottom-bar');
+    if (!bar) return;
+
+    const strings = JSON.parse(bar.dataset.strings || '{}');
+    const collapsed = document.getElementById('cart-collapsed');
+    const expanded = document.getElementById('cart-expanded');
+    const toggleBtn = document.getElementById('cart-toggle-btn');
+    const countLabel = document.getElementById('cart-count-label');
+    const totalLabel = document.getElementById('cart-total-label');
+    const expandedTotal = document.getElementById('cart-expanded-total');
+    const productList = document.getElementById('cart-product-list');
+    const clearBtn = document.getElementById('cart-clear-btn');
+    const ctaLink = document.getElementById('cart-cta-link') as HTMLAnchorElement | null;
+    const ctaLinkExpanded = document.getElementById('cart-cta-link-expanded') as HTMLAnchorElement | null;
+
+    let isExpanded = false;
+
+    function updateVisibility() {
+      const inRental = isRentalSection();
+      const count = getCount();
+      if (inRental && count > 0) {
+        bar.style.transform = 'translateY(0)';
+      } else {
+        bar.style.transform = 'translateY(100%)';
+        isExpanded = false;
+        if (expanded) expanded.classList.add('hidden');
+      }
+    }
+
+    function updateMailtoLinks() {
+      const mailtoStrings = {
+        subject: strings.mailtoSubject,
+        greeting: strings.mailtoGreeting,
+        productListHeader: strings.mailtoProductList,
+        daysLabel: strings.days,
+        dayLabel: strings.day,
+        discountLabel: strings.mailtoDiscount,
+        unitPriceLabel: strings.mailtoUnitPrice,
+        subtotalLabel: strings.mailtoSubtotal,
+        totalLabel: strings.mailtoTotal,
+        datesPlaceholder: strings.mailtoDates,
+        closing: strings.mailtoClosing,
+      };
+      const link = generateMailtoLink(mailtoStrings);
+      if (ctaLink) ctaLink.href = link;
+      if (ctaLinkExpanded) ctaLinkExpanded.href = link;
+    }
+
+    function buildDaysSelector(dataType: string, dataKey: string, currentDays: number): string {
+      let html = '<div style="display:flex;gap:4px;margin-top:6px;">';
+      DAY_OPTIONS.forEach((d) => {
+        const discPct = DISCOUNT_MAP[d] || 0;
+        const label = d + 'd' + (discPct > 0 ? ' -' + discPct + '%' : '');
+        const ariaLabel = d + (d === 1 ? ' ' + strings.day : ' ' + strings.days) + (discPct > 0 ? ', ' + discPct + '% ' + strings.discount : '');
+        const active = d === currentDays;
+        const style = active
+          ? 'background:#fff;color:#000;font-size:10px;font-weight:700;padding:4px 8px;min-height:28px;border:none;'
+          : 'background:transparent;color:#aaa;font-size:10px;font-weight:500;padding:4px 8px;min-height:28px;border:1px solid rgba(255,255,255,0.3);cursor:pointer;';
+        html += '<button type="button" class="cart-day-btn" style="' + style + '" aria-label="' + ariaLabel + '"' + (active ? ' aria-current="true"' : '') + ' data-day-type="' + dataType + '" data-day-key="' + dataKey + '" data-days="' + d + '">' + label + '</button>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function render() {
+      const cart = getCart();
+      const count = getCount();
+      const total = getTotal();
+
+      if (countLabel) {
+        countLabel.textContent = count + ' ' + (count === 1 ? strings.product : strings.products);
+      }
+      if (totalLabel) totalLabel.textContent = total.toFixed(0) + '€';
+      if (expandedTotal) expandedTotal.textContent = total.toFixed(0) + '€';
+
+      // Product list
+      if (productList) {
+        productList.innerHTML = '';
+
+        // Group by pack
+        const packs = new Map<string, typeof cart>();
+        const loose: typeof cart = [];
+        cart.forEach((item) => {
+          if (item.packName) {
+            const list = packs.get(item.packName) || [];
+            list.push(item);
+            packs.set(item.packName, list);
+          } else {
+            loose.push(item);
+          }
+        });
+
+        // Render packs as single rows
+        packs.forEach((items, packName) => {
+          const packDays = items[0].days;
+          const packDailyTotal = items.reduce((s, i) => s + i.price, 0);
+          const packSubtotal = items.reduce((s, i) => s + getItemTotal(i.price, i.days), 0);
+          const discount = getDiscountPercent(packDays);
+          const productNames = items.map((i) => i.productName).join(', ');
+
+          const row = document.createElement('div');
+          row.className = 'bg-surface-dark border border-white/10 p-3';
+          row.innerHTML =
+            '<div class="flex items-center gap-4">' +
+              '<div class="w-12 h-12 bg-white/10 flex items-center justify-center shrink-0 text-[20px]">📦</div>' +
+              '<div class="flex-1 min-w-0">' +
+                '<p class="text-white text-[14px] font-medium truncate">' + packName + '</p>' +
+                '<p class="text-dim text-[11px] truncate">' + productNames + '</p>' +
+              '</div>' +
+              '<div class="text-right shrink-0">' +
+                '<p class="text-white text-[16px] font-bold">' + packSubtotal.toFixed(0) + '€</p>' +
+                (discount > 0 ? '<p class="text-dim text-[10px]">-' + discount + '%</p>' : '') +
+              '</div>' +
+              '<button type="button" class="cart-remove-pack text-dim hover:text-white transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0" data-pack="' + packName + '" aria-label="' + strings.remove + ' ' + packName + '">' +
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+              '</button>' +
+            '</div>' +
+            '<div class="mt-2 pl-16">' +
+              buildDaysSelector('pack', packName, packDays) +
+            '</div>';
+          productList.appendChild(row);
+        });
+
+        // Render loose items with per-item day selector
+        loose.forEach((item) => {
+          const subtotal = getItemTotal(item.price, item.days);
+          const discount = getDiscountPercent(item.days);
+          const row = document.createElement('div');
+          row.className = 'bg-surface-dark border border-white/10 p-3';
+          row.innerHTML =
+            '<div class="flex items-center gap-4">' +
+              '<img src="' + item.image + '" alt="' + item.productName + '" class="w-12 h-12 object-contain bg-white p-1 shrink-0" />' +
+              '<div class="flex-1 min-w-0">' +
+                '<p class="text-white text-[14px] font-medium truncate">' + item.productName + '</p>' +
+              '</div>' +
+              '<div class="text-right shrink-0">' +
+                '<p class="text-white text-[16px] font-bold">' + subtotal.toFixed(0) + '€</p>' +
+                (discount > 0 ? '<p class="text-dim text-[10px]">-' + discount + '%</p>' : '') +
+              '</div>' +
+              '<button type="button" class="cart-remove-btn text-dim hover:text-white transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0" data-slug="' + item.productSlug + '" aria-label="' + strings.remove + ' ' + item.productName + '">' +
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+              '</button>' +
+            '</div>' +
+            '<div class="mt-2 pl-16">' +
+              buildDaysSelector('item', item.productSlug, item.days) +
+            '</div>';
+          productList.appendChild(row);
+        });
+
+        // Bind remove buttons (individual items)
+        productList.querySelectorAll<HTMLButtonElement>('.cart-remove-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const slug = btn.dataset.slug;
+            if (slug) removeFromCart(slug);
+          });
+        });
+
+        // Bind remove buttons (packs)
+        productList.querySelectorAll<HTMLButtonElement>('.cart-remove-pack').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const pack = btn.dataset.pack;
+            if (pack) removePackFromCart(pack);
+          });
+        });
+
+        // Bind day selector buttons
+        productList.querySelectorAll<HTMLButtonElement>('.cart-day-btn').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const type = btn.dataset.dayType;
+            const key = btn.dataset.dayKey;
+            const days = parseInt(btn.dataset.days || '1', 10);
+            if (!key) return;
+            if (type === 'pack') {
+              setPackDays(key, days);
+            } else {
+              setItemDays(key, days);
+            }
+          });
+        });
+      }
+
+      updateMailtoLinks();
+      updateVisibility();
+    }
+
+    // Toggle expand/collapse
+    function toggle() {
+      isExpanded = !isExpanded;
+      if (expanded) expanded.classList.toggle('hidden', !isExpanded);
+      const arrow = toggleBtn?.querySelector('svg');
+      if (arrow) arrow.style.transform = isExpanded ? 'rotate(180deg)' : '';
+      if (toggleBtn) toggleBtn.setAttribute('aria-label', isExpanded ? strings.collapse : strings.expand);
+    }
+
+    collapsed?.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('#cart-cta-link')) return;
+      toggle();
+    });
+
+    clearBtn?.addEventListener('click', () => { clearCart(); });
+
+    // Listen for cart changes
+    window.addEventListener('cart:updated', render);
+    render();
+  }
+
+  initBottomBar();
+  document.addEventListener('astro:after-swap', initBottomBar);
+</script>

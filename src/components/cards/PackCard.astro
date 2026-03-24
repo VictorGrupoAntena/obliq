@@ -1,9 +1,10 @@
 ---
-import Button from '@/components/atoms/Button.astro';
-
 interface PackProduct {
   name: string;
   price: number;
+  slug: string;
+  image: string;
+  categorySlug: string;
 }
 
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
   individualTotal: number;
   savings: number;
   ctaText: string;
-  ctaHref?: string;
+  addedText?: string;
   perDay: string;
   vat: string;
   savingsLabel: string;
@@ -29,7 +30,7 @@ const {
   individualTotal,
   savings,
   ctaText,
-  ctaHref = '#',
+  addedText = 'AÑADIDO ✓',
   perDay,
   vat,
   savingsLabel,
@@ -37,8 +38,8 @@ const {
 } = Astro.props;
 ---
 
-<div class="pack-card bg-surface-dark p-8 flex flex-col h-full">
-  <p class="text-[12px] font-semibold uppercase tracking-[3px] text-muted mb-3">
+<div class="pack-card bg-surface-dark border border-white/30 p-8 flex flex-col h-full">
+  <p class="text-[12px] font-semibold uppercase tracking-[3px] text-dim mb-3">
     {name}
   </p>
   <p class="text-secondary text-[14px] font-light mb-6">
@@ -48,8 +49,8 @@ const {
   <!-- Price -->
   <div class="mb-6">
     <span class="text-[48px] font-black text-white">{dailyPrice}€</span>
-    <span class="text-[14px] font-light text-muted">{perDay}</span>
-    <span class="text-[12px] font-light text-muted ml-1">{vat}</span>
+    <span class="text-[14px] font-light text-dim">{perDay}</span>
+    <span class="text-[12px] font-light text-dim ml-1">{vat}</span>
   </div>
 
   <!-- Savings badge -->
@@ -63,19 +64,79 @@ const {
   </div>
 
   <!-- Included items -->
-  <p class="text-[11px] font-semibold uppercase tracking-[2px] text-muted mb-3">
+  <p class="text-[11px] font-semibold uppercase tracking-[2px] text-dim mb-3">
     {includesLabel}
   </p>
   <ul class="flex-1 space-y-2 mb-8">
     {products.map((product) => (
-      <li class="flex items-center justify-between text-[14px] border-b border-border/30 pb-2">
+      <li class="flex items-center justify-between text-[14px] border-b border-border pb-2">
         <span class="text-white font-light">{product.name}</span>
-        <span class="text-muted text-[12px]">{product.price}€</span>
+        <span class="text-dim text-[12px]">{product.price}€</span>
       </li>
     ))}
   </ul>
 
-  <Button variant="primary" href={ctaHref} class="w-full justify-center">
-    {ctaText}
-  </Button>
+  <button
+    type="button"
+    class="pack-add-btn w-full inline-flex items-center justify-center gap-3 bg-white text-black uppercase font-semibold tracking-[3px] h-12 px-6 text-[10px] hover:bg-surface-light transition-all cursor-pointer"
+    data-pack-name={name}
+    data-pack-products={JSON.stringify(products.map((p) => ({
+      productSlug: p.slug,
+      productName: p.name,
+      categorySlug: p.categorySlug,
+      price: p.price,
+      image: p.image,
+    })))}
+    data-cta-text={ctaText}
+    data-added-text={addedText}
+    aria-label={ctaText + ' — ' + name}
+  >
+    <span class="btn-label">{ctaText}</span>
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" class="transition-transform" aria-hidden="true">
+      <path d="M12.3461 0.839999L17.9061 9.04L12.3461 17.32H8.86609L14.1061 9.04L8.86609 0.839999H12.3461ZM14.9061 7.6V10.52H0.426094V7.6H14.9061Z" fill="currentColor" />
+    </svg>
+  </button>
 </div>
+
+<script>
+  import { addPack, isPackInCart } from '@/lib/cart-store';
+
+  function initPackButtons() {
+    document.querySelectorAll<HTMLButtonElement>('.pack-add-btn').forEach((btn) => {
+      const packName = btn.dataset.packName!;
+      const products = JSON.parse(btn.dataset.packProducts || '[]');
+      const label = btn.querySelector('.btn-label')!;
+      const ctaText = btn.dataset.ctaText!;
+      const addedText = btn.dataset.addedText!;
+      const slugs = products.map((p: { productSlug: string }) => p.productSlug);
+
+      // Sync state on init
+      if (isPackInCart(packName, slugs)) {
+        label.textContent = addedText;
+        btn.classList.add('is-in-cart');
+      }
+
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        addPack(packName, products);
+        label.textContent = addedText;
+        btn.classList.add('is-in-cart');
+      });
+    });
+  }
+
+  initPackButtons();
+  document.addEventListener('astro:after-swap', initPackButtons);
+  window.addEventListener('cart:updated', () => {
+    document.querySelectorAll<HTMLButtonElement>('.pack-add-btn').forEach((btn) => {
+      const packName = btn.dataset.packName!;
+      const products = JSON.parse(btn.dataset.packProducts || '[]');
+      const label = btn.querySelector('.btn-label')!;
+      const slugs = products.map((p: { productSlug: string }) => p.productSlug);
+      const inCart = isPackInCart(packName, slugs);
+      label.textContent = inCart ? btn.dataset.addedText! : btn.dataset.ctaText!;
+      btn.classList.toggle('is-in-cart', inCart);
+    });
+  });
+</script>

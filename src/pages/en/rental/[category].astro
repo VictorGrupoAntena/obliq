@@ -2,7 +2,6 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import SectionHeader from '@/components/sections/SectionHeader.astro';
 import CTASection from '@/components/sections/CTASection.astro';
-import QuoteCartPreview from '@/components/sections/QuoteCartPreview.astro';
 import ProductCard from '@/components/cards/ProductCard.astro';
 import Breadcrumbs from '@/components/organisms/Breadcrumbs.astro';
 import Heading from '@/components/atoms/Heading.astro';
@@ -55,8 +54,11 @@ const breadcrumbItems = [
           price={product.price}
           image={product.image}
           href={localizedUrl('/rental/' + categorySlug + '/' + product.slug + '/', locale)}
+          slug={product.slug}
+          categorySlug={categorySlug}
           specs={product.specs.en}
           ctaText={r.ADD_TO_QUOTE}
+          addedText={r.CART_ADDED}
           perDay={r.PER_DAY}
           vat={r.VAT}
           theme="light"
@@ -64,13 +66,6 @@ const breadcrumbItems = [
       ))}
     </div>
   </section>
-
-  <QuoteCartPreview
-    title={r.QUOTE_TITLE}
-    description={r.QUOTE_DESCRIPTION}
-    ctaText={r.QUOTE_CTA}
-    ctaHref={localizedUrl('/contact/', locale)}
-  />
 
   <CTASection title={r.CTA_TITLE} background="white">
     <Button variant="dark" href={localizedUrl('/contact/', locale)}>{r.CTA_BUTTON}</Button>

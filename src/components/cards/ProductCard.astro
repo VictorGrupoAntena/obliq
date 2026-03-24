@@ -6,8 +6,11 @@ interface Props {
   price: number;
   image: string;
   href: string;
+  slug: string;
+  categorySlug: string;
   specs?: string[];
   ctaText: string;
+  addedText?: string;
   perDay: string;
   vat: string;
   theme?: 'dark' | 'light';
@@ -18,8 +21,11 @@ const {
   price,
   image,
   href,
+  slug,
+  categorySlug,
   specs = [],
   ctaText,
+  addedText = 'AÑADIDO ✓',
   perDay,
   vat,
   theme = 'light',
@@ -28,44 +34,109 @@ const {
 const isDark = theme === 'dark';
 ---
 
-<a href={href} class:list={[
-  'group block overflow-hidden',
-  isDark ? 'bg-black' : 'bg-white border border-border-light',
+<div class:list={[
+  'group overflow-hidden flex flex-col',
+  isDark ? 'bg-surface-dark border border-white/30 hover:border-white/50 transition-colors' : 'bg-white border border-border-light',
 ]}>
-  <div class="aspect-square overflow-hidden bg-surface-light p-4 flex items-center justify-center">
-    <img
-      src={image}
-      alt={name}
-      class="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105"
-      loading="lazy"
-    />
-  </div>
-  <div class="p-4">
-    {specs.length > 0 && (
-      <p class:list={['text-[11px] font-medium uppercase tracking-[2px] mb-2', isDark ? 'text-muted' : 'text-muted']}>
-        {specs[0]}
+  <a href={href} class="block">
+    <div class="aspect-square overflow-hidden bg-surface-light p-4 flex items-center justify-center">
+      <img
+        src={image}
+        alt={name}
+        class="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105"
+        loading="lazy"
+      />
+    </div>
+    <div class="p-4 pb-0">
+      {specs.length > 0 && (
+        <p class:list={['text-[11px] font-medium uppercase tracking-[2px] mb-2', isDark ? 'text-dim' : 'text-muted']}>
+          {specs[0]}
+        </p>
+      )}
+      <h3 class:list={['text-[18px] font-bold mb-2', isDark ? 'text-white' : 'text-black']}>
+        {name}
+      </h3>
+      <p class="mb-3">
+        <span class:list={['text-[20px] font-extrabold', isDark ? 'text-white' : 'text-black']}>
+          {price}€
+        </span>
+        <span class:list={['text-[13px] font-light', isDark ? 'text-dim' : 'text-muted']}>
+          {perDay}
+        </span>
+        <span class:list={['text-[11px] font-light ml-1', isDark ? 'text-dim' : 'text-muted']}>
+          {vat}
+        </span>
       </p>
-    )}
-    <h3 class:list={['text-[18px] font-bold mb-2', isDark ? 'text-white' : 'text-black']}>
-      {name}
-    </h3>
-    <p class="mb-3">
-      <span class:list={['text-[20px] font-extrabold', isDark ? 'text-white' : 'text-black']}>
-        {price}€
-      </span>
-      <span class:list={['text-[13px] font-light', isDark ? 'text-muted' : 'text-muted']}>
-        {perDay}
-      </span>
-      <span class:list={['text-[11px] font-light ml-1', isDark ? 'text-muted' : 'text-muted']}>
-        {vat}
-      </span>
-    </p>
-    <Button
-      variant={isDark ? 'primary' : 'dark'}
-      size="small"
-      class="w-full justify-center pointer-events-none"
+    </div>
+  </a>
+  <div class="px-4 pb-4">
+    <button
+      type="button"
+      class:list={[
+        'cart-add-btn w-full inline-flex items-center justify-center gap-3 uppercase font-semibold tracking-[3px] h-10 px-5 text-[10px] transition-all cursor-pointer',
+        isDark ? 'bg-white text-black hover:bg-surface-light' : 'bg-black text-white hover:bg-surface-dark',
+      ]}
+      data-product-slug={slug}
+      data-product-name={name}
+      data-product-price={price}
+      data-product-image={image}
+      data-category-slug={categorySlug}
+      data-cta-text={ctaText}
+      data-added-text={addedText}
+      aria-label={ctaText + ' — ' + name}
     >
-      {ctaText}
-    </Button>
+      <span class="btn-label">{ctaText}</span>
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" class="transition-transform" aria-hidden="true">
+        <path d="M12.3461 0.839999L17.9061 9.04L12.3461 17.32H8.86609L14.1061 9.04L8.86609 0.839999H12.3461ZM14.9061 7.6V10.52H0.426094V7.6H14.9061Z" fill="currentColor" />
+      </svg>
+    </button>
   </div>
-</a>
+</div>
+
+<script>
+  import { toggleCart, isInCart } from '@/lib/cart-store';
+  import type { CartItem } from '@/lib/cart-store';
+
+  function initCartButtons() {
+    document.querySelectorAll<HTMLButtonElement>('.cart-add-btn').forEach((btn) => {
+      const slug = btn.dataset.productSlug!;
+      const label = btn.querySelector('.btn-label')!;
+      const ctaText = btn.dataset.ctaText!;
+      const addedText = btn.dataset.addedText!;
+
+      // Sync state on init
+      if (isInCart(slug)) {
+        label.textContent = addedText;
+        btn.classList.add('is-in-cart');
+      }
+
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const item: CartItem = {
+          productSlug: slug,
+          productName: btn.dataset.productName!,
+          categorySlug: btn.dataset.categorySlug!,
+          price: parseFloat(btn.dataset.productPrice!),
+          image: btn.dataset.productImage!,
+          days: 1,
+        };
+        const added = toggleCart(item);
+        label.textContent = added ? addedText : ctaText;
+        btn.classList.toggle('is-in-cart', added);
+      });
+    });
+  }
+
+  initCartButtons();
+  document.addEventListener('astro:after-swap', initCartButtons);
+  window.addEventListener('cart:updated', () => {
+    document.querySelectorAll<HTMLButtonElement>('.cart-add-btn').forEach((btn) => {
+      const slug = btn.dataset.productSlug!;
+      const label = btn.querySelector('.btn-label')!;
+      const inCart = isInCart(slug);
+      label.textContent = inCart ? btn.dataset.addedText! : btn.dataset.ctaText!;
+      btn.classList.toggle('is-in-cart', inCart);
+    });
+  });
+</script>

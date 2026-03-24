@@ -5,6 +5,7 @@ import Header from '@/components/organisms/Header.astro';
 import Footer from '@/components/organisms/Footer.astro';
 import TransitionMask from '@/components/organisms/TransitionMask.astro';
 import WhatsAppFAB from '@/components/organisms/WhatsAppFAB.astro';
+import CartBottomBar from '@/components/organisms/CartBottomBar.astro';
 import { getLocale, alternateUrl } from '@/lib/i18n';
 import { localBusinessSchema } from '@/lib/schema';
 import { ClientRouter } from 'astro:transitions';
@@ -109,6 +110,7 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
     </main>
 
     <Footer locale={locale} />
+    <CartBottomBar locale={locale} />
     <WhatsAppFAB locale={locale} />
 
     <script>

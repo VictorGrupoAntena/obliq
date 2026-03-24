@@ -19,7 +19,7 @@ const { tag, title, features, theme = 'dark', class: className } = Astro.props;
 const bgClass = theme === 'dark' ? 'bg-surface-dark' : 'bg-surface-light';
 const textClass = theme === 'dark' ? 'text-white' : 'text-black';
 const mutedClass = theme === 'dark' ? 'text-secondary' : 'text-muted';
-const cardBg = theme === 'dark' ? 'bg-black/30' : 'bg-white';
+const cardBg = theme === 'dark' ? 'bg-black/30 border border-white/30' : 'bg-white border border-border-light';
 ---
 
 <section class:list={['py-section px-4 md:px-section', bgClass, textClass, className]} data-animate="section">

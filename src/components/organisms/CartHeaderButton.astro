@@ -1,0 +1,295 @@
+---
+import { t } from '@/lib/i18n';
+
+interface Props {
+  locale?: string;
+}
+
+const { locale = 'es' } = Astro.props;
+const i18n = t(locale);
+const r = i18n.RENTAL;
+---
+
+<div
+  id="cart-header-btn-wrapper"
+  class="hidden relative"
+  data-locale={locale}
+  data-strings={JSON.stringify({
+    perDay: r.PER_DAY,
+    vat: r.VAT,
+    products: r.CART_PRODUCTS,
+    product: r.CART_PRODUCT,
+    total: r.CART_TOTAL,
+    days: r.CART_DAYS,
+    day: r.CART_DAY,
+    remove: r.CART_REMOVE,
+    cta: r.CART_CTA,
+    close: r.CART_CLOSE,
+    empty: r.CART_EMPTY,
+    title: r.CART_TITLE,
+    mailtoSubject: r.CART_MAILTO_SUBJECT,
+    mailtoGreeting: r.CART_MAILTO_GREETING,
+    mailtoProductList: r.CART_MAILTO_PRODUCT_LIST,
+    mailtoUnitPrice: r.CART_MAILTO_UNIT_PRICE,
+    mailtoSubtotal: r.CART_MAILTO_SUBTOTAL,
+    mailtoTotal: r.CART_MAILTO_TOTAL,
+    mailtoDiscount: r.CART_MAILTO_DISCOUNT,
+    mailtoDates: r.CART_MAILTO_DATES,
+    mailtoClosing: r.CART_MAILTO_CLOSING,
+  })}
+>
+  <!-- Trigger button -->
+  <button
+    id="cart-header-btn"
+    type="button"
+    class="relative p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-current hover:opacity-70 transition-opacity"
+    aria-label={r.CART_TITLE}
+    aria-expanded="false"
+    aria-controls="cart-header-panel"
+  >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+    </svg>
+    <span id="cart-header-badge" class="absolute -top-0.5 -right-0.5 bg-red-600 text-white text-[9px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center" aria-label="Items in cart">0</span>
+  </button>
+
+  <!-- Flyout panel -->
+  <div
+    id="cart-header-panel"
+    class="hidden absolute right-0 top-full mt-2 w-[360px] max-h-[70vh] bg-black border border-white/30 shadow-2xl overflow-y-auto z-50"
+    role="dialog"
+    aria-label={r.CART_TITLE}
+  >
+    <div class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-[11px] font-semibold uppercase tracking-[3px] text-dim">{r.CART_TITLE}</h3>
+        <button id="cart-panel-close" type="button" class="text-dim hover:text-white transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label={r.CART_CLOSE}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="cart-panel-list" class="space-y-3 mb-6">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div id="cart-panel-footer" class="pt-4 border-t border-white/10">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-dim text-[11px] uppercase tracking-[2px]">{r.CART_TOTAL}</span>
+          <span id="cart-panel-total" class="text-white text-[20px] font-black">0€</span>
+        </div>
+        <a id="cart-panel-cta" href="#" class="w-full inline-flex items-center justify-center gap-3 bg-white text-black uppercase font-semibold tracking-[3px] h-[48px] px-6 text-[10px] hover:bg-surface-light transition-colors">
+          {r.CART_CTA}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import {
+    getCart, getCount, getTotal,
+    getItemTotal, getDiscountPercent, removeFromCart, removePackFromCart,
+    setItemDays, setPackDays, DAY_OPTIONS, generateMailtoLink
+  } from '@/lib/cart-store';
+
+  const DISCOUNT_MAP: Record<number, number> = { 1: 0, 3: 10, 5: 15, 7: 20 };
+
+  function initHeaderCart() {
+    const wrapper = document.getElementById('cart-header-btn-wrapper');
+    if (!wrapper) return;
+
+    const strings = JSON.parse(wrapper.dataset.strings || '{}');
+    const btn = document.getElementById('cart-header-btn');
+    const badge = document.getElementById('cart-header-badge');
+    const panel = document.getElementById('cart-header-panel');
+    const closeBtn = document.getElementById('cart-panel-close');
+    const listEl = document.getElementById('cart-panel-list');
+    const totalEl = document.getElementById('cart-panel-total');
+    const ctaEl = document.getElementById('cart-panel-cta') as HTMLAnchorElement | null;
+    let isOpen = false;
+
+    function updateVisibility() {
+      const count = getCount();
+      if (count > 0) {
+        wrapper.classList.remove('hidden');
+      } else {
+        wrapper.classList.add('hidden');
+        closePanel();
+      }
+    }
+
+    function closePanel() {
+      isOpen = false;
+      if (panel) panel.classList.add('hidden');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function openPanel() {
+      isOpen = true;
+      if (panel) panel.classList.remove('hidden');
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+    }
+
+    function render() {
+      const cart = getCart();
+      const count = getCount();
+      const total = getTotal();
+
+      if (badge) badge.textContent = String(count);
+      if (totalEl) totalEl.textContent = total.toFixed(0) + '€';
+
+      // Render list — group packs as single rows, with inline day selectors
+      if (listEl) {
+        listEl.innerHTML = '';
+
+        const packs = new Map<string, typeof cart>();
+        const loose: typeof cart = [];
+        cart.forEach((item) => {
+          if (item.packName) {
+            const list = packs.get(item.packName) || [];
+            list.push(item);
+            packs.set(item.packName, list);
+          } else {
+            loose.push(item);
+          }
+        });
+
+        function buildMiniDays(type: string, key: string, currentDays: number): string {
+          let h = '<div style="display:flex;gap:3px;margin-top:4px;">';
+          DAY_OPTIONS.forEach((d) => {
+            const disc = DISCOUNT_MAP[d] || 0;
+            const lbl = d + 'd' + (disc > 0 ? ' -' + disc + '%' : '');
+            const aLbl = d + (d === 1 ? ' ' + strings.day : ' ' + strings.days);
+            const active = d === currentDays;
+            const s = active
+              ? 'background:#fff;color:#000;font-size:9px;font-weight:700;padding:2px 6px;min-height:22px;border:none;'
+              : 'background:transparent;color:#aaa;font-size:9px;font-weight:500;padding:2px 6px;min-height:22px;border:1px solid rgba(255,255,255,0.25);cursor:pointer;';
+            h += '<button type="button" class="hdr-day-btn" style="' + s + '" aria-label="' + aLbl + '"' + (active ? ' aria-current="true"' : '') + ' data-day-type="' + type + '" data-day-key="' + key + '" data-days="' + d + '">' + lbl + '</button>';
+          });
+          h += '</div>';
+          return h;
+        }
+
+        // Pack rows
+        packs.forEach((items, packName) => {
+          const packSubtotal = items.reduce((s, i) => s + getItemTotal(i.price, i.days), 0);
+          const packDays = items[0].days;
+          const row = document.createElement('div');
+          row.style.cssText = 'margin-bottom:8px;';
+          row.innerHTML =
+            '<div style="display:flex;align-items:center;gap:10px;">' +
+              '<div style="width:40px;height:40px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;">📦</div>' +
+              '<div style="flex:1;min-width:0;">' +
+                '<p style="color:#fff;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + packName + '</p>' +
+                '<p style="color:#aaa;font-size:11px;">' + packSubtotal.toFixed(0) + '€</p>' +
+              '</div>' +
+              '<button type="button" class="cart-panel-remove-pack" style="color:#aaa;padding:8px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:none;border:none;cursor:pointer;" data-pack="' + packName + '" aria-label="' + strings.remove + ' ' + packName + '">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+              '</button>' +
+            '</div>' +
+            '<div style="padding-left:50px;">' + buildMiniDays('pack', packName, packDays) + '</div>';
+          listEl.appendChild(row);
+        });
+
+        // Loose item rows
+        loose.forEach((item) => {
+          const subtotal = getItemTotal(item.price, item.days);
+          const row = document.createElement('div');
+          row.style.cssText = 'margin-bottom:8px;';
+          row.innerHTML =
+            '<div style="display:flex;align-items:center;gap:10px;">' +
+              '<img src="' + item.image + '" alt="' + item.productName + '" style="width:40px;height:40px;object-fit:contain;background:#fff;padding:4px;flex-shrink:0;" />' +
+              '<div style="flex:1;min-width:0;">' +
+                '<p style="color:#fff;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + item.productName + '</p>' +
+                '<p style="color:#aaa;font-size:11px;">' + subtotal.toFixed(0) + '€</p>' +
+              '</div>' +
+              '<button type="button" class="cart-panel-remove" style="color:#aaa;padding:8px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:none;border:none;cursor:pointer;" data-slug="' + item.productSlug + '" aria-label="' + strings.remove + ' ' + item.productName + '">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+              '</button>' +
+            '</div>' +
+            '<div style="padding-left:50px;">' + buildMiniDays('item', item.productSlug, item.days) + '</div>';
+          listEl.appendChild(row);
+        });
+
+        // Bind remove (items)
+        listEl.querySelectorAll<HTMLButtonElement>('.cart-panel-remove').forEach((removeBtn) => {
+          removeBtn.addEventListener('click', () => {
+            const slug = removeBtn.dataset.slug;
+            if (slug) removeFromCart(slug);
+          });
+        });
+
+        // Bind remove (packs)
+        listEl.querySelectorAll<HTMLButtonElement>('.cart-panel-remove-pack').forEach((removeBtn) => {
+          removeBtn.addEventListener('click', () => {
+            const pack = removeBtn.dataset.pack;
+            if (pack) removePackFromCart(pack);
+          });
+        });
+
+        // Bind day buttons
+        listEl.querySelectorAll<HTMLButtonElement>('.hdr-day-btn').forEach((dayBtn) => {
+          dayBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const type = dayBtn.dataset.dayType;
+            const key = dayBtn.dataset.dayKey;
+            const days = parseInt(dayBtn.dataset.days || '1', 10);
+            if (!key) return;
+            if (type === 'pack') setPackDays(key, days);
+            else setItemDays(key, days);
+          });
+        });
+      }
+
+      // Update mailto
+      if (ctaEl) {
+        const mailtoStrings = {
+          subject: strings.mailtoSubject,
+          greeting: strings.mailtoGreeting,
+          productListHeader: strings.mailtoProductList,
+          daysLabel: strings.days,
+          dayLabel: strings.day,
+          discountLabel: strings.mailtoDiscount,
+          unitPriceLabel: strings.mailtoUnitPrice,
+          subtotalLabel: strings.mailtoSubtotal,
+          totalLabel: strings.mailtoTotal,
+          datesPlaceholder: strings.mailtoDates,
+          closing: strings.mailtoClosing,
+        };
+        ctaEl.href = generateMailtoLink(mailtoStrings);
+      }
+
+      updateVisibility();
+    }
+
+    // Toggle
+    btn?.addEventListener('click', () => {
+      if (isOpen) closePanel();
+      else openPanel();
+    });
+
+    closeBtn?.addEventListener('click', closePanel);
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isOpen) closePanel();
+    });
+
+    // Close on click outside (ignore clicks on nodes removed by re-render)
+    document.addEventListener('click', (e) => {
+      const target = e.target as Node;
+      if (isOpen && wrapper && !wrapper.contains(target) && document.body.contains(target)) {
+        closePanel();
+      }
+    });
+
+    window.addEventListener('cart:updated', render);
+    render();
+  }
+
+  initHeaderCart();
+  document.addEventListener('astro:after-swap', initHeaderCart);
+</script>

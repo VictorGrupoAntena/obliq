@@ -1,5 +1,6 @@
 ---
 import LangSwitcher from '@/components/atoms/LangSwitcher.astro';
+import CartHeaderButton from '@/components/organisms/CartHeaderButton.astro';
 import { t, localizedUrl } from '@/lib/i18n';
 
 interface Props {
@@ -42,7 +43,7 @@ const isCurrentLink = (href: string) => {
           href={item.href}
           class:list={[
             'text-[12px] font-medium uppercase tracking-[3px] transition-opacity hover:opacity-70',
-            isCurrentLink(item.href) ? 'font-bold italic opacity-100' : 'opacity-80',
+            isCurrentLink(item.href) ? 'font-bold italic opacity-100' : 'opacity-60',
           ]}
         >
           {item.label}
@@ -55,7 +56,7 @@ const isCurrentLink = (href: string) => {
       <img
         src="/logo.gif"
         alt={i18n.GLOBAL.OWNER}
-        class="w-40 md:w-56"
+        class:list={['w-40 md:w-56', pageColor === 'white' && 'invert']}
         width="224"
         height="58"
       />
@@ -68,17 +69,19 @@ const isCurrentLink = (href: string) => {
           href={item.href}
           class:list={[
             'text-[12px] font-medium uppercase tracking-[3px] transition-opacity hover:opacity-70',
-            isCurrentLink(item.href) ? 'font-bold italic opacity-100' : 'opacity-80',
+            isCurrentLink(item.href) ? 'font-bold italic opacity-100' : 'opacity-60',
           ]}
         >
           {item.label}
         </a>
       ))}
+      <CartHeaderButton locale={locale} />
       <LangSwitcher />
     </nav>
 
     <!-- Mobile: Burger -->
     <div class="flex items-center gap-4 md:hidden">
+      <CartHeaderButton locale={locale} />
       <button class="burger-menu" aria-label={i18n.NAV.OPEN_MENU}>
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" />
@@ -100,12 +103,12 @@ const isCurrentLink = (href: string) => {
       </svg>
     </button>
 
-    <nav class="flex flex-col gap-6 mt-16" aria-label="Mobile navigation">
+    <nav class="flex flex-col mt-16" aria-label="Mobile navigation">
       {navItems.map((item) => (
         <a
           href={item.href}
           class:list={[
-            'text-2xl uppercase font-medium',
+            'text-2xl uppercase font-medium py-4 border-b border-border',
             isCurrentLink(item.href) && 'font-bold italic',
           ]}
         >

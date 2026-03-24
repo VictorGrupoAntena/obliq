@@ -11,6 +11,19 @@
   --color-secondary: #CCCCCC;
   --color-border-light: #DDDDDD;
 
+  /* Contrast-enhanced tokens (UX review 2026-03-18)
+     ─────────────────────────────────────────────────
+     text-white      → títulos, texto primario
+     text-secondary  → descripciones, párrafos
+     text-dim        → labels, metadata, specs, precios secundarios
+     text-muted      → SOLO decorativo / tooltips (NO usar para texto legible)
+     border-white/20 → bordes de cards sobre fondo oscuro
+     border-emphasis  → separadores internos visibles
+  */
+  --color-dim: #AAAAAA;
+  --color-border-emphasis: #555555;
+  --color-surface-elevated: #1A1A1A;
+
   /* Typography — Montserrat Variable */
   --font-family-sans: 'Montserrat Variable', sans-serif;
 
@@ -43,6 +56,12 @@ body {
   font-weight: 300;
   font-size: 18px;
   line-height: 1.6;
+}
+
+/* Focus-visible — white outline for dark backgrounds */
+:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
 }
 
 /* View Transitions */

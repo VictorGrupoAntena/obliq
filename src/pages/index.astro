@@ -51,7 +51,7 @@ const clientNames = await getClientNamesAsync();
         return (
           <a
             href={localizedUrl('/servicios/' + svc.slug.es + '/', locale)}
-            class="service-card bg-surface-dark p-6 flex flex-col justify-between min-h-[151px] group transition-colors hover:bg-border"
+            class="service-card bg-surface-dark border border-white/30 p-6 flex flex-col justify-between min-h-[151px] group transition-colors hover:bg-border hover:border-white/50"
           >
             <div>
               <h3 class="text-[16px] font-bold mb-2">{data.NAME}</h3>
