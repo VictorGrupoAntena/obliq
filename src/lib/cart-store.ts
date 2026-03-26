@@ -165,76 +165,44 @@ export function getTotal(): number {
   return cart.reduce((sum, item) => sum + getItemTotal(item.price, item.days), 0);
 }
 
-// ─── Mailto ───
+// ── Quote page helpers ──
 
-interface MailtoStrings {
-  subject: string;
-  greeting: string;
-  productListHeader: string;
-  daysLabel: string;
-  discountLabel: string;
-  unitPriceLabel: string;
-  subtotalLabel: string;
-  totalLabel: string;
-  datesPlaceholder: string;
-  closing: string;
-  dayLabel?: string;
+/** Get the quote page URL for the current locale */
+export function getQuotePageUrl(locale: string = 'es'): string {
+  return locale === 'en' ? '/en/quote' : '/presupuesto';
 }
 
-export function generateMailtoLink(strings: MailtoStrings, email: string = 'info@obliqproductions.com'): string {
+/** Serialize cart data for the quote form */
+export function getCartDataForQuote(): {
+  products: Array<{
+    name: string;
+    slug: string;
+    price: number;
+    days: number;
+    subtotal: number;
+    packName: string | null;
+  }>;
+  total: number;
+  discount: number;
+} {
   const cart = readCart();
+  const products = cart.map((item) => ({
+    name: item.productName,
+    slug: item.productSlug,
+    price: item.price,
+    days: item.days,
+    subtotal: getItemTotal(item.price, item.days),
+    packName: item.packName ?? null,
+  }));
 
-  let body = strings.greeting + '\n\n';
-  body += strings.productListHeader + '\n';
-  body += '─'.repeat(40) + '\n\n';
+  // Use the max days from any item for the global discount
+  const maxDays = cart.length > 0 ? Math.max(...cart.map((i) => i.days)) : 1;
 
-  // Group by pack
-  const packs = new Map<string, CartItem[]>();
-  const loose: CartItem[] = [];
-  cart.forEach((item) => {
-    if (item.packName) {
-      const list = packs.get(item.packName) || [];
-      list.push(item);
-      packs.set(item.packName, list);
-    } else {
-      loose.push(item);
-    }
-  });
-
-  function formatItem(item: CartItem): string {
-    const dailyDiscounted = getDiscountedDailyPrice(item.price, item.days);
-    const subtotal = getItemTotal(item.price, item.days);
-    const discount = getDiscountPercent(item.days);
-    const dLabel = item.days === 1 ? (strings.dayLabel || strings.daysLabel) : strings.daysLabel;
-    let text = `- ${item.productName}\n`;
-    text += `  ${strings.unitPriceLabel}: ${dailyDiscounted.toFixed(2)}€/${dLabel.toLowerCase()}\n`;
-    text += `  ${strings.subtotalLabel} (${item.days} ${dLabel.toLowerCase()}): ${subtotal.toFixed(2)}€`;
-    if (discount > 0) text += ` (${strings.discountLabel}: -${discount}%)`;
-    text += '\n';
-    return text;
-  }
-
-  // Packs first
-  packs.forEach((items, packName) => {
-    body += `📦 ${packName}\n`;
-    items.forEach((item) => { body += formatItem(item); });
-    body += '\n';
-  });
-
-  // Loose items
-  loose.forEach((item) => { body += formatItem(item) + '\n'; });
-
-  body += '─'.repeat(40) + '\n';
-  body += `${strings.totalLabel}: ${getTotal().toFixed(2)}€ + IVA\n`;
-  body += '\n' + strings.datesPlaceholder + '\n\n';
-  body += strings.closing;
-
-  // Truncate if too long for mailto
-  if (body.length > 1800) {
-    body = body.substring(0, 1800) + '\n\n[...]';
-  }
-
-  return `mailto:${email}?subject=${encodeURIComponent(strings.subject)}&body=${encodeURIComponent(body)}`;
+  return {
+    products,
+    total: getTotal(),
+    discount: getDiscountPercent(maxDays),
+  };
 }
 
 // ─── Section detection ───

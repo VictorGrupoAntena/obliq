@@ -27,15 +27,6 @@ const r = i18n.RENTAL;
     close: r.CART_CLOSE,
     empty: r.CART_EMPTY,
     title: r.CART_TITLE,
-    mailtoSubject: r.CART_MAILTO_SUBJECT,
-    mailtoGreeting: r.CART_MAILTO_GREETING,
-    mailtoProductList: r.CART_MAILTO_PRODUCT_LIST,
-    mailtoUnitPrice: r.CART_MAILTO_UNIT_PRICE,
-    mailtoSubtotal: r.CART_MAILTO_SUBTOTAL,
-    mailtoTotal: r.CART_MAILTO_TOTAL,
-    mailtoDiscount: r.CART_MAILTO_DISCOUNT,
-    mailtoDates: r.CART_MAILTO_DATES,
-    mailtoClosing: r.CART_MAILTO_CLOSING,
   })}
 >
   <!-- Trigger button -->
@@ -92,7 +83,7 @@ const r = i18n.RENTAL;
   import {
     getCart, getCount, getTotal,
     getItemTotal, getDiscountPercent, removeFromCart, removePackFromCart,
-    setItemDays, setPackDays, DAY_OPTIONS, generateMailtoLink
+    setItemDays, setPackDays, DAY_OPTIONS, getQuotePageUrl
   } from '@/lib/cart-store';
 
   const DISCOUNT_MAP: Record<number, number> = { 1: 0, 3: 10, 5: 15, 7: 20 };
@@ -244,22 +235,10 @@ const r = i18n.RENTAL;
         });
       }
 
-      // Update mailto
+      // Update CTA link to quote page
       if (ctaEl) {
-        const mailtoStrings = {
-          subject: strings.mailtoSubject,
-          greeting: strings.mailtoGreeting,
-          productListHeader: strings.mailtoProductList,
-          daysLabel: strings.days,
-          dayLabel: strings.day,
-          discountLabel: strings.mailtoDiscount,
-          unitPriceLabel: strings.mailtoUnitPrice,
-          subtotalLabel: strings.mailtoSubtotal,
-          totalLabel: strings.mailtoTotal,
-          datesPlaceholder: strings.mailtoDates,
-          closing: strings.mailtoClosing,
-        };
-        ctaEl.href = generateMailtoLink(mailtoStrings);
+        const locale = wrapper.dataset.locale || 'es';
+        ctaEl.href = getQuotePageUrl(locale);
       }
 
       updateVisibility();

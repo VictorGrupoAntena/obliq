@@ -31,15 +31,6 @@ const r = i18n.RENTAL;
     collapse: r.CART_COLLAPSE,
     expand: r.CART_EXPAND,
     empty: r.CART_EMPTY,
-    mailtoSubject: r.CART_MAILTO_SUBJECT,
-    mailtoGreeting: r.CART_MAILTO_GREETING,
-    mailtoProductList: r.CART_MAILTO_PRODUCT_LIST,
-    mailtoUnitPrice: r.CART_MAILTO_UNIT_PRICE,
-    mailtoSubtotal: r.CART_MAILTO_SUBTOTAL,
-    mailtoTotal: r.CART_MAILTO_TOTAL,
-    mailtoDiscount: r.CART_MAILTO_DISCOUNT,
-    mailtoDates: r.CART_MAILTO_DATES,
-    mailtoClosing: r.CART_MAILTO_CLOSING,
   })}
 >
   <!-- Collapsed bar -->
@@ -96,7 +87,7 @@ const r = i18n.RENTAL;
   import {
     getCart, getCount, getTotal, removeFromCart, clearCart,
     isRentalSection, getItemTotal, getDiscountPercent,
-    setItemDays, setPackDays, removePackFromCart, DAY_OPTIONS, generateMailtoLink
+    setItemDays, setPackDays, removePackFromCart, DAY_OPTIONS, getQuotePageUrl
   } from '@/lib/cart-store';
 
   const DISCOUNT_MAP: Record<number, number> = { 1: 0, 3: 10, 5: 15, 7: 20 };
@@ -129,25 +120,6 @@ const r = i18n.RENTAL;
         isExpanded = false;
         if (expanded) expanded.classList.add('hidden');
       }
-    }
-
-    function updateMailtoLinks() {
-      const mailtoStrings = {
-        subject: strings.mailtoSubject,
-        greeting: strings.mailtoGreeting,
-        productListHeader: strings.mailtoProductList,
-        daysLabel: strings.days,
-        dayLabel: strings.day,
-        discountLabel: strings.mailtoDiscount,
-        unitPriceLabel: strings.mailtoUnitPrice,
-        subtotalLabel: strings.mailtoSubtotal,
-        totalLabel: strings.mailtoTotal,
-        datesPlaceholder: strings.mailtoDates,
-        closing: strings.mailtoClosing,
-      };
-      const link = generateMailtoLink(mailtoStrings);
-      if (ctaLink) ctaLink.href = link;
-      if (ctaLinkExpanded) ctaLinkExpanded.href = link;
     }
 
     function buildDaysSelector(dataType: string, dataKey: string, currentDays: number): string {
@@ -284,7 +256,12 @@ const r = i18n.RENTAL;
         });
       }
 
-      updateMailtoLinks();
+      // Update CTA links to point to quote page
+      const locale = bar.dataset.locale || 'es';
+      const quoteUrl = getQuotePageUrl(locale);
+      if (ctaLink) ctaLink.href = quoteUrl;
+      if (ctaLinkExpanded) ctaLinkExpanded.href = quoteUrl;
+
       updateVisibility();
     }
 

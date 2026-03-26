@@ -1,0 +1,468 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import HeroSection from '@/components/sections/HeroSection.astro';
+import { t, localizedUrl } from '@/lib/i18n';
+
+const locale = 'en';
+const i18n = t(locale);
+const q = i18n.QUOTE;
+const r = i18n.RENTAL;
+---
+
+<BaseLayout title={q.TITLE} description={q.SUBTITLE} locale={locale} pageColor="black">
+  <!-- Hero -->
+  <HeroSection
+    tag={r.HERO_TAG}
+    title={q.TITLE}
+    subtitle={q.SUBTITLE}
+    height="min-h-[30vh] md:min-h-[40vh]"
+  />
+
+  <!-- Quote Form Section -->
+  <section class="bg-black py-16 md:py-24 px-4 md:px-section">
+    <!-- Empty state -->
+    <div id="quote-empty" class="hidden text-center max-w-lg mx-auto py-16">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto mb-6 text-dim" aria-hidden="true">
+        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+      </svg>
+      <h2 class="text-[24px] md:text-[32px] font-bold text-white mb-4">{q.EMPTY_TITLE}</h2>
+      <p class="text-dim text-[16px] mb-8">{q.EMPTY_MESSAGE}</p>
+      <a href={localizedUrl('/alquiler/', locale)} class="inline-flex items-center gap-3 bg-white text-black uppercase font-semibold tracking-[3px] h-[52px] px-8 text-[11px] hover:bg-surface-light transition-colors">
+        {q.EMPTY_CTA}
+      </a>
+    </div>
+
+    <!-- Form state -->
+    <div id="quote-form-wrapper" class="hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 max-w-6xl mx-auto">
+
+        <!-- Left: Cart Summary -->
+        <div>
+          <h2 class="text-[11px] font-semibold uppercase tracking-[3px] text-dim mb-6">{q.SUMMARY}</h2>
+          <div id="quote-product-list" class="space-y-3 mb-6">
+            <!-- Rendered by JS -->
+          </div>
+
+          <!-- Totals -->
+          <div class="border-t border-white/10 pt-4 space-y-2">
+            <div id="quote-discount-row" class="hidden flex items-center justify-between">
+              <span class="text-dim text-[13px]">{q.DISCOUNT_APPLIED}</span>
+              <span id="quote-discount-value" class="text-dim text-[13px]">-0%</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-white text-[14px] font-medium">{q.TOTAL}</span>
+              <div class="text-right">
+                <span id="quote-total" class="text-white text-[28px] font-black">0€</span>
+                <span class="text-dim text-[11px] ml-1">{q.VAT_NOTE}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Contact Form -->
+        <div>
+          <h2 class="text-[11px] font-semibold uppercase tracking-[3px] text-dim mb-6">{q.CONTACT}</h2>
+          <form id="quote-form" class="space-y-5" novalidate>
+            <!-- Honeypot -->
+            <div style="position:absolute;left:-9999px;" aria-hidden="true">
+              <input type="text" name="website" tabindex="-1" autocomplete="off" />
+            </div>
+
+            <div>
+              <label for="company" class="block text-[12px] font-semibold uppercase tracking-[2px] text-dim mb-2">{q.COMPANY} *</label>
+              <input
+                type="text"
+                id="company"
+                name="company"
+                required
+                minlength="2"
+                placeholder={q.COMPANY_PLACEHOLDER}
+                class="w-full border border-white/20 bg-transparent px-4 py-3 text-[16px] text-white placeholder:text-white/30 focus:border-white focus:outline-none transition-colors"
+              />
+            </div>
+
+            <div>
+              <label for="email" class="block text-[12px] font-semibold uppercase tracking-[2px] text-dim mb-2">{q.EMAIL} *</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                placeholder={q.EMAIL_PLACEHOLDER}
+                class="w-full border border-white/20 bg-transparent px-4 py-3 text-[16px] text-white placeholder:text-white/30 focus:border-white focus:outline-none transition-colors"
+              />
+            </div>
+
+            <div>
+              <label for="phone" class="block text-[12px] font-semibold uppercase tracking-[2px] text-dim mb-2">{q.PHONE} *</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                required
+                minlength="6"
+                pattern="[\d\s\+\-\.\(\)]{6,20}"
+                title="Enter a valid phone number (min. 6 digits)"
+                placeholder={q.PHONE_PLACEHOLDER}
+                class="w-full border border-white/20 bg-transparent px-4 py-3 text-[16px] text-white placeholder:text-white/30 focus:border-white focus:outline-none transition-colors"
+              />
+            </div>
+
+            <div>
+              <label for="startDate" class="block text-[12px] font-semibold uppercase tracking-[2px] text-dim mb-2">{q.START_DATE} *</label>
+              <input
+                type="date"
+                id="startDate"
+                name="startDate"
+                required
+                class="w-full border border-white/20 bg-transparent px-4 py-3 text-[16px] text-white focus:border-white focus:outline-none transition-colors [color-scheme:dark]"
+              />
+            </div>
+
+            <!-- Days info -->
+            <div class="flex gap-8">
+              <div>
+                <span class="block text-[12px] font-semibold uppercase tracking-[2px] text-dim mb-1">{q.DAYS_LABEL}</span>
+                <span id="quote-days" class="text-white text-[18px] font-bold">1</span>
+                <span class="text-dim text-[13px] ml-1" id="quote-days-label">{q.DAY}</span>
+              </div>
+              <div>
+                <span class="block text-[12px] font-semibold uppercase tracking-[2px] text-dim mb-1">{q.RETURN_DATE}</span>
+                <span id="quote-return-date" class="text-white text-[18px] font-bold">—</span>
+              </div>
+            </div>
+
+            <div>
+              <label for="notes" class="block text-[12px] font-semibold uppercase tracking-[2px] text-dim mb-2">{q.NOTES}</label>
+              <textarea
+                id="notes"
+                name="notes"
+                rows="3"
+                placeholder={q.NOTES_PLACEHOLDER}
+                class="w-full border border-white/20 bg-transparent px-4 py-3 text-[16px] text-white placeholder:text-white/30 focus:border-white focus:outline-none transition-colors resize-none"
+              ></textarea>
+            </div>
+
+            <p class="text-[12px] text-dim">
+              {q.PRIVACY_NOTE}{' '}
+              <a href={localizedUrl('/politica-privacidad/', locale)} class="underline hover:text-white transition-colors">{q.PRIVACY_LINK}</a>.
+            </p>
+
+            <button
+              type="submit"
+              id="quote-submit-btn"
+              class="w-full inline-flex items-center justify-center gap-3 bg-white text-black uppercase font-semibold tracking-[3px] h-[52px] px-8 text-[11px] hover:bg-surface-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span id="quote-submit-text">{q.SUBMIT}</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success state -->
+    <div id="quote-success" class="hidden text-center max-w-lg mx-auto py-16">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto mb-6 text-white" aria-hidden="true">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <h2 class="text-[24px] md:text-[32px] font-bold text-white mb-4">{q.SUCCESS_TITLE}</h2>
+      <p class="text-dim text-[16px] mb-8">{q.SUCCESS_MESSAGE}</p>
+      <a href={localizedUrl('/alquiler/', locale)} class="inline-flex items-center gap-3 bg-white text-black uppercase font-semibold tracking-[3px] h-[52px] px-8 text-[11px] hover:bg-surface-light transition-colors">
+        {q.SUCCESS_BACK}
+      </a>
+    </div>
+
+    <!-- Error message -->
+    <div id="quote-error" class="hidden max-w-6xl mx-auto mt-4">
+      <p class="text-red-400 text-[14px] text-center">{q.ERROR}</p>
+    </div>
+
+    <!-- Simulated mode banner -->
+    <div id="quote-simulated" class="hidden max-w-6xl mx-auto mt-4">
+      <p class="text-yellow-400/80 text-[13px] text-center border border-yellow-400/30 px-4 py-2">{q.SIMULATED}</p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import {
+    getCart, getCount, getTotal, getItemTotal, getDiscountPercent,
+    clearCart, getCartDataForQuote, setItemDays, setPackDays, DAY_OPTIONS,
+    removeFromCart, removePackFromCart
+  } from '@/lib/cart-store';
+
+  const DISCOUNT_MAP: Record<number, number> = { 1: 0, 3: 10, 5: 15, 7: 20 };
+
+  function initQuotePage() {
+    const emptyEl = document.getElementById('quote-empty');
+    const formWrapper = document.getElementById('quote-form-wrapper');
+    const successEl = document.getElementById('quote-success');
+    const errorEl = document.getElementById('quote-error');
+    const simulatedEl = document.getElementById('quote-simulated');
+    const form = document.getElementById('quote-form') as HTMLFormElement | null;
+    const productList = document.getElementById('quote-product-list');
+    const totalEl = document.getElementById('quote-total');
+    const discountRow = document.getElementById('quote-discount-row');
+    const discountValue = document.getElementById('quote-discount-value');
+    const daysEl = document.getElementById('quote-days');
+    const daysLabelEl = document.getElementById('quote-days-label');
+    const returnDateEl = document.getElementById('quote-return-date');
+    const submitBtn = document.getElementById('quote-submit-btn') as HTMLButtonElement | null;
+    const submitText = document.getElementById('quote-submit-text');
+    const startDateInput = document.getElementById('startDate') as HTMLInputElement | null;
+
+    if (!emptyEl || !formWrapper || !successEl || !form) return;
+
+    if (getCount() === 0) {
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+
+    formWrapper.classList.remove('hidden');
+
+    const isProduction = window.location.hostname === 'obliqproductions.com' || window.location.hostname === 'www.obliqproductions.com';
+    if (!isProduction && simulatedEl) {
+      simulatedEl.classList.remove('hidden');
+    }
+
+    if (startDateInput) {
+      const today = new Date().toISOString().split('T')[0];
+      startDateInput.min = today;
+      startDateInput.value = today;
+    }
+
+    // Anti-bot: record page load time and generate token
+    const pageLoadTime = Math.floor(Date.now() / 1000);
+    const secret = 'obliq_quote_' + new Date().toISOString().split('T')[0];
+    async function generateToken(timestamp: number): Promise<string> {
+      const data = new TextEncoder().encode(secret + timestamp);
+      const hash = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function buildDaysSelector(dataType: string, dataKey: string, currentDays: number): string {
+      let html = '<div style="display:flex;gap:4px;margin-top:6px;">';
+      DAY_OPTIONS.forEach((d) => {
+        const discPct = DISCOUNT_MAP[d] || 0;
+        const label = d + 'd' + (discPct > 0 ? ' -' + discPct + '%' : '');
+        const ariaLabel = d + ' ' + (d === 1 ? 'day' : 'days') + (discPct > 0 ? ', ' + discPct + '% discount' : '');
+        const active = d === currentDays;
+        const style = active
+          ? 'background:#fff;color:#000;font-size:10px;font-weight:700;padding:4px 8px;min-height:28px;border:none;cursor:default;'
+          : 'background:transparent;color:#aaa;font-size:10px;font-weight:500;padding:4px 8px;min-height:28px;border:1px solid rgba(255,255,255,0.3);cursor:pointer;';
+        html += '<button type="button" class="quote-day-btn" style="' + style + '" aria-label="' + ariaLabel + '"' + (active ? ' aria-current="true"' : '') + ' data-day-type="' + dataType + '" data-day-key="' + dataKey + '" data-days="' + d + '">' + label + '</button>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function updateReturnDate() {
+      if (!startDateInput || !returnDateEl) return;
+      const cart = getCart();
+      const maxDays = cart.length > 0 ? Math.max(...cart.map((i) => i.days)) : 1;
+      const start = startDateInput.value;
+      if (!start) { returnDateEl.textContent = '—'; return; }
+      const startDate = new Date(start);
+      startDate.setDate(startDate.getDate() + maxDays);
+      returnDateEl.textContent = startDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    startDateInput?.addEventListener('change', updateReturnDate);
+
+    function render() {
+      const cart = getCart();
+
+      if (cart.length === 0) {
+        formWrapper?.classList.add('hidden');
+        emptyEl?.classList.remove('hidden');
+        return;
+      }
+
+      const maxDays = Math.max(...cart.map((i) => i.days));
+      if (daysEl) daysEl.textContent = String(maxDays);
+      if (daysLabelEl) daysLabelEl.textContent = maxDays === 1 ? 'day' : 'days';
+
+      if (productList) {
+        productList.innerHTML = '';
+
+        const packs = new Map<string, typeof cart>();
+        const loose: typeof cart = [];
+        cart.forEach((item) => {
+          if (item.packName) {
+            const list = packs.get(item.packName) || [];
+            list.push(item);
+            packs.set(item.packName, list);
+          } else {
+            loose.push(item);
+          }
+        });
+
+        packs.forEach((items, packName) => {
+          const packDays = items[0].days;
+          const packSubtotal = items.reduce((s, i) => s + getItemTotal(i.price, i.days), 0);
+          const row = document.createElement('div');
+          row.className = 'bg-surface-elevated border border-white/10 p-4';
+          row.innerHTML =
+            '<div class="flex items-center gap-4">' +
+              '<div class="w-12 h-12 bg-white/10 flex items-center justify-center shrink-0 text-[20px]">📦</div>' +
+              '<div class="flex-1 min-w-0">' +
+                '<p class="text-white text-[14px] font-medium">' + packName + '</p>' +
+                '<p class="text-dim text-[11px]">' + items.map((i) => i.productName).join(', ') + '</p>' +
+              '</div>' +
+              '<div class="text-right shrink-0">' +
+                '<p class="text-white text-[18px] font-bold">' + packSubtotal.toFixed(0) + '€</p>' +
+              '</div>' +
+              '<button type="button" class="quote-remove-pack text-dim hover:text-white transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0" data-pack="' + packName + '" aria-label="Remove ' + packName + '">' +
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+              '</button>' +
+            '</div>' +
+            '<div class="mt-2 pl-16">' + buildDaysSelector('pack', packName, packDays) + '</div>';
+          productList.appendChild(row);
+        });
+
+        loose.forEach((item) => {
+          const subtotal = getItemTotal(item.price, item.days);
+          const discount = getDiscountPercent(item.days);
+          const row = document.createElement('div');
+          row.className = 'bg-surface-elevated border border-white/10 p-4';
+          row.innerHTML =
+            '<div class="flex items-center gap-4">' +
+              '<img src="' + item.image + '" alt="' + item.productName + '" class="w-12 h-12 object-contain bg-white p-1 shrink-0" loading="lazy" />' +
+              '<div class="flex-1 min-w-0">' +
+                '<p class="text-white text-[14px] font-medium">' + item.productName + '</p>' +
+                '<p class="text-dim text-[11px]">' + item.days + 'd × ' + item.price.toFixed(0) + '€' +
+                (discount > 0 ? ' <span class="text-dim">(-' + discount + '%)</span>' : '') +
+                '</p>' +
+              '</div>' +
+              '<div class="text-right shrink-0">' +
+                '<p class="text-white text-[18px] font-bold">' + subtotal.toFixed(0) + '€</p>' +
+              '</div>' +
+              '<button type="button" class="quote-remove-item text-dim hover:text-white transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0" data-slug="' + item.productSlug + '" aria-label="Remove ' + item.productName + '">' +
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+              '</button>' +
+            '</div>' +
+            '<div class="mt-2 pl-16">' + buildDaysSelector('item', item.productSlug, item.days) + '</div>';
+          productList.appendChild(row);
+        });
+
+        // Bind remove buttons
+        productList.querySelectorAll<HTMLButtonElement>('.quote-remove-pack').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const pack = btn.dataset.pack;
+            if (pack) removePackFromCart(pack);
+          });
+        });
+        productList.querySelectorAll<HTMLButtonElement>('.quote-remove-item').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const slug = btn.dataset.slug;
+            if (slug) removeFromCart(slug);
+          });
+        });
+
+        productList.querySelectorAll<HTMLButtonElement>('.quote-day-btn').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const type = btn.dataset.dayType;
+            const key = btn.dataset.dayKey;
+            const days = parseInt(btn.dataset.days || '1', 10);
+            if (!key) return;
+            if (type === 'pack') setPackDays(key, days);
+            else setItemDays(key, days);
+          });
+        });
+      }
+
+      const globalDiscount = getDiscountPercent(maxDays);
+      if (discountRow && discountValue) {
+        if (globalDiscount > 0) {
+          discountRow.classList.remove('hidden');
+          discountValue.textContent = '-' + globalDiscount + '%';
+        } else {
+          discountRow.classList.add('hidden');
+        }
+      }
+
+      if (totalEl) totalEl.textContent = getTotal().toFixed(0) + '€';
+      updateReturnDate();
+    }
+
+    window.addEventListener('cart:updated', render);
+    render();
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!form.checkValidity()) { form.reportValidity(); return; }
+
+      if (submitBtn) submitBtn.disabled = true;
+      if (submitText) submitText.textContent = submitText.dataset.submitting || 'SENDING...';
+      if (errorEl) errorEl.classList.add('hidden');
+
+      const formData = new FormData(form);
+      const cartData = getCartDataForQuote();
+      const cart = getCart();
+      const maxDays = cart.length > 0 ? Math.max(...cart.map((i) => i.days)) : 1;
+
+      const token = await generateToken(pageLoadTime);
+
+      const payload = {
+        products: cartData.products,
+        company: formData.get('company'),
+        email: formData.get('email'),
+        phone: formData.get('phone'),
+        startDate: formData.get('startDate'),
+        days: maxDays,
+        notes: formData.get('notes') || '',
+        total: cartData.total,
+        discount: cartData.discount,
+        lang: 'en',
+        website: formData.get('website') || '',
+        _token: token,
+        _t: pageLoadTime,
+      };
+
+      if (!isProduction) {
+        console.log('[Quote Form] Simulated submission:', payload);
+        clearCart();
+        formWrapper.classList.add('hidden');
+        successEl.classList.remove('hidden');
+        if (simulatedEl) simulatedEl.classList.add('hidden');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/send-quote.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          clearCart();
+          formWrapper.classList.add('hidden');
+          successEl.classList.remove('hidden');
+        } else {
+          if (errorEl) errorEl.classList.remove('hidden');
+          if (submitBtn) submitBtn.disabled = false;
+          if (submitText) submitText.textContent = submitText.dataset.original || 'REQUEST QUOTE';
+        }
+      } catch {
+        if (errorEl) errorEl.classList.remove('hidden');
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitText) submitText.textContent = submitText.dataset.original || 'REQUEST QUOTE';
+      }
+    });
+
+    if (submitText) {
+      submitText.dataset.original = submitText.textContent || '';
+      submitText.dataset.submitting = 'SENDING...';
+    }
+  }
+
+  initQuotePage();
+  document.addEventListener('astro:after-swap', initQuotePage);
+</script>
