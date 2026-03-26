@@ -1,6 +1,6 @@
 # Obliq Productions — Project Memory
 
-## Fase actual: REDISEÑO — Sprint 2.5 (bugs + polish) completado
+## Fase actual: REDISEÑO — Sprint Quote Form completado, en revisión cliente
 
 ### Sprint 0 (Fundamentos) ✅ 2-Mar-2026
 - Rama `redesign` — i18n invertido, tokens, atoms, organisms, sections
@@ -67,34 +67,66 @@
 - `--spacing-X: Npx` en `@theme` → genera utility `py-X`, NO `py-spacing-X`
 - CSS `translate` y `transform` son propiedades SEPARADAS que se apilan — no mezclar clases Tailwind `translate-*` con JS `style.transform`
 
-### Backlog Sprint 3+ (próximas sesiones)
+### Sprint Cart+UX ✅ 24-Mar-2026
+- Carrito interactivo con selector de días por producto y pack
+- Descuentos multidía (1d=0%, 3d=10%, 5d=15%, 7d=20%)
+- CartBottomBar + CartHeaderButton con desplegables
+- Commit: `506525e`
 
-**PRIORIDAD ALTA — Revisión visual página por página:**
-1. Auditoría visual completa: recorrer cada página verificando espaciados, elementos, responsividad
-2. Imágenes reales: subir fotos producto/servicio a WP Media Library
-3. Deploy redesign a producción (rama redesign → build → httpdocs)
-4. Redirecciones 301 de URLs antiguas (EN default → ES default)
+### Sprint Quote Form ✅ 26-Mar-2026
+- **Formulario presupuesto:** Página dedicada `/presupuesto` (ES) y `/en/quote` (EN)
+- **Backend PHP:** `public/api/send-quote.php` — email HTML, validación, anti-spam
+- **Anti-spam (4 capas):** honeypot, JS token SHA-256, tiempo mínimo 3s, rate limiting 5/10min
+- **Validación:** email (filter_var), teléfono (6-15 dígitos), fecha (no pasada)
+- **UX:** 2 columnas desktop (resumen + formulario), stack móvil, selector días por producto, eliminar productos, estados vacío/form/loading/success/error
+- **Cart store:** eliminado `generateMailtoLink()`, añadidos `getQuotePageUrl()` y `getCartDataForQuote()`
+- **i18n:** 35 claves QUOTE.* en es.json y en.json
+- **Detección entorno:** si no es obliqproductions.com → modo simulado (banner amarillo)
+- **Docs reorganizados:** `docs/specs/`, `docs/audits/`, `docs/guides/`, `docs/sprints/`
+- **Limpieza:** 39 duplicados " 2" eliminados, legacy pages/components eliminados
+- **Commit:** `b68741d`
+- **Vercel preview:** Desplegado en proyecto existente `grupo-antena/obliq`, URL de producción activa
+- **Estado:** En revisión por cliente, esperando feedback
 
-**PRIORIDAD ALTA — Funcionalidad:**
-5. Webhook auto-rebuild: WP publish → GitHub Actions → build → SFTP a Plesk
-6. Formulario contacto: integrar Resend email
-7. Formulario alquiler: solicitud presupuesto con productos pre-rellenados
+#### Archivos clave Sprint Quote Form
+| Archivo | Función |
+|---------|---------|
+| `src/pages/presupuesto.astro` | Página formulario ES |
+| `src/pages/en/quote.astro` | Página formulario EN |
+| `public/api/send-quote.php` | Backend PHP: validación + email HTML |
+| `src/lib/cart-store.ts` | Store carrito (sin mailto, con helpers quote) |
+| `src/components/organisms/CartBottomBar.astro` | Barra carrito inferior |
+| `src/components/organisms/CartHeaderButton.astro` | Botón carrito header |
+| `docs/specs/2026-03-26-quote-form.md` | Spec formal completa |
+
+### Backlog (próximas sesiones)
+
+**PENDIENTE FEEDBACK CLIENTE (Quote Form):**
+- Validar flujo completo de presupuesto con el cliente
+- Ajustes de diseño/UX según feedback
+- Test envío email real en Plesk (PHP mail())
+
+**PRIORIDAD ALTA:**
+1. Auditoría visual página por página (espaciados, responsividad)
+2. Formulario contacto: integrar envío email (PHP en Plesk, misma solución que quote)
+3. Imágenes reales: subir fotos producto/servicio a WP Media Library
+4. Deploy redesign a producción Plesk (rama redesign → build → httpdocs)
+5. Redirecciones 301 de URLs antiguas (EN default → ES default)
 
 **PRIORIDAD MEDIA:**
-8. Portfolio: URLs Vimeo reales + thumbnails (cliente proporciona)
-9. WhatsApp mensaje contextual según página
-10. Carrito de presupuesto alquiler (lista productos + fechas)
+6. Webhook auto-rebuild: WP publish → GitHub Actions → build → SFTP a Plesk
+7. Portfolio: URLs Vimeo reales + thumbnails (cliente proporciona)
+8. WhatsApp mensaje contextual según página
 
 **PRIORIDAD BAJA:**
-11. Schema.org VideoObject en portfolio (cuando haya URLs Vimeo reales)
-12. Optimizar GSAP deduplication
-13. Migrar logo.gif → WebP/Lottie
-14. DNS/MX migration planning
-15. i18n admin WP (Polylang si cliente lo necesita — ahora campos `_es/_en`)
+9. Schema.org VideoObject en portfolio (cuando haya URLs Vimeo reales)
+10. Optimizar GSAP deduplication
+11. Migrar logo.gif → WebP/Lottie
+12. DNS/MX migration planning
+13. i18n admin WP (Polylang si cliente lo necesita)
 
 **DEUDA TÉCNICA:**
 - Merge pendiente: plesk-migration → main → seguir con redesign
-- `public/favicon 2.svg` residuo — eliminar
 
 ## Project Overview
 
@@ -112,9 +144,16 @@ Estos documentos contienen las decisiones de negocio y el contexto que no se pue
 
 | Documento | Ubicación | Contenido |
 |-----------|-----------|-----------|
-| Memoria técnica v6 | `docs/memoria-tecnica-v6.md` | Visión completa del rediseño: arquitectura, servicios, alquiler, SEO, fases |
-| Análisis competitivo rental | `docs/analisis-competitivo-rental.md` | 5 rental houses Valencia analizados, oportunidades de mercado |
-| Informe estado actual | `docs/informe-estado-actual.md` | Auditoría completa de la web actual (SEO, técnica, contenido, seguridad) |
+| Memoria técnica v6 | `docs/specs/memoria-tecnica-v6.md` | Visión completa del rediseño |
+| Design Spec | `docs/specs/design-spec.md` | Tokens, componentes, estructura |
+| Quote Form Spec | `docs/specs/2026-03-26-quote-form.md` | Formulario presupuesto alquiler |
+| Análisis competitivo | `docs/audits/analisis-competitivo-rental.md` | 5 rental houses analizados |
+| Informe estado actual | `docs/audits/informe-estado-actual.md` | Auditoría web actual |
+| UX/UI Review | `docs/audits/ux-ui-review.md` | Auditoría UX/UI con hallazgos WCAG |
+| Animation Spec | `docs/guides/animation-spec.md` | 17 animaciones GSAP catalogadas |
+| Claude CLI Guide | `docs/guides/prompt-claude-cli.md` | Guía de uso Claude CLI |
+| Cart+UX Briefing | `docs/sprints/briefing-cart-ux.md` | Briefing carrito + UX |
+| Cart+UX Plan | `docs/sprints/plan-cart-ux.md` | Plan implementación M1-M9 |
 
 ## Decisiones estratégicas ya tomadas
 
@@ -202,15 +241,8 @@ Estas decisiones son **zona roja** — no se cambian sin consultar al responsabl
 
 ## Documentación de diseño (2-Mar-2026)
 
-Análisis completo del diseño en Pencil (`obliq-design-system.pen`) completado:
-
-| Documento | Ubicación | Contenido |
-|-----------|-----------|-----------|
-| Design Spec | `docs/design-spec.md` | Tokens, componentes, estructura de 10 páginas, assets |
-| Animation Spec | `docs/animation-spec.md` | 17 animaciones catalogadas del código actual |
-| Memoria técnica v6 | `docs/memoria-tecnica-v6.md` | Visión completa del rediseño |
-| Análisis competitivo | `docs/analisis-competitivo-rental.md` | 5 rental houses analizados |
-| Informe estado actual | `docs/informe-estado-actual.md` | Auditoría web actual |
+Análisis completo del diseño en Pencil (`obliq-design-system.pen`) completado.
+Toda la documentación está reorganizada en `docs/` (specs, audits, guides, sprints).
 
 ### Componentes del Design System (22 únicos)
 - **Navigation:** Header, Footer, Breadcrumbs, Marquee/Large, Marquee/Small, WhatsApp FAB/Expanded
@@ -245,11 +277,11 @@ Análisis completo del diseño en Pencil (`obliq-design-system.pen`) completado:
 ## Notas técnicas
 - Git repo is inside `obliq/obliq/` (not the parent `obliq/`)
 - **Branch `main`:** web actual (Vercel SSR, EN default, Google Sheets + Vimeo API v2)
-- **Branch `redesign`:** nueva web (SSG, ES default, tokens, i18n invertido)
-- Stack main: Astro 5.x + @astrojs/vercel + Tailwind 4 + GSAP + Resend
-- Stack redesign: Astro 5.x + @astrojs/sitemap + Tailwind 4 + GSAP (sin Vercel adapter)
-- **Hosting:** Plesk ✅ (migración completada, LIVE)
-- Vulnerabilidades XSS en templates de email y mensajes de error — pendiente corregir
+- **Branch `redesign`:** nueva web (SSG, ES default, tokens, i18n invertido, quote form, limpia)
+- Stack redesign: Astro 5.x + @astrojs/sitemap + Tailwind 4 + GSAP + PHP (email)
+- **Hosting producción:** Plesk ✅ (migración completada, LIVE con main)
+- **Preview cliente:** Vercel `grupo-antena/obliq` — deploy prod desde redesign branch
+- **Vercel Deployment Protection:** activada — necesita desactivarse en dashboard para acceso público
 - about.mp4 (20.8 MB) y logo.gif (813 KB) — pendiente optimizar
 - GSAP (~60KB) se carga en cada página sin deduplicación — pendiente optimizar
 - Vimeo API v2 deprecada — migración a v3 obligatoria
