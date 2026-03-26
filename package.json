@@ -2,6 +2,7 @@
   "name": "obliq",
   "type": "module",
   "version": "0.1.0",
+  "packageManager": "pnpm@10.20.0",
   "scripts": {
     "dev": "astro dev",
     "dev:host": "astro dev --host",
