@@ -1,0 +1,14 @@
+---
+import ContactComponent from "@/components/Contact.astro";
+import Layout from "@/layouts/Layout.astro";
+import HeroPage from "@/components/HeroPage.astro";
+import { getI18N } from "@/a18n/index.ts";
+
+const { currentLocale } = Astro;
+const t = getI18N({ currentLocale: currentLocale ?? "es" });
+---
+
+<Layout title={t.CONTACT.TITLE}>
+  <HeroPage title={t.CONTACT.HEADING} />
+  <ContactComponent />
+</Layout>

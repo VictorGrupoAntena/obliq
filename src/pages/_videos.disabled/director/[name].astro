@@ -1,0 +1,14 @@
+---
+import VideoLayout from "@/layouts/Video.astro";
+import { getFirstVideoByDirector } from "@/services/videos";
+import VideoItem from "@/components/VideoItem.astro";
+
+const { name } = Astro.params;
+const video = await getFirstVideoByDirector(name as string);
+
+if (!video) return Astro.redirect('/404');
+---
+
+<VideoLayout title={video.title}>
+  <VideoItem video={video} />
+</VideoLayout>

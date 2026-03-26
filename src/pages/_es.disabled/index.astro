@@ -1,0 +1,133 @@
+---
+import Hero from "@/components/Hero.astro";
+import Layout from "@/layouts/Layout.astro";
+import Marquee from "@/components/organisms/Marqee.astro";
+import Videos from "@/components/Videos.astro";
+import Cta from "@/components/organisms/Cta.astro";
+import Cursor from "@/components/organisms/Cursor.astro";
+import { getI18N } from "@/a18n/index.ts";
+
+const { currentLocale } = Astro;
+const t = getI18N({ currentLocale: currentLocale ?? "es" });
+---
+
+<Layout title={t.HOME.TITLE}>
+  <Hero />
+  <Marquee texts={t.HOME.MARQUEE} />
+  <Videos />
+  <Cta title={t.HOME.CTA} />
+  <Cursor />
+</Layout>
+
+<script>
+  import gsap from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  gsap.registerPlugin(ScrollTrigger);
+
+  function initVideoAnimations() {
+    const videoItems = document.querySelectorAll(".video-item");
+    const videoSection = document.getElementById("videos");
+
+    gsap.from(videoItems, {
+      opacity: 0,
+      y: 30,
+      duration: 0.2,
+      ease: "power2.out",
+      stagger: 0.1,
+      scrollTrigger: {
+        trigger: videoSection,
+        start: "-=300 center",
+        end: "bottom center",
+        toggleActions: "play reverse play reverse",
+        scrub: 0.5,
+      },
+    });
+  }
+
+  function initCursorBehavior() {
+    const cursor = document.getElementById("customCursor")!;
+    const targets = document.querySelectorAll(".custom-cursor-target");
+    const CURSOR_HALF = 75 / 2;
+
+    let pendingX = 0;
+    let pendingY = 0;
+    let rafId: number | null = null;
+    let hideTimeout: number | null = null;
+    let showTimeout: number | null = null;
+
+    function updatePosition() {
+      gsap.set(cursor, {
+        x: pendingX - CURSOR_HALF,
+        y: pendingY - CURSOR_HALF,
+      });
+      rafId = null;
+    }
+
+    function onMove(e: Event) {
+      const mouseEvent = e as MouseEvent;
+      pendingX = mouseEvent.clientX;
+      pendingY = mouseEvent.clientY;
+      if (!rafId) rafId = requestAnimationFrame(updatePosition);
+    }
+
+    function animateShowCursor() {
+      gsap.killTweensOf(cursor);
+      gsap.to(cursor, {
+        scale: 1,
+        duration: 0.2,
+        ease: "power3.out",
+      });
+    }
+
+    function animateHideCursor() {
+      gsap.killTweensOf(cursor);
+      gsap.to(cursor, {
+        scale: 0,
+        duration: 0.2,
+        ease: "power3.inOut",
+      });
+    }
+
+    function onPointerEnter() {
+      if (hideTimeout) {
+        clearTimeout(hideTimeout);
+        hideTimeout = null;
+      }
+
+      showTimeout = window.setTimeout(() => {
+        animateShowCursor();
+        showTimeout = null;
+      }, 100); // Delay en mostrar el cursor
+    }
+
+    function onPointerLeave() {
+      if (showTimeout) {
+        clearTimeout(showTimeout);
+        showTimeout = null;
+      }
+
+      if (hideTimeout) return;
+
+      hideTimeout = window.setTimeout(() => {
+        animateHideCursor();
+        hideTimeout = null;
+      }, 50);
+    }
+
+    document.addEventListener("pointermove", onMove);
+
+    targets.forEach((target) => {
+      (target as HTMLElement).style.cursor = "none";
+      target.addEventListener("pointerenter", onPointerEnter);
+      target.addEventListener("pointerleave", onPointerLeave);
+    });
+  }
+
+  initVideoAnimations();
+  initCursorBehavior();
+
+  document.addEventListener("astro:after-swap", () => {
+    initVideoAnimations();
+    initCursorBehavior();
+  });
+</script>

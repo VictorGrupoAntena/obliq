@@ -1,0 +1,192 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Marquee from "@/components/organisms/Marqee.astro";
+import Cta from "@/components/organisms/Cta.astro";
+import Directors from "@/components/Directors.astro";
+import AboutSection from "@/components/About.astro";
+import { brands } from "@/data/brands.json";
+
+import { getI18N } from "@/a18n/index.ts";
+
+const { currentLocale } = Astro;
+const t = getI18N({ currentLocale: currentLocale ?? "es" });
+---
+
+<Layout title={t.ABOUT.TITLE} pageColor="white">
+  <AboutSection />
+  <Marquee texts={t.ABOUT.MARQUEE} />
+  <Directors />
+  <Marquee small texts={brands} />
+  <Cta title={t.ABOUT.CTA} />
+</Layout>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger, SplitText } from "gsap/all";
+  gsap.registerPlugin(ScrollTrigger, SplitText);
+
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+  const aboutText = document.getElementById("about-text");
+
+  let split;
+  SplitText.create(aboutText, {
+    type: "words,lines",
+    linesClass: "line",
+    autoSplit: true,
+    mask: "lines",
+    onSplit: (self) => {
+      split = gsap.from(self.lines, {
+        duration: 1,
+        yPercent: 100,
+        opacity: 0,
+        stagger: 0.2,
+        delay: 1,
+        ease: "expo.out",
+      });
+      return split;
+    },
+  });
+
+  const video = document.getElementById("about-video");
+  const videoSection = document.getElementById("about-video-section");
+  const videoMask1 = document.getElementById("video-mask-1");
+  const videoMask2 = document.getElementById("video-mask-2");
+
+  gsap.set(video, {
+    width: "40dvw",
+    height: "40dvh",
+    transformOrigin: "center center",
+  });
+
+  const tlVideoZoom = gsap
+    .timeline()
+    .to(video, {
+      width: "100dvw",
+      height: "100dvh",
+      duration: 8,
+    })
+    .to(video, {
+      width: "100dvw",
+      height: "100dvh",
+      duration: 5,
+    })
+    .to(videoMask1, {
+      height: "50%",
+      duration: 5,
+    })
+    .to(
+      videoMask2,
+      {
+        height: "50%",
+        duration: 5,
+      },
+      "<"
+    );
+
+  ScrollTrigger.create({
+    animation: tlVideoZoom,
+    trigger: videoSection,
+    start: "top 75%",
+    end: "bottom top",
+    scrub: 0.5,
+  });
+
+  ScrollTrigger.create({
+    trigger: videoSection,
+    start: "top top",
+    end: "bottom top",
+    pin: true,
+    pinSpacing: true,
+  });
+
+  const aboutContentSection = document.getElementById("about-content-section");
+  const aboutContentImages = document.querySelectorAll(".about-content-image");
+
+  const masterTl = gsap.timeline();
+
+  aboutContentImages.forEach((image, index) => {
+    const singleTl = gsap.timeline();
+
+    singleTl
+      .from(image, {
+        y: !isMobile ? 300 : 0,
+        duration: !isMobile ? 1 : 2,
+      })
+      .to(
+        image,
+        {
+          scaleY: !isMobile ? 2 : 1,
+          skewX: -20,
+          y: !isMobile ? -100 : 0,
+          duration: !isMobile ? 1 : 2,
+        },
+        "<"
+      )
+      .to(image, {
+        y: !isMobile ? -500 : 0,
+        duration: !isMobile ? 1 : 2,
+      });
+
+    masterTl.add(singleTl, index * 0.6);
+  });
+
+  ScrollTrigger.create({
+    animation: masterTl,
+    trigger: aboutContentSection,
+    start: "top center",
+    end: "bottom center",
+    scrub: true,
+  });
+
+  const directorNames = document.querySelectorAll(".director-name");
+  const directorNameHidden = document.querySelectorAll(".director-name-hidden");
+  const directorsSection = document.getElementById("directors-section");
+  const directorNameLine = document.querySelectorAll(".director-name-line");
+
+  const splitDirectors = Array.from(directorNames).map((name) =>
+    SplitText.create(name, {
+      type: "chars",
+      charsClass: "director-letter",
+    })
+  );
+
+  SplitText.create(directorNameHidden, {
+    type: "chars",
+    charsClass: "director-letter-hidden",
+  });
+
+  const directorTl = gsap.timeline({
+    defaults: { ease: "power2.out" },
+  });
+
+  splitDirectors.forEach((split, index) => {
+    directorTl.from(
+      split.chars,
+      {
+        opacity: 0,
+        duration: 0.05,
+        stagger: 0.05,
+      },
+      index === 0 ? 0 : ">0.5"
+    );
+
+    directorTl.from(
+      directorNameLine[index],
+      {
+        scaleX: 0,
+        transformOrigin: "left center",
+        duration: 0.4,
+      },
+      ">-0.2"
+    );
+  });
+
+  ScrollTrigger.create({
+    animation: directorTl,
+    trigger: directorsSection,
+    start: "top center",
+    end: "bottom center",
+    scrub: true,
+  });
+</script>
