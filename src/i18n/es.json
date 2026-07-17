@@ -219,13 +219,11 @@
     "HERO_TITLE": "NUESTRO TRABAJO",
     "HERO_SUBTITLE": "Una selección de proyectos que hablan por sí mismos.",
     "FILTER_ALL": "Todos",
-    "FILTER_SPOTS": "Spots",
-    "FILTER_CORPORATE": "Corporativo",
-    "FILTER_MUSIC_VIDEOS": "Videoclips",
-    "FILTER_STREAMING": "Streaming",
-    "FILTER_EVENTS": "Eventos",
     "LOAD_MORE": "CARGAR MÁS",
-    "VIEW_PROJECT": "VER PROYECTO"
+    "VIEW_PROJECT": "VER PROYECTO",
+    "PLAY_VIDEO": "Reproducir vídeo",
+    "LIGHTBOX_LABEL": "Reproductor de vídeo",
+    "LIGHTBOX_CLOSE": "Cerrar vídeo"
   },
   "ABOUT_PAGE": {
     "TITLE": "Sobre nosotros — Obliq Productions",

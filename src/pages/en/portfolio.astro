@@ -2,22 +2,24 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HeroSection from '@/components/sections/HeroSection.astro';
 import CustomCursor from '@/components/organisms/CustomCursor.astro';
+import VideoLightbox from '@/components/organisms/VideoLightbox.astro';
 import { t } from '@/lib/i18n';
-import { getPortfolioProjectsAsync } from '@/data/portfolio';
+import { getPortfolioProjectsAsync, getPortfolioCategoriesAsync } from '@/data/portfolio';
+import { getVimeoEmbedUrl } from '@/lib/vimeo';
 
 const locale = 'en';
 const i18n = t(locale);
 const p = i18n.PORTFOLIO_PAGE;
 
 const projects = await getPortfolioProjectsAsync();
+const categories = await getPortfolioCategoriesAsync();
 
+// Filters derived from real WP categories — a new category in WordPress
+// shows up here on its own, no code changes. "All" always first.
+// Category names come from WP terms and are shared across locales.
 const filters = [
   { key: 'all', label: p.FILTER_ALL },
-  { key: 'Spots', label: p.FILTER_SPOTS },
-  { key: 'Corporate', label: p.FILTER_CORPORATE },
-  { key: 'Music Videos', label: p.FILTER_MUSIC_VIDEOS },
-  { key: 'Streaming', label: p.FILTER_STREAMING },
-  { key: 'Events', label: p.FILTER_EVENTS },
+  ...categories.map((category) => ({ key: category, label: category })),
 ];
 ---
 
@@ -47,19 +49,46 @@ const filters = [
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="portfolio-grid">
-      {projects.map((project) => (
-        <div class="portfolio-item custom-cursor-target group relative overflow-hidden aspect-[4/3] cursor-pointer" data-category={project.category}>
-          <img src={project.image} alt={project.title.en} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-          <div class="absolute bottom-0 left-0 right-0 p-6">
-            <p class="text-[12px] font-medium uppercase tracking-[2px] text-muted mb-2">{project.category}</p>
-            <h3 class="text-[20px] font-bold italic text-white">{project.title.en}</h3>
-          </div>
-        </div>
-      ))}
+      {projects.map((project) => {
+        const embedUrl = project.vimeoUrl ? getVimeoEmbedUrl(project.vimeoUrl) : null;
+        const Tag = embedUrl ? 'button' : 'div';
+        return (
+          <Tag
+            class="portfolio-item custom-cursor-target group relative overflow-hidden aspect-[4/3] cursor-pointer text-left w-full"
+            data-category={project.category}
+            data-vimeo-embed={embedUrl ?? undefined}
+            aria-label={embedUrl ? `${p.PLAY_VIDEO}: ${project.title.en}` : undefined}
+          >
+            <img
+              src={project.image}
+              alt={embedUrl ? '' : project.title.en}
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            {embedUrl && (
+              <div
+                class="absolute inset-0 flex items-center justify-center opacity-70 group-hover:opacity-100 transition-opacity"
+                aria-hidden="true"
+              >
+                <span class="w-14 h-14 flex items-center justify-center border border-white/60 bg-black/40 text-white">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true">
+                    <path d="M4 2.5v13l11-6.5L4 2.5z" />
+                  </svg>
+                </span>
+              </div>
+            )}
+            <div class="absolute bottom-0 left-0 right-0 p-6">
+              <p class="text-[12px] font-medium uppercase tracking-[2px] text-muted mb-2">{project.category}</p>
+              <h3 class="text-[20px] font-bold italic text-white">{project.title.en}</h3>
+            </div>
+          </Tag>
+        );
+      })}
     </div>
   </section>
 
+  <VideoLightbox label={p.LIGHTBOX_LABEL} closeLabel={p.LIGHTBOX_CLOSE} />
   <CustomCursor />
 </BaseLayout>
 

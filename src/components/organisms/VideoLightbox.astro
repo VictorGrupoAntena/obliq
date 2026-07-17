@@ -1,0 +1,115 @@
+---
+/**
+ * VideoLightbox — modal accesible para reproducir vídeos de Vimeo.
+ *
+ * Se abre desde cualquier elemento con [data-vimeo-embed] (URL de embed,
+ * generada con getVimeoEmbedUrl — conserva el hash de privacidad como h=).
+ *
+ * Accesibilidad: role="dialog" + aria-modal, cierre con Esc y clic en fondo,
+ * foco atrapado dentro del modal, foco restaurado al elemento que lo abrió.
+ * El iframe se vacía al cerrar para detener la reproducción.
+ */
+interface Props {
+  /** aria-label del diálogo (i18n) */
+  label: string;
+  /** aria-label del botón de cierre (i18n) */
+  closeLabel: string;
+}
+
+const { label, closeLabel } = Astro.props;
+---
+
+<div
+  id="video-lightbox"
+  role="dialog"
+  aria-modal="true"
+  aria-label={label}
+  class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/95 p-4 md:p-10"
+>
+  <button
+    id="video-lightbox-close"
+    type="button"
+    aria-label={closeLabel}
+    class="absolute top-4 right-4 md:top-6 md:right-6 w-11 h-11 flex items-center justify-center text-white border border-white/30 hover:border-white transition-colors cursor-pointer"
+  >
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    </svg>
+  </button>
+
+  <div class="w-full max-w-6xl aspect-video bg-black">
+    <iframe
+      id="video-lightbox-iframe"
+      src=""
+      title={label}
+      class="w-full h-full"
+      frameborder="0"
+      allow="autoplay; fullscreen; picture-in-picture"
+      allowfullscreen></iframe>
+  </div>
+</div>
+
+<script>
+  function initVideoLightbox() {
+    const lightbox = document.getElementById('video-lightbox');
+    const iframe = document.getElementById('video-lightbox-iframe') as HTMLIFrameElement | null;
+    const closeBtn = document.getElementById('video-lightbox-close');
+    if (!lightbox || !iframe || !closeBtn) return;
+
+    let opener: HTMLElement | null = null;
+
+    function open(embedUrl: string, trigger: HTMLElement) {
+      opener = trigger;
+      iframe!.src = embedUrl;
+      lightbox!.classList.remove('hidden');
+      lightbox!.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      closeBtn!.focus();
+      document.addEventListener('keydown', onKeydown);
+    }
+
+    function close() {
+      iframe!.src = ''; // detiene la reproducción
+      lightbox!.classList.add('hidden');
+      lightbox!.classList.remove('flex');
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', onKeydown);
+      opener?.focus(); // restaura el foco al elemento que abrió el modal
+      opener = null;
+    }
+
+    function onKeydown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        close();
+        return;
+      }
+      // Focus trap: Tab cicla entre el botón de cierre y el iframe
+      if (e.key === 'Tab') {
+        const focusables = [closeBtn!, iframe!];
+        const current = focusables.indexOf(document.activeElement as HTMLElement & HTMLIFrameElement);
+        e.preventDefault();
+        const next = e.shiftKey
+          ? (current - 1 + focusables.length) % focusables.length
+          : (current + 1) % focusables.length;
+        focusables[next].focus();
+      }
+    }
+
+    closeBtn.addEventListener('click', close);
+    // Clic en el fondo (fuera del vídeo y del botón) cierra
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) close();
+    });
+
+    // Delegación: cualquier [data-vimeo-embed] de la página abre el lightbox
+    document.querySelectorAll<HTMLElement>('[data-vimeo-embed]').forEach((el) => {
+      el.addEventListener('click', () => {
+        const url = el.dataset.vimeoEmbed;
+        if (url) open(url, el);
+      });
+    });
+  }
+
+  initVideoLightbox();
+  document.addEventListener('astro:after-swap', initVideoLightbox);
+</script>

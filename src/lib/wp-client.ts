@@ -16,6 +16,7 @@ import type {
   WPAlquilerPack,
   WPCliente,
   WPRentalCategoryTerm,
+  WPPortfolioCategoryTerm,
 } from './wp-types';
 
 import type { ServiceData, ServiceFeature, PricingPlan } from '@/data/services';
@@ -336,6 +337,19 @@ export async function getRentalPacks(): Promise<RentalPack[]> {
 export async function getPortfolioProjects(): Promise<PortfolioProject[]> {
   const raw = await wpFetch<WPPortfolio>('portfolio');
   return raw.map(transformPortfolio);
+}
+
+/**
+ * Categorías de portfolio CON proyectos (count > 0), en orden de creación
+ * (term_id asc). Los filtros del portfolio se derivan de aquí: una categoría
+ * nueva en WP aparece sola como filtro, sin tocar código.
+ */
+export async function getPortfolioCategories(): Promise<string[]> {
+  const terms = await wpFetch<WPPortfolioCategoryTerm>('portfolio_category', {
+    orderby: 'id',
+    order: 'asc',
+  });
+  return terms.filter((t) => t.count > 0).map((t) => t.name);
 }
 
 // Directors / Team
