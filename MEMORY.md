@@ -1,6 +1,31 @@
 # Obliq Productions — Project Memory
 
-## Fase actual: REDISEÑO — Sprint P3 Redirecciones 301 ✅ CERRADO (17-Jul-2026)
+## Fase actual: REDISEÑO — Sprint P4 Auto-rebuild implementado (código), pendiente conectar secretos (17-Jul-2026)
+
+### Sprint P4 — Auto-rebuild WP→GitHub Actions→Plesk — código listo, sin conectar
+
+- **Pipeline:** WordPress (edición CPT/taxonomía) → mu-plugin `scripts/obliq-deploy-hook.php` (debounce 90s vía `wp_schedule_single_event` único) → `repository_dispatch [wp-content-update]` → `.github/workflows/deploy.yml` (runner Ubuntu: pnpm install + build WP-real + `rsync -avz --delete` a Plesk). Elegido GitHub Actions por: build fuera del server (Plesk sin Node en PATH), runner limpio (mata el bug iCloud `" 2"` y el 403 de perms), versionado, secretos fuera del repo, reutiliza el rsync probado en staging.
+- **Triggers:** 6 CPTs (portfolio, servicio, alquiler, alquiler_pack, director, cliente) vía transition_post_status + before_delete_post; 2 taxonomías (portfolio_category, rental_category) vía created/edited/delete_term. Ignora autosaves/revisiones.
+- **TARGET = staging** (variable `DEPLOY_TARGET`). Excludes rsync: `.php-ini`, `.php-version`, `robots.txt` (este preserva el Disallow de staging; se quita en cutover).
+- **Clave SSH CI:** ed25519 dedicada generada; pública ya añadida al `authorized_keys` del server (probada, conecta). Privada en scratchpad (NO en repo) → va a GitHub Secret `SSH_DEPLOY_KEY`.
+- **Secretos/config fuera del repo:** GitHub Secrets (`SSH_DEPLOY_KEY`, `SSH_KNOWN_HOSTS`) + Variables (`WP_API_URL`, `DEPLOY_HOST/USER/TARGET`); WordPress `wp-config.php` (`OBLIQ_DEPLOY_PAT` fine-grained Contents:RW, `OBLIQ_DEPLOY_REPO`). Setup completo en `docs/guides/auto-rebuild.md`; manual cliente en `docs/guides/wp-editar-portfolio.md`.
+- **wp-cron:** el debounce depende de WP-Cron → en headless de bajo tráfico, garantizar con `DISABLE_WP_CRON` + cron de sistema `curl wp-cron.php` cada minuto (documentado).
+- **Pendiente (Víctor):** crear PAT + pegar secrets/variables en GitHub + constantes en wp-config + instalar mu-plugin en el server + cron wp-cron. Luego test: cambio en WP staging → dispara build → despliega. **NO conectado a producción.**
+- **Deuda iCloud `" 2"`:** resuelta de facto por el build en CI (runner limpio).
+
+## Historial rediseño — Staging desplegado y validado (17-Jul-2026)
+
+### Deploy de STAGING (validación, NO cutover) — 🔶 abierto, pendiente 2 decisiones
+
+- **Live:** `staging.obliqproductions.com` (subdominio estático Plesk, docroot `~/staging.obliqproductions.com/`). Producción (`~/httpdocs` main + `~/admin.*` WP) intactas. SIN cutover DNS/MX.
+- **Mecanismo de deploy (reutilizable por P4):** build local (`rm -rf dist && pnpm build`, WP real vía `.env`) + `rsync -avz --delete --exclude='.php-ini' --exclude='.php-version' dist/ obliq-plesk:staging.obliqproductions.com/`.
+- **Validaciones:** 301 `.htaccess` ✅ (disparan en Plesk, 1 salto, destinos 200) · Vimeo ✅ reproduce bajo el subdominio (segmentos vod-adaptive 200 en ES+EN → incógnita embed-por-dominio resuelta) · nav WP-real ✅ (16 URLs 200, 0 404) · **email ✅ `mail()` entrega de verdad** (confirmado a victor@grupoantena.com vía script de prueba desechable; los endpoints reales usan el mismo transporte, destinatario hardcodeado info@; revisar SPF/DKIM del server para producción).
+- **🔴 Blockers abiertos (no cerrar P-staging hasta resolver):**
+  1. Decisión de protección de staging: **A** desmarcar "Serve static files directly by nginx" en Plesk (nginx bypassa el Basic Auth de Apache → staging quedó accesible/indexable) **/ B** robots `Disallow: /`.
+  2. Deuda iCloud: el build re-crea dirs `" 2"` en `dist` → el pipeline P4 debe purgarlos o correr fuera de `~/Documents`.
+- **Aprendizaje Plesk (positivo para producción):** las 301 `.htaccess` funcionan aun con smart-static activo (rutas viejas no existen como fichero → nginx delega a Apache). Solo la auth sobre ficheros existentes se bypassa.
+
+### Sprint P3 Redirecciones 301 ✅ CERRADO (17-Jul-2026)
 
 ### Sprint P3 — Redirecciones 301 de la migración de URLs ✅ 17-Jul-2026
 
