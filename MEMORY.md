@@ -1,6 +1,21 @@
 # Obliq Productions — Project Memory
 
-## Fase actual: REDISEÑO — Proyecto REANUDADO (16-Jul-2026), Sprint P1 Portfolio Real en curso
+## Fase actual: REDISEÑO — Sprint P1 Portfolio Real ✅ CERRADO (17-Jul-2026)
+
+### Sprint P1 — Portfolio Real ✅ 17-Jul-2026
+
+- **WP conectado en serio:** `WP_API_URL` persistida en `.env` VERSIONADO (URL pública de solo lectura; `.gitignore` ajustado — los secretos siguen en `.env.local`, ignorado). Fallback mock intacto para dev offline (catch → mock con warning)
+- **Contenido real en WP:** script one-off `scripts/obliq-portfolio-reset.php` ejecutado en servidor → 6 categorías (Gastro 2, Marcas 3, Branded content 1, Entrevistas 2, Eventos 1, Spots 2) + 11 proyectos con `pf_vimeo_url` (8 con hash de privacidad). Featured provisional: Gastro 1, Marcas 1, Spots 1
+- **Filtros dinámicos:** derivados de términos WP con count>0 en orden term_id asc — el cliente añade categorías sin tocar código. Corregido bug EN preexistente (filtros hardcodeados nunca matcheaban)
+- **Lightbox Vimeo accesible:** Esc, focus trap, foco restaurado, aria-modal, iframe vaciado al cerrar, `dnt=1`, hash `h=` conservado
+- **Thumbnails oEmbed** en build con caché por módulo; si el cliente sube `pf_image` en WP, su imagen gana
+- **Build final contra WP real:** 78 págs, 0 errores, 0 fallbacks; 11 thumbnails i.vimeocdn.com; 6 dominios WP verificados (servicios 12 págs, alquiler 22 con precios+multidía, packs, equipo, 13 clientes reales en marquee — Samsung/MasterChef World son clientes REALES, no placeholder)
+- **Acceso servidor:** clave SSH dedicada `~/.ssh/id_ed25519_obliq` + alias `obliq-plesk` en ~/.ssh/config. PHP CLI del servidor: `/opt/plesk/php/8.3/bin/php` (¡`php` NO está en PATH — causa del primer intento fallido del script!). Docroot WP: `~/admin.obliqproductions.com/`
+- **Pendiente del cliente:** títulos/años/clientes reales de los 11 proyectos (ahora «Proyecto {cat} {n}»); imágenes propias si quieren sustituir thumbnails
+- **Pendiente técnico:** term meta `pc_name_en` en portfolio_category (mu-plugin) si el cliente quiere nombres EN distintos en filtros (hoy: mismo nombre ES/EN)
+- **Commits:** `9ccd93a` (retoma), `355462d` (feat portfolio), este cierre. SIN deploy — la web pública sigue sirviendo main
+
+## Historial rediseño (fase REANUDADA 16-Jul-2026)
 
 ### Retoma Julio 2026 (16/17-Jul-2026)
 
