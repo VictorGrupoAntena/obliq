@@ -84,7 +84,11 @@ function obliq_do_dispatch() {
         'timeout' => 20,
         'headers' => array(
             'Accept'               => 'application/vnd.github+json',
-            'Authorization'        => 'Bearer ' . OBLIQ_DEPLOY_PAT,
+            // trim() imprescindible: si el PAT se pegó en wp-config.php con un
+            // salto de línea final, ese \n corta las cabeceras HTTP a la mitad
+            // y GitHub rechaza el dispatch (403 "missing User-Agent" o 422 body
+            // vacío "nil is not an object"). Verificado en servidor.
+            'Authorization'        => 'Bearer ' . trim( OBLIQ_DEPLOY_PAT ),
             'Content-Type'         => 'application/json',
             'User-Agent'           => 'obliq-deploy-hook',
             'X-GitHub-Api-Version' => '2022-11-28',
