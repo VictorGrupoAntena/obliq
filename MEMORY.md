@@ -1,18 +1,12 @@
 # Obliq Productions — Project Memory
 
-## Fase actual: REDISEÑO — P1–P4 cerrados; staging protegido y validado; pendiente P4 fase 2 + cutover (17-Jul-2026)
+## Fase actual: REDISEÑO — P1–P4 CERRADOS (auto-deploy WP→staging validado E2E); pendiente solo cutover a producción (17-Jul-2026)
 
 > Rama de trabajo `redesign` (limpia, pusheada). Producción sigue sirviendo `main` (SSR Node en `~/httpdocs`), intacta. Staging: **staging.obliqproductions.com** (Basic Auth user `obliq` + robots Disallow).
 
 ### ⏭️ PENDIENTE PRÓXIMA SESIÓN — retomar aquí
 
-**P4 fase 2 — cerrar el ciclo completo desde WordPress** (la mitad build+rsync ya está VERDE; falta el disparo desde WP). Ref: `docs/guides/auto-rebuild.md`.
-
-1. Crear **PAT fine-grained** en GitHub (repo obliq, permiso Contents: R/W).
-2. Añadir a `wp-config.php` de `~/admin.obliqproductions.com/`: `OBLIQ_DEPLOY_PAT` + `OBLIQ_DEPLOY_REPO` = `VictorGrupoAntena/obliq`.
-3. Instalar el mu-plugin: copiar `scripts/obliq-deploy-hook.php` → `wp-content/mu-plugins/`.
-4. Montar el **cron de garantía de wp-cron** (`DISABLE_WP_CRON` + cron de sistema `curl wp-cron.php` cada minuto).
-5. Test end-to-end: editar un CPT en WP staging → dispara `repository_dispatch` (~90s) → run verde → cambio visible en staging.
+**P4 fase 2 ✅ CERRADO Y VALIDADO E2E (17-Jul-2026).** Todo montado en el servidor (PAT + constantes `OBLIQ_DEPLOY_PAT`/`OBLIQ_DEPLOY_REPO` + mu-plugin con `trim` + `DISABLE_WP_CRON` + cron de sistema cada minuto) y probado de punta a punta. Detalle en «Sprint P4» abajo. Lo único que queda del auto-deploy es el **cutover**.
 
 **Bloqueantes de CUTOVER a producción** (no dependen de código):
 
@@ -25,17 +19,20 @@
 - **P5:** auditoría visual página a página + **imágenes reales** (subir a WP Media / `pf_image`) + revisión de **seguridad** pre-entrega.
 - `pc_name_en` (term meta) para nombres EN distintos en los filtros de portfolio (hoy ES=EN).
 - **Cutover:** cambiar la Variable `DEPLOY_TARGET` de staging → producción y **quitar `--exclude='robots.txt'`** del `deploy.yml` (para publicar el robots real `Allow`).
+- **Backups del servidor a limpiar en el cutover** (conservados a propósito): `wp-content/mu-plugins/obliq-deploy-hook.php.bak*`, `wp-config.php.bak*`, `staging.obliqproductions.com/.htpasswd.bak*`, `crontab.bak*` (en `~/`).
+- **Credencial staging** (Basic Auth nginx): user `obliq`, pass reseteada 17-Jul (guardada aparte, NO en repo).
 
 ---
 
-### Sprint P4 — Auto-rebuild WP→GitHub Actions→Plesk — ✅ build+rsync VALIDADO (verde), falta disparo WP
+### Sprint P4 — Auto-rebuild WP→GitHub Actions→Plesk — ✅ CERRADO Y VALIDADO E2E (17-Jul-2026)
 
 - **Pipeline:** WordPress (edición CPT/taxonomía) → mu-plugin `scripts/obliq-deploy-hook.php` (debounce 90s vía `wp_schedule_single_event` único) → `repository_dispatch [wp-content-update]` → `.github/workflows/deploy.yml` (runner Ubuntu: pnpm install + build WP-real + `rsync -avz --delete` a Plesk). GitHub Actions elegido por: build fuera del server (Plesk sin Node en PATH), runner limpio (mata el bug iCloud `" 2"` y el 403 de perms), versionado, secretos fuera del repo.
 - **Workflow en la RAMA POR DEFECTO (main):** GitHub solo activa `workflow_dispatch`/`repository_dispatch` si el `.yml` está en main. Está en main (`195a27e`+`edd6170`) Y en redesign; GitHub ejecuta el de main, que hace `checkout ref: redesign` para construir.
-- **✅ VALIDADO:** `workflow_dispatch` corrió **verde** (run 29568662097, 40s, 17-Jul) → build WP-real + rsync a staging OK. La mitad build+deploy del pipeline está probada de verdad.
+- **✅ VALIDADO E2E (17-Jul):** ciclo completo de punta a punta — editar un proyecto de portfolio en WP → auto-deploy a staging en **~2min40** (run #29575296560, success). Tramos medidos: **edición→dispatch 115s** (debounce 90s + cron wp-cron ≤1min), **dispatch→build+rsync 40s**, **rsync→visible 6s**. Antes se validó también `workflow_dispatch` en verde (run 29568662097, 40s).
+- **🐛 Bug resuelto — `\n` final en el PAT (clave, no repetir):** el PAT pegado en `wp-config.php` arrastraba un salto de línea DENTRO de las comillas. Ese `\n` cortaba las cabeceras HTTP del `repository_dispatch` a la mitad → **403 «missing User-Agent»** o **422 «Invalid request… nil is not an object»** (body sin Content-Length) según qué cabecera cayera tras el corte. Muy enmascarado: por SSH funcionaba porque bash `$(...)` recorta el `\n`, pero PHP leía la constante intacta. **Fix: `trim( OBLIQ_DEPLOY_PAT )`** en el mu-plugin (commit `d1d6586`, redesign) + `\n` limpiado en el `wp-config.php` del servidor (define en 1 línea, verificado len 93). **Lección general: cualquier secreto leído de una constante PHP y metido en una cabecera HTTP → `trim()` defensivo.** No es un fallo de `wp_remote_post` (que funciona perfecto con el PAT limpio).
 - **Triggers (mu-plugin):** 6 CPTs (portfolio, servicio, alquiler, alquiler_pack, director, cliente) vía transition_post_status + before_delete_post; 2 taxonomías (portfolio_category, rental_category) vía created/edited/delete_term. Ignora autosaves/revisiones.
 - **TARGET = staging** (Variable `DEPLOY_TARGET`). Excludes rsync: `.php-ini`, `.php-version`, `robots.txt`, `.htpasswd` (preservan ficheros del server que `--delete` borraría; robots y htpasswd = protección de staging).
-- **Secretos/config fuera del repo:** GitHub Secrets `SSH_DEPLOY_KEY` (ed25519 CI dedicada, **rotada**; pública en `authorized_keys` del server) + `SSH_KNOWN_HOSTS`; Variables `WP_API_URL`/`DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_TARGET`. WP `wp-config.php`: `OBLIQ_DEPLOY_PAT`/`OBLIQ_DEPLOY_REPO` (pendiente, ver bloque arriba).
+- **Secretos/config fuera del repo:** GitHub Secrets `SSH_DEPLOY_KEY` (ed25519 CI dedicada, **rotada**; pública en `authorized_keys` del server) + `SSH_KNOWN_HOSTS`; Variables `WP_API_URL`/`DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_TARGET`. WP `wp-config.php`: `OBLIQ_DEPLOY_PAT`/`OBLIQ_DEPLOY_REPO` (✅ puestos, limpios y verificados) + `DISABLE_WP_CRON=true`.
 - **Deuda iCloud `" 2"`:** resuelta de facto por el build en CI (runner limpio).
 
 ### Staging desplegado, validado y PROTEGIDO ✅ (17-Jul-2026)
