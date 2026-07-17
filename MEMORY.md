@@ -1,29 +1,49 @@
 # Obliq Productions — Project Memory
 
-## Fase actual: REDISEÑO — Sprint P4 Auto-rebuild implementado (código), pendiente conectar secretos (17-Jul-2026)
+## Fase actual: REDISEÑO — P1–P4 cerrados; staging protegido y validado; pendiente P4 fase 2 + cutover (17-Jul-2026)
 
-### Sprint P4 — Auto-rebuild WP→GitHub Actions→Plesk — código listo, sin conectar
+> Rama de trabajo `redesign` (limpia, pusheada). Producción sigue sirviendo `main` (SSR Node en `~/httpdocs`), intacta. Staging: **staging.obliqproductions.com** (Basic Auth user `obliq` + robots Disallow).
 
-- **Pipeline:** WordPress (edición CPT/taxonomía) → mu-plugin `scripts/obliq-deploy-hook.php` (debounce 90s vía `wp_schedule_single_event` único) → `repository_dispatch [wp-content-update]` → `.github/workflows/deploy.yml` (runner Ubuntu: pnpm install + build WP-real + `rsync -avz --delete` a Plesk). Elegido GitHub Actions por: build fuera del server (Plesk sin Node en PATH), runner limpio (mata el bug iCloud `" 2"` y el 403 de perms), versionado, secretos fuera del repo, reutiliza el rsync probado en staging.
-- **Triggers:** 6 CPTs (portfolio, servicio, alquiler, alquiler_pack, director, cliente) vía transition_post_status + before_delete_post; 2 taxonomías (portfolio_category, rental_category) vía created/edited/delete_term. Ignora autosaves/revisiones.
-- **TARGET = staging** (variable `DEPLOY_TARGET`). Excludes rsync: `.php-ini`, `.php-version`, `robots.txt` (este preserva el Disallow de staging; se quita en cutover).
-- **Clave SSH CI:** ed25519 dedicada generada; pública ya añadida al `authorized_keys` del server (probada, conecta). Privada en scratchpad (NO en repo) → va a GitHub Secret `SSH_DEPLOY_KEY`.
-- **Secretos/config fuera del repo:** GitHub Secrets (`SSH_DEPLOY_KEY`, `SSH_KNOWN_HOSTS`) + Variables (`WP_API_URL`, `DEPLOY_HOST/USER/TARGET`); WordPress `wp-config.php` (`OBLIQ_DEPLOY_PAT` fine-grained Contents:RW, `OBLIQ_DEPLOY_REPO`). Setup completo en `docs/guides/auto-rebuild.md`; manual cliente en `docs/guides/wp-editar-portfolio.md`.
-- **wp-cron:** el debounce depende de WP-Cron → en headless de bajo tráfico, garantizar con `DISABLE_WP_CRON` + cron de sistema `curl wp-cron.php` cada minuto (documentado).
-- **Pendiente (Víctor):** crear PAT + pegar secrets/variables en GitHub + constantes en wp-config + instalar mu-plugin en el server + cron wp-cron. Luego test: cambio en WP staging → dispara build → despliega. **NO conectado a producción.**
+### ⏭️ PENDIENTE PRÓXIMA SESIÓN — retomar aquí
+
+**P4 fase 2 — cerrar el ciclo completo desde WordPress** (la mitad build+rsync ya está VERDE; falta el disparo desde WP). Ref: `docs/guides/auto-rebuild.md`.
+
+1. Crear **PAT fine-grained** en GitHub (repo obliq, permiso Contents: R/W).
+2. Añadir a `wp-config.php` de `~/admin.obliqproductions.com/`: `OBLIQ_DEPLOY_PAT` + `OBLIQ_DEPLOY_REPO` = `VictorGrupoAntena/obliq`.
+3. Instalar el mu-plugin: copiar `scripts/obliq-deploy-hook.php` → `wp-content/mu-plugins/`.
+4. Montar el **cron de garantía de wp-cron** (`DISABLE_WP_CRON` + cron de sistema `curl wp-cron.php` cada minuto).
+5. Test end-to-end: editar un CPT en WP staging → dispara `repository_dispatch` (~90s) → run verde → cambio visible en staging.
+
+**Bloqueantes de CUTOVER a producción** (no dependen de código):
+
+- Títulos/años/clientes **reales** de los 11 proyectos (hoy «Proyecto {cat} {n}»).
+- Diagnóstico **DNS/correo** del dominio (dónde están los DNS; MX está en **Google Workspace**).
+- **SPF/DKIM/DMARC** del servidor: `mail()` entrega, pero revisar que no caiga en spam (envío server→Google en nombre de obliqproductions.com).
+
+**Backlog restante:**
+
+- **P5:** auditoría visual página a página + **imágenes reales** (subir a WP Media / `pf_image`) + revisión de **seguridad** pre-entrega.
+- `pc_name_en` (term meta) para nombres EN distintos en los filtros de portfolio (hoy ES=EN).
+- **Cutover:** cambiar la Variable `DEPLOY_TARGET` de staging → producción y **quitar `--exclude='robots.txt'`** del `deploy.yml` (para publicar el robots real `Allow`).
+
+---
+
+### Sprint P4 — Auto-rebuild WP→GitHub Actions→Plesk — ✅ build+rsync VALIDADO (verde), falta disparo WP
+
+- **Pipeline:** WordPress (edición CPT/taxonomía) → mu-plugin `scripts/obliq-deploy-hook.php` (debounce 90s vía `wp_schedule_single_event` único) → `repository_dispatch [wp-content-update]` → `.github/workflows/deploy.yml` (runner Ubuntu: pnpm install + build WP-real + `rsync -avz --delete` a Plesk). GitHub Actions elegido por: build fuera del server (Plesk sin Node en PATH), runner limpio (mata el bug iCloud `" 2"` y el 403 de perms), versionado, secretos fuera del repo.
+- **Workflow en la RAMA POR DEFECTO (main):** GitHub solo activa `workflow_dispatch`/`repository_dispatch` si el `.yml` está en main. Está en main (`195a27e`+`edd6170`) Y en redesign; GitHub ejecuta el de main, que hace `checkout ref: redesign` para construir.
+- **✅ VALIDADO:** `workflow_dispatch` corrió **verde** (run 29568662097, 40s, 17-Jul) → build WP-real + rsync a staging OK. La mitad build+deploy del pipeline está probada de verdad.
+- **Triggers (mu-plugin):** 6 CPTs (portfolio, servicio, alquiler, alquiler_pack, director, cliente) vía transition_post_status + before_delete_post; 2 taxonomías (portfolio_category, rental_category) vía created/edited/delete_term. Ignora autosaves/revisiones.
+- **TARGET = staging** (Variable `DEPLOY_TARGET`). Excludes rsync: `.php-ini`, `.php-version`, `robots.txt`, `.htpasswd` (preservan ficheros del server que `--delete` borraría; robots y htpasswd = protección de staging).
+- **Secretos/config fuera del repo:** GitHub Secrets `SSH_DEPLOY_KEY` (ed25519 CI dedicada, **rotada**; pública en `authorized_keys` del server) + `SSH_KNOWN_HOSTS`; Variables `WP_API_URL`/`DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_TARGET`. WP `wp-config.php`: `OBLIQ_DEPLOY_PAT`/`OBLIQ_DEPLOY_REPO` (pendiente, ver bloque arriba).
 - **Deuda iCloud `" 2"`:** resuelta de facto por el build en CI (runner limpio).
 
-## Historial rediseño — Staging desplegado y validado (17-Jul-2026)
-
-### Deploy de STAGING (validación, NO cutover) — 🔶 abierto, pendiente 2 decisiones
+### Staging desplegado, validado y PROTEGIDO ✅ (17-Jul-2026)
 
 - **Live:** `staging.obliqproductions.com` (subdominio estático Plesk, docroot `~/staging.obliqproductions.com/`). Producción (`~/httpdocs` main + `~/admin.*` WP) intactas. SIN cutover DNS/MX.
-- **Mecanismo de deploy (reutilizable por P4):** build local (`rm -rf dist && pnpm build`, WP real vía `.env`) + `rsync -avz --delete --exclude='.php-ini' --exclude='.php-version' dist/ obliq-plesk:staging.obliqproductions.com/`.
-- **Validaciones:** 301 `.htaccess` ✅ (disparan en Plesk, 1 salto, destinos 200) · Vimeo ✅ reproduce bajo el subdominio (segmentos vod-adaptive 200 en ES+EN → incógnita embed-por-dominio resuelta) · nav WP-real ✅ (16 URLs 200, 0 404) · **email ✅ `mail()` entrega de verdad** (confirmado a victor@grupoantena.com vía script de prueba desechable; los endpoints reales usan el mismo transporte, destinatario hardcodeado info@; revisar SPF/DKIM del server para producción).
-- **🔴 Blockers abiertos (no cerrar P-staging hasta resolver):**
-  1. Decisión de protección de staging: **A** desmarcar "Serve static files directly by nginx" en Plesk (nginx bypassa el Basic Auth de Apache → staging quedó accesible/indexable) **/ B** robots `Disallow: /`.
-  2. Deuda iCloud: el build re-crea dirs `" 2"` en `dist` → el pipeline P4 debe purgarlos o correr fuera de `~/Documents`.
-- **Aprendizaje Plesk (positivo para producción):** las 301 `.htaccess` funcionan aun con smart-static activo (rutas viejas no existen como fichero → nginx delega a Apache). Solo la auth sobre ficheros existentes se bypassa.
+- **Validaciones (en servidor real):** 301 `.htaccess` ✅ (disparan en Plesk, 1 salto, destinos 200) · Vimeo ✅ reproduce bajo el subdominio (segmentos vod-adaptive 200 en ES+EN → incógnita embed-por-dominio resuelta) · nav WP-real ✅ (16 URLs 200, 0 404) · email ✅ `mail()` entrega (confirmado a victor@grupoantena.com).
+- **Protección ✅ Basic Auth a nivel nginx:** `.htpasswd` bcrypt (`$2y$`, user `obliq`) en el docroot + directivas `auth_basic` + `location = /.htpasswd { deny all; }` en «Additional nginx directives» de Plesk. Verificado: `/`, subpágina y `/api/*.php` → **401** sin credenciales, **200** con `obliq:<pass>`; `/.htpasswd` → **403**. Robusto: aplica en la capa que sirve (nginx), el `.htpasswd` está **excluido del rsync** (`--delete` no lo borra), fuera del `.htaccess` versionado. Credencial guardada aparte (NO en repo). `robots.txt` = `Disallow` (no indexable).
+- **Diagnóstico Plesk clave:** nginx sirve estáticos directo (bypassa Apache y su Protected-Dir de Plesk) → por eso el Basic Auth de Apache no aplicaba; la solución robusta fue **auth a nivel nginx**. Las 301 sí funcionan porque las rutas viejas no existen como fichero → nginx las delega a Apache.
 
 ### Sprint P3 Redirecciones 301 ✅ CERRADO (17-Jul-2026)
 
