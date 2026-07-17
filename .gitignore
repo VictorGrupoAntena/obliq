@@ -24,5 +24,8 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
+# asset no usado (favicon activo = favicon.ico, referenciado en los layouts)
+public/favicon.svg
+
 .vercel
 .env*.local
