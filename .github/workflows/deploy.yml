@@ -1,0 +1,69 @@
+name: Deploy (build + rsync a Plesk)
+
+# Auto-rebuild del SSG: WordPress dispara un repository_dispatch al editar
+# contenido (ver scripts/obliq-deploy-hook.php) → este workflow construye en un
+# runner limpio y sincroniza dist/ al docroot de Plesk vía rsync sobre SSH.
+# Documentación completa: docs/guides/auto-rebuild.md
+#
+# TARGET actual = STAGING (variable DEPLOY_TARGET). En el cutover a producción
+# solo se cambia esa variable (y se quita robots.txt de los excludes).
+
+on:
+  repository_dispatch:
+    types: [wp-content-update]
+  workflow_dispatch: {}
+
+# Un build a la vez por destino: si entra otro dispatch, cancela el en curso
+# y gana el último (doble red junto al debounce del lado WordPress).
+concurrency:
+  group: deploy-${{ vars.DEPLOY_TARGET }}
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (rama redesign)
+        uses: actions/checkout@v4
+        with:
+          ref: redesign
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+
+      - name: Instalar Node 20 (+ caché pnpm)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (datos reales de WordPress)
+        run: pnpm build
+        env:
+          # Explícito por si se quiere sobreescribir; el .env versionado del
+          # repo ya trae WP_API_URL como fallback.
+          WP_API_URL: ${{ vars.WP_API_URL }}
+
+      - name: Configurar SSH del runner
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_DEPLOY_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Deploy (rsync --delete al docroot)
+        run: |
+          rsync -avz --delete \
+            --exclude='.php-ini' \
+            --exclude='.php-version' \
+            --exclude='robots.txt' \
+            -e "ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=yes" \
+            dist/ "${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}:${{ vars.DEPLOY_TARGET }}"
+        # NOTA: --exclude='robots.txt' preserva el Disallow manual de STAGING.
+        # En el cutover a producción, ELIMINAR ese exclude para publicar el
+        # robots.txt real (Allow + sitemap) del repo.
