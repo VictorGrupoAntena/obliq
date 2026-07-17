@@ -1,0 +1,54 @@
+# =============================================================================
+# Obliq Productions — Redirecciones 301 de la migración de URLs (rediseño)
+# =============================================================================
+# La web ANTIGUA usaba inglés como idioma por defecto (sin prefijo) y español
+# bajo /es/. La web NUEVA invierte la lógica: español en la raíz, inglés bajo
+# /en/. Sin estas 301 permanentes se perdería el posicionamiento SEO y se
+# generarían 404 en cada URL antigua indexada por Google.
+#
+# MECANISMO: este fichero vive en public/ y Astro lo copia a dist/ en el build.
+# Al servir el SSG como sitio estático en Plesk (docroot = dist/, Apache tras
+# nginx), Apache procesa mod_rewrite para las rutas ANTIGUAS —que no existen
+# como ficheros en el nuevo dist/— emitiendo 301 reales a nivel de servidor.
+#
+# Cada regla apunta DIRECTAMENTE a la URL final (200) del sitio nuevo: no hay
+# cadenas ni bucles (ningún destino es a su vez origen de otra regla).
+# `/?$` tolera las URLs antiguas con o sin barra final.
+# =============================================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # -------------------------------------------------------------------------
+    # 1) ESPAÑOL antiguo (/es/*) → ESPAÑOL nuevo (raíz, slugs en español)
+    # -------------------------------------------------------------------------
+    RewriteRule ^es/?$                    /            [R=301,L]
+    RewriteRule ^es/about/?$              /nosotros/   [R=301,L]
+    RewriteRule ^es/contact/?$            /contacto/   [R=301,L]
+    RewriteRule ^es/rental/?$             /alquiler/   [R=301,L]
+    RewriteRule ^es/legal/?$              /aviso-legal/ [R=301,L]
+    # /es/videos/[slug]/ y /es/videos/director/[name]/ → grid de portfolio
+    # (el sitio nuevo aún no tiene páginas de detalle ni de director)
+    RewriteRule ^es/videos(/.*)?$         /portfolio/  [R=301,L]
+
+    # -------------------------------------------------------------------------
+    # 2) INGLÉS antiguo (sin prefijo) → INGLÉS nuevo (/en/*)
+    # -------------------------------------------------------------------------
+    RewriteRule ^about/?$                 /en/about/   [R=301,L]
+    RewriteRule ^contact/?$               /en/contact/ [R=301,L]
+    RewriteRule ^rental/?$                /en/rental/  [R=301,L]
+    # No existe /en/legal/: la página legal es única (ES) en el sitio nuevo
+    RewriteRule ^legal/?$                 /aviso-legal/ [R=301,L]
+    # /videos/[slug]/ y /videos/director/[name]/ → grid de portfolio EN
+    RewriteRule ^videos(/.*)?$            /en/portfolio/ [R=301,L]
+
+    # -------------------------------------------------------------------------
+    # NOTA sobre la raíz "/":
+    # NO se redirige. Antes servía la home en INGLÉS; ahora sirve la home en
+    # ESPAÑOL (idioma por defecto del rediseño) con 200. Un 301 de "/" a "/en/"
+    # rebotaría a TODOS los visitantes españoles al inglés, destruyendo la
+    # estrategia SEO ES-first que es el objetivo del rediseño. El enlace con la
+    # antigua home inglesa se preserva vía hreflang (/ ↔ /en/) + autodetección
+    # de idioma JS en la primera visita.
+    # -------------------------------------------------------------------------
+</IfModule>

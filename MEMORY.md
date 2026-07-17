@@ -1,6 +1,18 @@
 # Obliq Productions — Project Memory
 
-## Fase actual: REDISEÑO — Sprint P2 Formulario Contacto ✅ CERRADO (17-Jul-2026)
+## Fase actual: REDISEÑO — Sprint P3 Redirecciones 301 ✅ CERRADO (17-Jul-2026)
+
+### Sprint P3 — Redirecciones 301 de la migración de URLs ✅ 17-Jul-2026
+
+- **Mecanismo elegido: `.htaccess` (Apache mod_rewrite)** en `public/.htaccess` → Astro lo copia a `dist/.htaccess` en cada build (versionado, revisable, desplegado con el sitio). Justificación en `docs/guides/redirects-301.md`
+- **Por qué .htaccess y no otro:** redesign es SSG puro (sin adaptador) → se sirve estático (docroot=dist, Apache tras nginx). Astro `redirects` en SSG solo emite `<meta refresh>` (redirección blanda, NO 301 real). Node adapter = reintroducir SSR solo para redirigir un sitio estático (complejidad innecesaria). nginx panel = no versionado. `.htaccess` da 301 reales, versionadas y revisables. Las rutas antiguas no existen como fichero en el nuevo dist → nginx las delega a Apache → mod_rewrite aplica
+- **11 reglas** (origen→destino final, 1 salto): `/es/`→`/`, `/es/about/`→`/nosotros/`, `/es/contact/`→`/contacto/`, `/es/rental/`→`/alquiler/`, `/es/legal/`→`/aviso-legal/`, `/es/videos/*`→`/portfolio/`; y EN sin prefijo→`/en/*`: `/about/`→`/en/about/`, `/contact/`→`/en/contact/`, `/rental/`→`/en/rental/`, `/legal/`→`/aviso-legal/`, `/videos/*`→`/en/portfolio/`. Toleran barra final (`/?$`)
+- **Raíz `/` NO se redirige (excepción deliberada):** antes home EN, ahora home ES con 200; un 301 `/`→`/en/` rebotaría a todo visitante ES al inglés y destruiría la estrategia ES-first. Vínculo con la vieja home EN vía hreflang + autodetección JS 1ª visita
+- **Detalle vídeo/director:** el sitio nuevo no tiene `/portfolio/[slug]/` ni páginas de director → los slugs viejos van al grid `/portfolio/` (evita 301→404)
+- **Verificado (sin deploy):** `.htaccess` copiado a dist ✓; `scripts/verify-redirects.mjs` simula Apache (primer match, [L]) sobre 27 URLs (con/sin barra) → 27/27 al destino esperado en 1 salto, todos 200 en dist, **0 cadenas, 0 bucles**
+- **Fallback documentado:** bloque nginx equivalente para «Additional nginx directives» de Plesk si el estático se sirviera nginx-directo. SIN deploy
+
+## Historial rediseño — Sprint P2 Formulario Contacto ✅ CERRADO (17-Jul-2026)
 
 ### Sprint P2 — Formulario de contacto con email ✅ 17-Jul-2026
 
