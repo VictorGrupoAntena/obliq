@@ -62,8 +62,12 @@ jobs:
             --exclude='.php-ini' \
             --exclude='.php-version' \
             --exclude='robots.txt' \
+            --exclude='.htpasswd' \
             -e "ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=yes" \
             dist/ "${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}:${{ vars.DEPLOY_TARGET }}"
-        # NOTA: --exclude='robots.txt' preserva el Disallow manual de STAGING.
-        # En el cutover a producción, ELIMINAR ese exclude para publicar el
-        # robots.txt real (Allow + sitemap) del repo.
+        # NOTAS sobre los excludes de STAGING (preservan ficheros del servidor
+        # que no están en el repo y que --delete borraría):
+        #  - robots.txt : Disallow manual de staging (en cutover a producción,
+        #    ELIMINAR este exclude para publicar el robots.txt real del repo).
+        #  - .htpasswd  : credenciales del Basic Auth de nginx del staging
+        #    (protección de acceso; ver docs/guides/auto-rebuild.md).
