@@ -366,6 +366,74 @@ function obliq_field( $post_id, $key, $label, $type = 'text' ) {
     echo '</label></p>';
 }
 
+// --- Helper: campo de imagen con selector de la Biblioteca de medios (wp.media) ---
+// Guarda la URL en el MISMO meta key (compat total con wp-client.ts, el frontend
+// y las URLs ya guardadas: si el valor es una URL externa/pegada, se muestra
+// igual en la vista previa y en el input, y se puede seguir pegando a mano).
+function obliq_media_field( $post_id, $key, $label ) {
+    $value = get_post_meta( $post_id, $key, true );
+    if ( is_array( $value ) ) $value = '';
+    $img_style = 'max-width:180px;height:auto;display:block;margin:6px 0;border:1px solid #ddd;padding:3px;background:#fff';
+    echo '<p class="obliq-media-field">';
+    echo '<label><strong>' . esc_html( $label ) . '</strong></label><br>';
+    echo '<span class="obliq-media-preview">';
+    if ( $value ) {
+        echo '<img src="' . esc_url( $value ) . '" alt="" style="' . esc_attr( $img_style ) . '">';
+    }
+    echo '</span>';
+    echo '<input type="text" class="obliq-media-url" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '" style="width:100%" placeholder="Selecciona una imagen o pega una URL">';
+    echo '<button type="button" class="button obliq-media-select" style="margin-top:6px">Seleccionar imagen</button> ';
+    echo '<button type="button" class="button obliq-media-remove" style="margin-top:6px;' . ( $value ? '' : 'display:none' ) . '">Quitar</button>';
+    echo '</p>';
+}
+
+// --- Encolar el media uploader (wp.media) SOLO en las pantallas de edición
+//     (post.php / post-new.php) de los CPTs con campos de imagen ---
+add_action( 'admin_enqueue_scripts', 'obliq_enqueue_media_uploader' );
+
+function obliq_enqueue_media_uploader( $hook ) {
+    if ( 'post.php' !== $hook && 'post-new.php' !== $hook ) return;
+    $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+    $cpts   = array( 'servicio', 'portfolio', 'director', 'alquiler', 'alquiler_pack', 'cliente' );
+    if ( ! $screen || ! in_array( $screen->post_type, $cpts, true ) ) return;
+
+    wp_enqueue_media();
+
+    $js = <<<'JS'
+jQuery(function($){
+    $('.obliq-media-field').each(function(){
+        var $w = $(this),
+            $url = $w.find('.obliq-media-url'),
+            $prev = $w.find('.obliq-media-preview'),
+            $rm = $w.find('.obliq-media-remove'),
+            style = 'max-width:180px;height:auto;display:block;margin:6px 0;border:1px solid #ddd;padding:3px;background:#fff',
+            frame;
+        function setImg(url){
+            $prev.html(url ? $('<img>', { src:url, alt:'', style:style }) : '');
+            $rm.toggle(!!url);
+        }
+        $w.find('.obliq-media-select').on('click', function(e){
+            e.preventDefault();
+            if (frame){ frame.open(); return; }
+            frame = wp.media({ title:'Seleccionar imagen', button:{ text:'Usar esta imagen' }, library:{ type:'image' }, multiple:false });
+            frame.on('select', function(){
+                var att = frame.state().get('selection').first().toJSON();
+                $url.val(att.url);
+                setImg(att.url);
+            });
+            frame.open();
+        });
+        $rm.on('click', function(e){
+            e.preventDefault();
+            $url.val('');
+            setImg('');
+        });
+    });
+});
+JS;
+    wp_add_inline_script( 'media-editor', $js );
+}
+
 function obliq_servicio_meta_html( $post ) {
     wp_nonce_field( 'obliq_save_meta', 'obliq_meta_nonce' );
     $id = $post->ID;
@@ -374,7 +442,7 @@ function obliq_servicio_meta_html( $post ) {
     obliq_field( $id, 'sv_long_description_en', 'Descripción larga EN', 'textarea' );
     obliq_field( $id, 'sv_marquee_text_es', 'Texto Marquee ES' );
     obliq_field( $id, 'sv_marquee_text_en', 'Texto Marquee EN' );
-    obliq_field( $id, 'sv_image', 'Imagen (URL)' );
+    obliq_media_field( $id, 'sv_image', 'Imagen' );
     echo '<hr><h4>Features ES (JSON array)</h4>';
     obliq_field( $id, 'sv_features_es', 'Features ES — [{title, description}, ...]', 'textarea' );
     obliq_field( $id, 'sv_features_en', 'Features EN — [{title, description}, ...]', 'textarea' );
@@ -386,7 +454,7 @@ function obliq_servicio_meta_html( $post ) {
     obliq_field( $id, 'sv_case_study_title_en', 'Título caso EN' );
     obliq_field( $id, 'sv_case_study_desc_es', 'Descripción caso ES', 'textarea' );
     obliq_field( $id, 'sv_case_study_desc_en', 'Descripción caso EN', 'textarea' );
-    obliq_field( $id, 'sv_case_study_image', 'Imagen caso (URL)' );
+    obliq_media_field( $id, 'sv_case_study_image', 'Imagen caso' );
 }
 
 function obliq_portfolio_meta_html( $post ) {
@@ -398,7 +466,7 @@ function obliq_portfolio_meta_html( $post ) {
     obliq_field( $id, 'pf_director', 'Director' );
     obliq_field( $id, 'pf_year', 'Año' );
     obliq_field( $id, 'pf_featured', 'Destacado (true/false)' );
-    obliq_field( $id, 'pf_image', 'Imagen (URL)' );
+    obliq_media_field( $id, 'pf_image', 'Imagen' );
 }
 
 function obliq_director_meta_html( $post ) {
@@ -406,7 +474,7 @@ function obliq_director_meta_html( $post ) {
     $id = $post->ID;
     obliq_field( $id, 'dr_role_es', 'Rol ES' );
     obliq_field( $id, 'dr_role_en', 'Rol EN' );
-    obliq_field( $id, 'dr_photo', 'Foto (URL)' );
+    obliq_media_field( $id, 'dr_photo', 'Foto' );
 }
 
 function obliq_alquiler_meta_html( $post ) {
@@ -416,7 +484,7 @@ function obliq_alquiler_meta_html( $post ) {
     obliq_field( $id, 'al_description_es', 'Descripción ES', 'textarea' );
     obliq_field( $id, 'al_description_en', 'Descripción EN', 'textarea' );
     obliq_field( $id, 'al_price', 'Precio/día (€)', 'number' );
-    obliq_field( $id, 'al_image', 'Imagen (URL)' );
+    obliq_media_field( $id, 'al_image', 'Imagen' );
     obliq_field( $id, 'al_specs_es', 'Specs ES — JSON [{spec: "..."}, ...]', 'textarea' );
     obliq_field( $id, 'al_specs_en', 'Specs EN — JSON [{spec: "..."}, ...]', 'textarea' );
     obliq_field( $id, 'al_order', 'Orden', 'number' );
@@ -437,7 +505,7 @@ function obliq_pack_meta_html( $post ) {
 function obliq_cliente_meta_html( $post ) {
     wp_nonce_field( 'obliq_save_meta', 'obliq_meta_nonce' );
     $id = $post->ID;
-    obliq_field( $id, 'cl_logo', 'Logo (URL)' );
+    obliq_media_field( $id, 'cl_logo', 'Logo' );
     obliq_field( $id, 'cl_order', 'Orden', 'number' );
 }
 

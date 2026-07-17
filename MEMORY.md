@@ -35,6 +35,12 @@
 - **Secretos/config fuera del repo:** GitHub Secrets `SSH_DEPLOY_KEY` (ed25519 CI dedicada, **rotada**; pública en `authorized_keys` del server) + `SSH_KNOWN_HOSTS`; Variables `WP_API_URL`/`DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_TARGET`. WP `wp-config.php`: `OBLIQ_DEPLOY_PAT`/`OBLIQ_DEPLOY_REPO` (✅ puestos, limpios y verificados) + `DISABLE_WP_CRON=true`.
 - **Deuda iCloud `" 2"`:** resuelta de facto por el build en CI (runner limpio).
 
+### Mejora UX admin — campos de imagen con selector nativo wp.media ✅ (17-Jul-2026)
+
+- **Qué:** los 6 campos de imagen de los CPTs (`sv_image`, `sv_case_study_image`, `pf_image`, `dr_photo`, `al_image`, `cl_logo`) pasan de input-de-texto-pega-URL a **selector de la Biblioteca de medios de WordPress** (`wp.media`): botón «Seleccionar imagen» + vista previa + botón «Quitar». En `scripts/obliq-cpts.php` (mu-plugin del WP).
+- **Cómo (sin romper nada):** helper nuevo `obliq_media_field()` que guarda la URL en el **mismo meta key** → `obliq_save_meta_fields`, `wp-client.ts` y el frontend **intactos**. El input sigue visible/editable (fallback pegar URL) → compat total con URLs ya guardadas. `wp_enqueue_media()` + JS `wp.media` encolados **solo** en `post.php`/`post-new.php` de esos 6 CPTs (guard por `get_current_screen()->post_type`).
+- **Validado:** lint PHP 8.3 + render del metabox en contexto WP real (estados con/sin imagen, guards negativos ok, enqueue ok) + **clic en admin confirmado por el cliente** (abre Biblioteca, guarda, muestra preview). Desplegado al servidor (backup `obliq-cpts.php.bak-*`). Commit en `redesign`.
+
 ### Staging desplegado, validado y PROTEGIDO ✅ (17-Jul-2026)
 
 - **Live:** `staging.obliqproductions.com` (subdominio estático Plesk, docroot `~/staging.obliqproductions.com/`). Producción (`~/httpdocs` main + `~/admin.*` WP) intactas. SIN cutover DNS/MX.
