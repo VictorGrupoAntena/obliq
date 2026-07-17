@@ -1,6 +1,28 @@
 # Obliq Productions — Project Memory
 
-## Fase actual: REDISEÑO — Sprint Quote Form completado, en revisión cliente
+## Fase actual: REDISEÑO — Proyecto REANUDADO (16-Jul-2026), Sprint P1 Portfolio Real en curso
+
+### Retoma Julio 2026 (16/17-Jul-2026)
+
+**Estado al reanudar tras 4 meses parado (desde 26-Mar-2026):**
+- Rama `redesign` intacta, working tree limpio. WP headless VIVO (admin.obliqproductions.com, HTTP 200)
+- Contenido WP seguía siendo 100% placeholder del seed de marzo (MasterChef, Loewe…) — el cliente no subió nada
+- **Validación P0.5 ✅ (16-Jul):** build contra WP real (`WP_API_URL` inline) → 78 páginas, exit 0, los 6 transformers de `wp-client.ts` (servicios, portfolio, alquiler, packs, directores, clientes) procesan JetEngine sin fallback. Evidencia: 0 warnings `WP fetch failed` en log completo
+- Build mock (sin `WP_API_URL`): también 78 páginas OK. `WP_API_URL` aún NO persistida — se hará al final de P1 (flip WP)
+- Incidente entorno: iCloud había desalojado `node_modules` (ficheros dataless) → `rm -rf node_modules && pnpm install` lo resuelve. pnpm 10 ignora build scripts de oxide/esbuild/sharp (funciona con binarios precompilados; pendiente `pnpm approve-builds`)
+
+**Decisiones tomadas en la retoma (cliente):**
+1. **6 categorías de portfolio definidas por el cliente:** Gastro, Marcas, Branded content, Entrevistas, Eventos, Spots (sustituyen a las 6 del placeholder)
+2. **Lanzamiento completo** (no soft-launch): el redesign sale a producción íntegro cuando el contenido esté listo
+3. **Auto-rebuild:** se implementará webhook WP publish → rebuild (sube de prioridad media a comprometida)
+
+**Sprint P1 — Portfolio Real (en curso):**
+- 11 vídeos Vimeo reales del cliente, títulos provisionales «Proyecto {categoría} {n}» hasta recibir títulos definitivos
+- Filtros dinámicos derivados de las categorías presentes en WP (el cliente puede añadir categorías sin tocar código)
+- Reproducción en lightbox accesible (iframe player.vimeo.com, conserva hash de privacidad)
+- Thumbnails vía Vimeo oEmbed en build (NO API v2 deprecada, sin API key), con caché
+- Orden obligatorio: 1º contenido WP (script PHP one-off ejecutado por Víctor en servidor), 2º flip `WP_API_URL`
+- Bug preexistente detectado: filtros EN hardcodeados ('Corporate') no matchean `data-category` (nombre ES del término WP) — los filtros EN nunca funcionaron con datos WP; la derivación dinámica lo corrige
 
 ### Sprint 0 (Fundamentos) ✅ 2-Mar-2026
 - Rama `redesign` — i18n invertido, tokens, atoms, organisms, sections
