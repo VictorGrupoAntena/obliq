@@ -23,11 +23,27 @@
     "HERO_CTA_SECONDARY": "CONTACTAR",
     "SERVICES_TAG": "SERVICIOS",
     "SERVICES_TITLE": "Soluciones audiovisuales integrales",
-    "MARQUEE_WORK": ["NUESTRO TRABAJO", "NUESTRO TRABAJO", "NUESTRO TRABAJO", "NUESTRO TRABAJO"],
+    "MARQUEE_WORK": [
+      "NUESTRO TRABAJO",
+      "NUESTRO TRABAJO",
+      "NUESTRO TRABAJO",
+      "NUESTRO TRABAJO"
+    ],
     "PORTFOLIO_TAG": "PORTFOLIO",
     "PORTFOLIO_TITLE": "Proyectos que hablan por sí mismos",
     "PORTFOLIO_CTA": "VER TODOS LOS PROYECTOS",
-    "MARQUEE_BRANDS": ["MasterChef", "Loewe", "Samsung", "Estrella Damm", "Netflix", "MasterChef", "Loewe", "Samsung", "Estrella Damm", "Netflix"],
+    "MARQUEE_BRANDS": [
+      "MasterChef",
+      "Loewe",
+      "Samsung",
+      "Estrella Damm",
+      "Netflix",
+      "MasterChef",
+      "Loewe",
+      "Samsung",
+      "Estrella Damm",
+      "Netflix"
+    ],
     "ABOUT_TAG": "NOSOTROS",
     "ABOUT_TITLE": "Creamos historias que importan",
     "ABOUT_TEXT": "Somos una productora audiovisual formada por un equipo polivalente y experimentado. Entendemos la naturaleza de cada proyecto y nos adaptamos con eficacia a sus necesidades.",
@@ -265,6 +281,13 @@
     "INFO_PHONE": "+34 675 489 980",
     "INFO_EMAIL": "info@obliqproductions.com",
     "INFO_HOURS_TITLE": "Horario",
-    "INFO_HOURS": "Lunes a Viernes: 9:00 — 18:00"
+    "INFO_HOURS": "Lunes a Viernes: 9:00 — 18:00",
+    "FORM_COMPANY": "Empresa",
+    "FORM_SENDING": "ENVIANDO...",
+    "SUCCESS_TITLE": "¡Mensaje enviado!",
+    "SUCCESS_MESSAGE": "Gracias por escribirnos. Te responderemos lo antes posible.",
+    "SUCCESS_BACK": "VOLVER AL INICIO",
+    "ERROR": "No se pudo enviar el mensaje. Inténtalo de nuevo más tarde.",
+    "SIMULATED": "Envío simulado — en producción se enviará el mensaje por email."
   }
 }

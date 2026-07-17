@@ -102,7 +102,7 @@ const r = i18n.RENTAL;
                 name="phone"
                 required
                 minlength="6"
-                pattern="[\d\s\+\-\.\(\)]{6,20}"
+                pattern={'[0-9\\s+.\\(\\)\\-]{6,20}'}
                 title="Enter a valid phone number (min. 6 digits)"
                 placeholder={q.PHONE_PLACEHOLDER}
                 class="w-full border border-white/20 bg-transparent px-4 py-3 text-[16px] text-white placeholder:text-white/30 focus:border-white focus:outline-none transition-colors"

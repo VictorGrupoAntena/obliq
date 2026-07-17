@@ -2,7 +2,6 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HeroSection from '@/components/sections/HeroSection.astro';
 import Heading from '@/components/atoms/Heading.astro';
-import Button from '@/components/atoms/Button.astro';
 import { t, localizedUrl } from '@/lib/i18n';
 
 const locale = 'en';
@@ -17,39 +16,95 @@ const serviceOptions = Object.values(i18n.SERVICES).map((s) => s.NAME);
 
   <section class="bg-white py-section px-4 md:px-section">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
-      <form class="space-y-6" id="contact-form">
-        <div>
-          <label for="name" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_NAME}</label>
-          <input type="text" id="name" name="name" required class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors" />
-        </div>
-        <div>
-          <label for="email" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_EMAIL}</label>
-          <input type="email" id="email" name="email" required class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors" />
-        </div>
-        <div>
-          <label for="phone" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_PHONE}</label>
-          <input type="tel" id="phone" name="phone" class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors" />
-        </div>
-        <div>
-          <label for="service" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_SERVICE}</label>
-          <select id="service" name="service" class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors">
-            <option value="">{c.FORM_SERVICE_PLACEHOLDER}</option>
-            {serviceOptions.map((name) => (
-              <option value={name}>{name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label for="message" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_MESSAGE}</label>
-          <textarea id="message" name="message" rows={5} required placeholder={c.FORM_MESSAGE_PLACEHOLDER} class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors resize-none"></textarea>
-        </div>
-        <p class="text-[12px] text-muted">
-          {c.FORM_PRIVACY}{' '}
-          <a href={localizedUrl('/privacy-policy/', locale)} class="underline hover:text-black transition-colors">{c.FORM_PRIVACY_LINK}</a>.
-        </p>
-        <Button variant="dark" class="w-full justify-center md:w-auto">{c.FORM_SUBMIT}</Button>
-      </form>
+      <!-- Form column -->
+      <div>
+        <div id="contact-form-wrapper">
+          <form class="space-y-6" id="contact-form" novalidate>
+            <!-- Honeypot -->
+            <div style="position:absolute;left:-9999px;" aria-hidden="true">
+              <input type="text" name="website" tabindex="-1" autocomplete="off" />
+            </div>
+            <!-- Product/Pack of interest (pre-filled via ?product= / ?pack=) -->
+            <input type="hidden" id="interest" name="interest" value="" />
 
+            <div>
+              <label for="name" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_NAME} *</label>
+              <input type="text" id="name" name="name" required minlength="2" class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors" />
+            </div>
+            <div>
+              <label for="email" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_EMAIL} *</label>
+              <input type="email" id="email" name="email" required class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors" />
+            </div>
+            <div>
+              <label for="phone" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_PHONE}</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                pattern={'[0-9\\s+.\\(\\)\\-]{6,20}'}
+                title="Enter a valid phone number (min. 6 digits)"
+                class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <label for="company" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_COMPANY}</label>
+              <input type="text" id="company" name="company" class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors" />
+            </div>
+            <div>
+              <label for="service" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_SERVICE}</label>
+              <select id="service" name="service" class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors">
+                <option value="">{c.FORM_SERVICE_PLACEHOLDER}</option>
+                {serviceOptions.map((name) => (
+                  <option value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label for="message" class="block text-[12px] font-semibold uppercase tracking-[2px] text-black mb-2">{c.FORM_MESSAGE} *</label>
+              <textarea id="message" name="message" rows={5} required placeholder={c.FORM_MESSAGE_PLACEHOLDER} class="w-full border border-border-light px-4 py-3 text-[16px] text-black bg-white focus:border-black focus:outline-none transition-colors resize-none"></textarea>
+            </div>
+            <p class="text-[12px] text-muted">
+              {c.FORM_PRIVACY}{' '}
+              <a href={localizedUrl('/privacy-policy/', locale)} class="underline hover:text-black transition-colors">{c.FORM_PRIVACY_LINK}</a>.
+            </p>
+            <button
+              type="submit"
+              id="contact-submit-btn"
+              class="inline-flex items-center justify-center gap-3 uppercase font-semibold tracking-[3px] transition-all cursor-pointer group h-[52px] px-8 text-[11px] bg-black text-white hover:bg-surface-dark w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span id="contact-submit-text">{c.FORM_SUBMIT}</span>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" class="transition-transform group-hover:translate-x-2" aria-hidden="true">
+                <path d="M12.3461 0.839999L17.9061 9.04L12.3461 17.32H8.86609L14.1061 9.04L8.86609 0.839999H12.3461ZM14.9061 7.6V10.52H0.426094V7.6H14.9061Z" fill="currentColor" />
+              </svg>
+            </button>
+          </form>
+
+          <!-- Error message (inline) -->
+          <div id="contact-error" class="hidden mt-4" role="alert" aria-live="assertive">
+            <p class="text-red-600 text-[14px]">{c.ERROR}</p>
+          </div>
+
+          <!-- Simulated mode banner -->
+          <div id="contact-simulated" class="hidden mt-4" role="status">
+            <p class="text-yellow-600 text-[13px] border border-yellow-500/40 px-4 py-2">{c.SIMULATED}</p>
+          </div>
+        </div>
+
+        <!-- Success state -->
+        <div id="contact-success" class="hidden py-16 text-center lg:text-left" role="status" tabindex="-1">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto lg:mx-0 mb-6 text-black" aria-hidden="true">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <h2 class="text-[24px] md:text-[32px] font-bold text-black mb-4">{c.SUCCESS_TITLE}</h2>
+          <p class="text-muted text-[16px] mb-8">{c.SUCCESS_MESSAGE}</p>
+          <a href={localizedUrl('/', locale)} class="inline-flex items-center gap-3 bg-black text-white uppercase font-semibold tracking-[3px] h-[52px] px-8 text-[11px] hover:bg-surface-dark transition-colors">
+            {c.SUCCESS_BACK}
+          </a>
+        </div>
+      </div>
+
+      <!-- Contact Info -->
       <div>
         <Heading level={3} italic={false} class="text-black mb-8">{c.INFO_TITLE}</Heading>
         <div class="space-y-6">
@@ -78,6 +133,13 @@ const serviceOptions = Object.values(i18n.SERVICES).map((s) => s.NAME);
     <p class="text-muted text-[14px] uppercase tracking-[2px]">Google Maps — Valencia</p>
   </section>
 </BaseLayout>
+
+<script>
+  import { initContactForm } from '@/lib/contact-form';
+
+  initContactForm();
+  document.addEventListener('astro:after-swap', initContactForm);
+</script>
 
 <script>
   import { initScrollFadeInAll } from '@/lib/gsap';

@@ -1,6 +1,18 @@
 # Obliq Productions — Project Memory
 
-## Fase actual: REDISEÑO — Sprint P1 Portfolio Real ✅ CERRADO (17-Jul-2026)
+## Fase actual: REDISEÑO — Sprint P2 Formulario Contacto ✅ CERRADO (17-Jul-2026)
+
+### Sprint P2 — Formulario de contacto con email ✅ 17-Jul-2026
+
+- **Backend:** `public/api/send-contact.php` replica el patrón de `send-quote.php` — anti-spam 4 capas (honeypot, token SHA-256 con secret `obliq_contact_{fecha}`, tiempo mínimo 3s, rate limiting 5/10min por IP), validación email (filter_var) + teléfono opcional (6-15 dígitos), sanitización XSS de TODO input (`htmlspecialchars ENT_QUOTES`), anti header-injection en Subject (`headerSafe`), caps de longitud. Email HTML dark → info@obliqproductions.com
+- **Campos:** nombre*, email*, teléfono, empresa, servicio (select), mensaje* + campo oculto `interest` (producto/pack pre-rellenado). Required: nombre/email/mensaje
+- **Frontend:** lógica extraída a `src/lib/contact-form.ts` (compartida ES/EN). Estados UX loading/success/error idénticos al quote; banner modo simulado fuera de obliqproductions.com. Pre-relleno desde query: `?servicio=`/`?service=` (select) y `?producto=`/`?product=`/`?pack=` (interest). A11y: role=alert/status, aria-live, foco a success
+- **i18n:** +7 claves CONTACT_PAGE (FORM_COMPANY, FORM_SENDING, SUCCESS_*, ERROR, SIMULATED) en es/en
+- **Bug corregido de paso:** el `pattern` del teléfono se rompía en los 4 forms (quote+contacto ES/EN) — Astro colapsaba `[\d\s\+\-\.\(\)]` a `[ds+-.()]` (regex inválida → checkValidity lanzaba). Fijado a `pattern={'[0-9\\s+.\\(\\)\\-]{6,20}'}`. Afectaba también a presupuesto.astro/en/quote.astro que estaban rotos desde Sprint Quote Form
+- **Verificado (Playwright, preview):** build 78 págs 0 errores; ES+EN modo simulado → success + foco; prefill servicio+interest desde URL; required bloquea vacío; email inválido rechazado; consola sin errores; teléfono válido
+- **Pendiente producción:** test email real con PHP mail() en Plesk (igual que quote, aún sin validar en server). SIN deploy
+
+## Historial rediseño — Sprint P1 Portfolio Real ✅ CERRADO (17-Jul-2026)
 
 ### Sprint P1 — Portfolio Real ✅ 17-Jul-2026
 
