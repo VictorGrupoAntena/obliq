@@ -21,7 +21,7 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 // CPTs y taxonomías que, al cambiar, deben regenerar la web.
-const OBLIQ_DEPLOY_CPTS  = array( 'portfolio', 'servicio', 'alquiler', 'alquiler_pack', 'director', 'cliente' );
+const OBLIQ_DEPLOY_CPTS  = array( 'portfolio', 'servicio', 'alquiler', 'alquiler_pack', 'director', 'cliente', 'contenido' );
 const OBLIQ_DEPLOY_TAXOS = array( 'portfolio_category', 'rental_category' );
 const OBLIQ_DEPLOY_HOOK  = 'obliq_deploy_dispatch';
 const OBLIQ_DEPLOY_DEBOUNCE = 90; // segundos

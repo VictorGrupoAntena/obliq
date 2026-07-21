@@ -122,3 +122,13 @@ export interface WPCliente extends WPPost {
   cl_order?: string | number;
   cl_logo?: unknown;
 }
+
+// ---------- CPT: contenido (2 entradas singleton) ----------
+// Los campos se leen dinámicamente por clave (`ab_*_es`, `ct_*_en`, ...),
+// por eso el índice de string en vez de 47 propiedades declaradas.
+
+export interface WPContenido extends WPPost {
+  /** Discriminador de entrada. Estable frente a cambios de título o slug. */
+  _obliq_key?: 'about' | 'contact' | string;
+  [field: string]: unknown;
+}

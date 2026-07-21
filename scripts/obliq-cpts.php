@@ -394,7 +394,7 @@ add_action( 'admin_enqueue_scripts', 'obliq_enqueue_media_uploader' );
 function obliq_enqueue_media_uploader( $hook ) {
     if ( 'post.php' !== $hook && 'post-new.php' !== $hook ) return;
     $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-    $cpts   = array( 'servicio', 'portfolio', 'director', 'alquiler', 'alquiler_pack', 'cliente' );
+    $cpts   = array( 'servicio', 'portfolio', 'director', 'alquiler', 'alquiler_pack', 'cliente', 'contenido' );
     if ( ! $screen || ! in_array( $screen->post_type, $cpts, true ) ) return;
 
     wp_enqueue_media();
@@ -557,4 +557,411 @@ function obliq_save_meta_fields( $post_id, $post ) {
             update_post_meta( $post_id, $key, sanitize_text_field( $value ) );
         }
     }
+}
+
+// ============================================================
+// ============================================================
+// CPT `contenido` — textos de páginas fijas
+//
+// Dos entradas SINGLETON creadas por auto-seed, discriminadas por
+// el meta `_obliq_key` (NO por slug ni título → el cliente puede
+// renombrarlas sin romper el frontend):
+//
+//   _obliq_key = 'about'    → página /nosotros/ y /en/about/
+//   _obliq_key = 'contact'  → datos de contacto GLOBALES del sitio
+//                             (página de contacto + footer + WhatsApp
+//                              + JSON-LD LocalBusiness)
+//
+// El cliente NO puede crear ni borrar entradas de este CPT.
+// El equipo (CPT `director`) y los clientes (CPT `cliente`) NO se
+// tocan aquí: siguen gestionándose en sus propios CPTs.
+// ============================================================
+// ============================================================
+
+// Versión del seed. Subir este número solo si se AÑADEN campos nuevos
+// que deban precargarse; el seed nunca sobrescribe lo ya escrito.
+if ( ! defined( 'OBLIQ_CONTENIDO_SEED_VERSION' ) ) {
+    define( 'OBLIQ_CONTENIDO_SEED_VERSION', '1' );
+}
+
+/**
+ * Definición única de los campos del CPT.
+ * meta_key => array( etiqueta en wp-admin, tipo: text|textarea|media )
+ *
+ * Es la ÚNICA fuente de verdad: de aquí salen el registro de meta,
+ * los rest_fields, el render del metabox y el guardado.
+ */
+function obliq_contenido_field_defs() {
+    return array(
+
+        // ---------- Entrada "Nosotros" (31 campos) ----------
+        'ab_hero_tag_es'        => array( 'Hero — etiqueta (ES)', 'text' ),
+        'ab_hero_tag_en'        => array( 'Hero — etiqueta (EN)', 'text' ),
+        'ab_hero_title_es'      => array( 'Hero — título (ES)', 'text' ),
+        'ab_hero_title_en'      => array( 'Hero — título (EN)', 'text' ),
+        'ab_hero_subtitle_es'   => array( 'Hero — subtítulo (ES)', 'textarea' ),
+        'ab_hero_subtitle_en'   => array( 'Hero — subtítulo (EN)', 'textarea' ),
+
+        'ab_story_title_es'     => array( 'Historia — título (ES)', 'text' ),
+        'ab_story_title_en'     => array( 'Historia — título (EN)', 'text' ),
+        'ab_story_text_es'      => array( 'Historia — texto (ES)', 'textarea' ),
+        'ab_story_text_en'      => array( 'Historia — texto (EN)', 'textarea' ),
+        'ab_story_image'        => array( 'Historia — imagen', 'media' ),
+
+        'ab_values_tag_es'      => array( 'Valores — etiqueta (ES)', 'text' ),
+        'ab_values_tag_en'      => array( 'Valores — etiqueta (EN)', 'text' ),
+        'ab_values_title_es'    => array( 'Valores — título (ES)', 'text' ),
+        'ab_values_title_en'    => array( 'Valores — título (EN)', 'text' ),
+        'ab_value_1_title_es'   => array( 'Valor 1 — título (ES)', 'text' ),
+        'ab_value_1_title_en'   => array( 'Valor 1 — título (EN)', 'text' ),
+        'ab_value_1_text_es'    => array( 'Valor 1 — texto (ES)', 'textarea' ),
+        'ab_value_1_text_en'    => array( 'Valor 1 — texto (EN)', 'textarea' ),
+        'ab_value_2_title_es'   => array( 'Valor 2 — título (ES)', 'text' ),
+        'ab_value_2_title_en'   => array( 'Valor 2 — título (EN)', 'text' ),
+        'ab_value_2_text_es'    => array( 'Valor 2 — texto (ES)', 'textarea' ),
+        'ab_value_2_text_en'    => array( 'Valor 2 — texto (EN)', 'textarea' ),
+        'ab_value_3_title_es'   => array( 'Valor 3 — título (ES)', 'text' ),
+        'ab_value_3_title_en'   => array( 'Valor 3 — título (EN)', 'text' ),
+        'ab_value_3_text_es'    => array( 'Valor 3 — texto (ES)', 'textarea' ),
+        'ab_value_3_text_en'    => array( 'Valor 3 — texto (EN)', 'textarea' ),
+
+        'ab_team_tag_es'        => array( 'Equipo — etiqueta (ES)', 'text' ),
+        'ab_team_tag_en'        => array( 'Equipo — etiqueta (EN)', 'text' ),
+        'ab_team_title_es'      => array( 'Equipo — título (ES)', 'text' ),
+        'ab_team_title_en'      => array( 'Equipo — título (EN)', 'text' ),
+
+        // ---------- Entrada "Datos de contacto" (16 campos) ----------
+        'ct_hero_tag_es'        => array( 'Hero — etiqueta (ES)', 'text' ),
+        'ct_hero_tag_en'        => array( 'Hero — etiqueta (EN)', 'text' ),
+        'ct_hero_title_es'      => array( 'Hero — título (ES)', 'text' ),
+        'ct_hero_title_en'      => array( 'Hero — título (EN)', 'text' ),
+        'ct_hero_subtitle_es'   => array( 'Hero — subtítulo / intro (ES)', 'textarea' ),
+        'ct_hero_subtitle_en'   => array( 'Hero — subtítulo / intro (EN)', 'textarea' ),
+        'ct_info_title_es'      => array( 'Título del bloque de información (ES)', 'text' ),
+        'ct_info_title_en'      => array( 'Título del bloque de información (EN)', 'text' ),
+        'ct_hours_es'           => array( 'Horario (ES)', 'text' ),
+        'ct_hours_en'           => array( 'Horario (EN)', 'text' ),
+
+        'ct_email'              => array( 'Email', 'text' ),
+        'ct_phone'              => array( 'Teléfono (tal y como debe verse)', 'text' ),
+        'ct_whatsapp'           => array( 'WhatsApp (solo dígitos, con prefijo país y sin +)', 'text' ),
+        'ct_address_street'     => array( 'Dirección — calle y número', 'text' ),
+        'ct_address_postal'     => array( 'Dirección — código postal', 'text' ),
+        'ct_address_city'       => array( 'Dirección — ciudad', 'text' ),
+    );
+}
+
+/** Lista de meta_keys de una entrada: 'about' | 'contact' | 'all' */
+function obliq_contenido_keys( $which = 'all' ) {
+    $prefix = ( $which === 'about' ) ? 'ab_' : ( ( $which === 'contact' ) ? 'ct_' : '' );
+    $keys   = array();
+    foreach ( obliq_contenido_field_defs() as $key => $def ) {
+        if ( $prefix === '' || strpos( $key, $prefix ) === 0 ) $keys[] = $key;
+    }
+    return $keys;
+}
+
+/** Localiza el ID de una entrada singleton por su `_obliq_key`. 0 si no existe. */
+function obliq_contenido_id( $obliq_key ) {
+    $found = get_posts( array(
+        'post_type'        => 'contenido',
+        'post_status'      => 'any',
+        'numberposts'      => 1,
+        'fields'           => 'ids',
+        'meta_key'         => '_obliq_key',
+        'meta_value'       => $obliq_key,
+        'suppress_filters' => false,
+    ) );
+    return $found ? (int) $found[0] : 0;
+}
+
+// ------------------------------------------------------------
+// Registro del CPT
+// ------------------------------------------------------------
+
+add_action( 'init', 'obliq_register_contenido_cpt', 10 );
+
+function obliq_register_contenido_cpt() {
+    register_post_type( 'contenido', array(
+        'labels' => array(
+            'name'          => 'Contenido de páginas',
+            'singular_name' => 'Contenido',
+            'menu_name'     => 'Contenido de páginas',
+            'edit_item'     => 'Editar contenido',
+            'all_items'     => 'Contenido de páginas',
+        ),
+        // `public => false` + `publicly_queryable => true`:
+        // no aparece en búsquedas ni menús de WP y no tiene URL propia,
+        // pero SÍ es legible de forma anónima por la REST API — necesario
+        // para que el build SSG (GitHub Actions) lo lea sin credenciales.
+        'public'              => false,
+        'publicly_queryable'  => true,
+        'exclude_from_search' => true,
+        'show_ui'             => true,
+        'show_in_menu'        => true,
+        'show_in_nav_menus'   => false,
+        'has_archive'         => false,
+        'rewrite'             => false,
+        'show_in_rest'        => true,
+        'rest_base'           => 'contenido',
+        'supports'            => array( 'title' ), // sin editor Gutenberg: solo el metabox de campos
+        'capability_type'     => 'post',
+        'map_meta_cap'        => true,
+        'capabilities'        => array( 'create_posts' => 'do_not_allow' ),
+        'menu_icon'           => 'dashicons-admin-page',
+        'menu_position'       => 11,
+    ) );
+}
+
+// El cliente tampoco puede BORRAR las dos entradas singleton.
+add_filter( 'map_meta_cap', 'obliq_contenido_block_delete', 10, 4 );
+
+function obliq_contenido_block_delete( $caps, $cap, $user_id, $args ) {
+    if ( 'delete_post' !== $cap || empty( $args[0] ) ) return $caps;
+    if ( 'contenido' === get_post_type( $args[0] ) ) return array( 'do_not_allow' );
+    return $caps;
+}
+
+// ------------------------------------------------------------
+// Meta fields + REST
+// ------------------------------------------------------------
+
+add_action( 'init', 'obliq_register_contenido_meta', 15 );
+
+function obliq_register_contenido_meta() {
+    foreach ( obliq_contenido_keys( 'all' ) as $key ) {
+        register_post_meta( 'contenido', $key, array(
+            'type'          => 'string',
+            'single'        => true,
+            'show_in_rest'  => true,
+            'auth_callback' => '__return_true',
+        ) );
+    }
+}
+
+add_action( 'rest_api_init', 'obliq_register_contenido_rest_fields' );
+
+function obliq_register_contenido_rest_fields() {
+    // Discriminador de entrada — expuesto en el top level del JSON.
+    register_rest_field( 'contenido', '_obliq_key', array(
+        'get_callback' => function ( $post ) {
+            return get_post_meta( $post['id'], '_obliq_key', true );
+        },
+        'schema' => null,
+    ) );
+
+    foreach ( obliq_contenido_keys( 'all' ) as $key ) {
+        register_rest_field( 'contenido', $key, array(
+            'get_callback' => function ( $post ) use ( $key ) {
+                return get_post_meta( $post['id'], $key, true );
+            },
+            'update_callback' => function ( $value, $post ) use ( $key ) {
+                update_post_meta( $post->ID, $key, $value );
+            },
+            'schema' => null,
+        ) );
+    }
+}
+
+// ------------------------------------------------------------
+// Metabox de edición
+// ------------------------------------------------------------
+
+add_action( 'add_meta_boxes', 'obliq_contenido_add_meta_box' );
+
+function obliq_contenido_add_meta_box() {
+    add_meta_box( 'obliq_contenido_meta', 'Contenido de la página', 'obliq_contenido_meta_html', 'contenido', 'normal', 'high' );
+}
+
+/** Render de un grupo de campos según su definición */
+function obliq_contenido_render_fields( $post_id, $keys ) {
+    $defs = obliq_contenido_field_defs();
+    foreach ( $keys as $key ) {
+        if ( ! isset( $defs[ $key ] ) ) continue;
+        $label = $defs[ $key ][0];
+        $type  = $defs[ $key ][1];
+        if ( 'media' === $type ) {
+            obliq_media_field( $post_id, $key, $label );
+        } else {
+            obliq_field( $post_id, $key, $label, $type );
+        }
+    }
+}
+
+function obliq_contenido_meta_html( $post ) {
+    wp_nonce_field( 'obliq_save_meta', 'obliq_meta_nonce' );
+    $id  = $post->ID;
+    $key = get_post_meta( $id, '_obliq_key', true );
+
+    if ( 'about' === $key ) {
+        echo '<p><em>Textos de la página «Nosotros» (/nosotros/ y /en/about/).<br>';
+        echo 'Los miembros del equipo se editan en <strong>Equipo</strong> y los logos de marcas en <strong>Clientes</strong>.</em></p>';
+        echo '<hr><h4>Cabecera</h4>';
+        obliq_contenido_render_fields( $id, array( 'ab_hero_tag_es', 'ab_hero_tag_en', 'ab_hero_title_es', 'ab_hero_title_en', 'ab_hero_subtitle_es', 'ab_hero_subtitle_en' ) );
+        echo '<hr><h4>Nuestra historia</h4>';
+        obliq_contenido_render_fields( $id, array( 'ab_story_title_es', 'ab_story_title_en', 'ab_story_text_es', 'ab_story_text_en', 'ab_story_image' ) );
+        echo '<hr><h4>Valores (siempre 3 — el diseño es una rejilla de tres columnas)</h4>';
+        obliq_contenido_render_fields( $id, array( 'ab_values_tag_es', 'ab_values_tag_en', 'ab_values_title_es', 'ab_values_title_en' ) );
+        echo '<h4>Valor 1</h4>';
+        obliq_contenido_render_fields( $id, array( 'ab_value_1_title_es', 'ab_value_1_title_en', 'ab_value_1_text_es', 'ab_value_1_text_en' ) );
+        echo '<h4>Valor 2</h4>';
+        obliq_contenido_render_fields( $id, array( 'ab_value_2_title_es', 'ab_value_2_title_en', 'ab_value_2_text_es', 'ab_value_2_text_en' ) );
+        echo '<h4>Valor 3</h4>';
+        obliq_contenido_render_fields( $id, array( 'ab_value_3_title_es', 'ab_value_3_title_en', 'ab_value_3_text_es', 'ab_value_3_text_en' ) );
+        echo '<hr><h4>Cabecera del bloque de equipo</h4>';
+        obliq_contenido_render_fields( $id, array( 'ab_team_tag_es', 'ab_team_tag_en', 'ab_team_title_es', 'ab_team_title_en' ) );
+        return;
+    }
+
+    if ( 'contact' === $key ) {
+        echo '<p><em>Datos de contacto <strong>globales</strong>: se usan en la página de contacto, en el pie de página, en el botón de WhatsApp y en los datos que lee Google (JSON-LD).<br>';
+        echo 'El formulario de contacto no se edita desde aquí.</em></p>';
+        echo '<hr><h4>Datos de contacto</h4>';
+        obliq_contenido_render_fields( $id, array( 'ct_email', 'ct_phone', 'ct_whatsapp' ) );
+        echo '<hr><h4>Dirección</h4>';
+        obliq_contenido_render_fields( $id, array( 'ct_address_street', 'ct_address_postal', 'ct_address_city' ) );
+        echo '<hr><h4>Horario</h4>';
+        obliq_contenido_render_fields( $id, array( 'ct_hours_es', 'ct_hours_en' ) );
+        echo '<hr><h4>Textos de la página de contacto</h4>';
+        obliq_contenido_render_fields( $id, array( 'ct_hero_tag_es', 'ct_hero_tag_en', 'ct_hero_title_es', 'ct_hero_title_en', 'ct_hero_subtitle_es', 'ct_hero_subtitle_en', 'ct_info_title_es', 'ct_info_title_en' ) );
+        return;
+    }
+
+    echo '<p><strong>Entrada no reconocida.</strong> Falta el identificador interno <code>_obliq_key</code>.</p>';
+}
+
+// ------------------------------------------------------------
+// Guardado (handler propio — no interfiere con obliq_save_meta_fields,
+// que ignora este CPT porque no está en su $fields_map)
+// ------------------------------------------------------------
+
+add_action( 'save_post_contenido', 'obliq_contenido_save', 10, 2 );
+
+function obliq_contenido_save( $post_id, $post ) {
+    if ( ! isset( $_POST['obliq_meta_nonce'] ) || ! wp_verify_nonce( $_POST['obliq_meta_nonce'], 'obliq_save_meta' ) ) return;
+    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+    if ( ! current_user_can( 'edit_post', $post_id ) ) return;
+
+    foreach ( obliq_contenido_field_defs() as $key => $def ) {
+        if ( ! isset( $_POST[ $key ] ) ) continue;
+        $value = wp_unslash( $_POST[ $key ] );
+        // Los textarea conservan los saltos de línea; sanitize_text_field los colapsaría.
+        $value = ( 'textarea' === $def[1] )
+            ? sanitize_textarea_field( $value )
+            : sanitize_text_field( $value );
+        update_post_meta( $post_id, $key, $value );
+    }
+}
+
+// ------------------------------------------------------------
+// Auto-seed idempotente
+//
+// Crea las dos entradas con los textos que hoy están en el repo
+// (src/i18n/*.json), de modo que tras instalar el plugin la web
+// se reconstruye EXACTAMENTE igual que antes.
+//
+// - Guard por get_option() → se ejecuta una sola vez.
+// - Solo INSERTA lo que falta; nunca sobrescribe lo ya escrito.
+// ------------------------------------------------------------
+
+add_action( 'init', 'obliq_contenido_seed', 20 );
+
+function obliq_contenido_seed() {
+    if ( get_option( 'obliq_contenido_seeded' ) === OBLIQ_CONTENIDO_SEED_VERSION ) return;
+
+    $entries = array(
+        'about'   => array( 'Nosotros', obliq_contenido_seed_about() ),
+        'contact' => array( 'Datos de contacto', obliq_contenido_seed_contact() ),
+    );
+
+    foreach ( $entries as $obliq_key => $entry ) {
+        $post_id = obliq_contenido_id( $obliq_key );
+
+        if ( ! $post_id ) {
+            $post_id = wp_insert_post( array(
+                'post_type'   => 'contenido',
+                'post_title'  => $entry[0],
+                'post_status' => 'publish',
+            ) );
+            if ( is_wp_error( $post_id ) || ! $post_id ) continue;
+            update_post_meta( $post_id, '_obliq_key', $obliq_key );
+        }
+
+        // Rellena SOLO los campos que aún no tienen valor.
+        foreach ( $entry[1] as $key => $default ) {
+            $current = get_post_meta( $post_id, $key, true );
+            if ( '' === $current || null === $current || false === $current ) {
+                update_post_meta( $post_id, $key, $default );
+            }
+        }
+    }
+
+    update_option( 'obliq_contenido_seeded', OBLIQ_CONTENIDO_SEED_VERSION );
+}
+
+/** Valores iniciales de "Nosotros" — espejo de ABOUT_PAGE en src/i18n/*.json */
+function obliq_contenido_seed_about() {
+    return array(
+        'ab_hero_tag_es'      => 'NOSOTROS',
+        'ab_hero_tag_en'      => 'ABOUT US',
+        'ab_hero_title_es'    => 'CREAMOS HISTORIAS QUE IMPORTAN',
+        'ab_hero_title_en'    => 'WE CREATE STORIES THAT MATTER',
+        'ab_hero_subtitle_es' => 'Somos una productora audiovisual en Valencia con pasión por contar historias.',
+        'ab_hero_subtitle_en' => 'We are an audiovisual production company in Valencia with a passion for storytelling.',
+
+        'ab_story_title_es'   => 'Nuestra historia',
+        'ab_story_title_en'   => 'Our story',
+        'ab_story_text_es'    => 'Obliq Productions nace de la pasión por el audiovisual y la voluntad de crear contenido que conecte con las personas. Formados por un equipo polivalente y experimentado, entendemos la naturaleza de cada proyecto y nos adaptamos con eficacia a sus necesidades. Desde nuestra base en Valencia, trabajamos con marcas nacionales e internacionales para producir contenido que marca la diferencia.',
+        'ab_story_text_en'    => 'Obliq Productions was born from a passion for audiovisual media and the desire to create content that connects with people. Formed by a versatile and experienced team, we understand the nature of each project and effectively adapt to its needs. From our base in Valencia, we work with national and international brands to produce content that makes a difference.',
+        'ab_story_image'      => '/hero.jpg',
+
+        'ab_values_tag_es'    => 'VALORES',
+        'ab_values_tag_en'    => 'VALUES',
+        'ab_values_title_es'  => 'Lo que nos define',
+        'ab_values_title_en'  => 'What defines us',
+
+        'ab_value_1_title_es' => 'Creatividad',
+        'ab_value_1_title_en' => 'Creativity',
+        'ab_value_1_text_es'  => 'Cada proyecto es una oportunidad para innovar. Buscamos soluciones creativas que sorprendan y emocionen.',
+        'ab_value_1_text_en'  => 'Every project is an opportunity to innovate. We seek creative solutions that surprise and excite.',
+        'ab_value_2_title_es' => 'Excelencia técnica',
+        'ab_value_2_title_en' => 'Technical excellence',
+        'ab_value_2_text_es'  => 'Utilizamos equipamiento de última generación y flujos de trabajo optimizados para garantizar la máxima calidad.',
+        'ab_value_2_text_en'  => 'We use state-of-the-art equipment and optimized workflows to guarantee the highest quality.',
+        'ab_value_3_title_es' => 'Compromiso',
+        'ab_value_3_title_en' => 'Commitment',
+        'ab_value_3_text_es'  => 'Nos comprometemos con cada proyecto como si fuera propio. Tu éxito es nuestro éxito.',
+        'ab_value_3_text_en'  => 'We commit to every project as if it were our own. Your success is our success.',
+
+        'ab_team_tag_es'      => 'EQUIPO',
+        'ab_team_tag_en'      => 'TEAM',
+        'ab_team_title_es'    => 'Las personas detrás de Obliq',
+        'ab_team_title_en'    => 'The people behind Obliq',
+    );
+}
+
+/** Valores iniciales de "Datos de contacto" — espejo de CONTACT_PAGE + schema.ts */
+function obliq_contenido_seed_contact() {
+    return array(
+        'ct_hero_tag_es'      => 'CONTACTO',
+        'ct_hero_tag_en'      => 'CONTACT',
+        'ct_hero_title_es'    => 'HABLEMOS DE TU PROYECTO',
+        'ct_hero_title_en'    => 'LET\'S TALK ABOUT YOUR PROJECT',
+        'ct_hero_subtitle_es' => 'Cuéntanos tu idea y te ayudamos a hacerla realidad.',
+        'ct_hero_subtitle_en' => 'Tell us your idea and we\'ll help you make it happen.',
+
+        'ct_info_title_es'    => 'Información de contacto',
+        'ct_info_title_en'    => 'Contact information',
+
+        'ct_hours_es'         => 'Lunes a Viernes: 9:00 — 18:00',
+        'ct_hours_en'         => 'Monday to Friday: 9:00 — 18:00',
+
+        'ct_email'            => 'info@obliqproductions.com',
+        'ct_phone'            => '+34 675 489 980',
+        'ct_whatsapp'         => '34675489980',
+
+        'ct_address_street'   => 'C/ Pintor Navarro Llorens bajo 3',
+        'ct_address_postal'   => '46008',
+        'ct_address_city'     => 'Valencia',
+    );
 }

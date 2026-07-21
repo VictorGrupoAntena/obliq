@@ -5,7 +5,20 @@ export interface BreadcrumbItem {
   href?: string;
 }
 
-export function localBusinessSchema() {
+/**
+ * Datos de contacto que alimentan el LocalBusiness. Provienen de
+ * src/data/site.ts (WordPress). Todos son opcionales: si no se pasa ninguno,
+ * `localBusinessSchema()` devuelve exactamente los valores de siempre.
+ */
+export interface BusinessContact {
+  telephone?: string;
+  email?: string;
+  streetAddress?: string;
+  postalCode?: string;
+  addressLocality?: string;
+}
+
+export function localBusinessSchema(contact: BusinessContact = {}) {
   return {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
@@ -15,14 +28,14 @@ export function localBusinessSchema() {
     url: 'https://obliqproductions.com',
     logo: 'https://obliqproductions.com/logo.svg',
     image: 'https://obliqproductions.com/hero.jpg',
-    telephone: '+34675489980',
-    email: 'info@obliqproductions.com',
+    telephone: contact.telephone ?? '+34675489980',
+    email: contact.email ?? 'info@obliqproductions.com',
     taxID: 'B19377019',
     address: {
       '@type': 'PostalAddress',
-      streetAddress: 'C/ Pintor Navarro Llorens bajo 3',
-      addressLocality: 'Valencia',
-      postalCode: '46008',
+      streetAddress: contact.streetAddress ?? 'C/ Pintor Navarro Llorens bajo 3',
+      addressLocality: contact.addressLocality ?? 'Valencia',
+      postalCode: contact.postalCode ?? '46008',
       addressRegion: 'Comunidad Valenciana',
       addressCountry: 'ES',
     },

@@ -3,16 +3,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import HeroSection from '@/components/sections/HeroSection.astro';
 import Heading from '@/components/atoms/Heading.astro';
 import { t, localizedUrl } from '@/lib/i18n';
+import { getSiteContactAsync } from '@/data/site';
 
 const locale = 'en';
 const i18n = t(locale);
 const c = i18n.CONTACT_PAGE;
+const info = await getSiteContactAsync(locale);
 
 const serviceOptions = Object.values(i18n.SERVICES).map((s) => s.NAME);
 ---
 
-<BaseLayout title={c.TITLE} description={c.HERO_SUBTITLE} locale={locale}>
-  <HeroSection tag={c.HERO_TAG} title={c.HERO_TITLE} subtitle={c.HERO_SUBTITLE} height="min-h-[40vh] md:min-h-[50vh]" />
+<BaseLayout title={c.TITLE} description={info.heroSubtitle} locale={locale}>
+  <HeroSection tag={info.heroTag} title={info.heroTitle} subtitle={info.heroSubtitle} height="min-h-[40vh] md:min-h-[50vh]" />
 
   <section class="bg-white py-section px-4 md:px-section">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
@@ -106,23 +108,23 @@ const serviceOptions = Object.values(i18n.SERVICES).map((s) => s.NAME);
 
       <!-- Contact Info -->
       <div>
-        <Heading level={3} italic={false} class="text-black mb-8">{c.INFO_TITLE}</Heading>
+        <Heading level={3} italic={false} class="text-black mb-8">{info.infoTitle}</Heading>
         <div class="space-y-6">
           <div>
             <p class="text-[12px] font-semibold uppercase tracking-[2px] text-muted mb-1">Email</p>
-            <a href={'mailto:' + c.INFO_EMAIL} class="text-[18px] text-black hover:underline">{c.INFO_EMAIL}</a>
+            <a href={'mailto:' + info.email} class="text-[18px] text-black hover:underline">{info.email}</a>
           </div>
           <div>
             <p class="text-[12px] font-semibold uppercase tracking-[2px] text-muted mb-1">{c.FORM_PHONE}</p>
-            <a href={'tel:' + c.INFO_PHONE.replace(/\s/g, '')} class="text-[18px] text-black hover:underline">{c.INFO_PHONE}</a>
+            <a href={'tel:' + info.phoneTel} class="text-[18px] text-black hover:underline">{info.phone}</a>
           </div>
           <div>
             <p class="text-[12px] font-semibold uppercase tracking-[2px] text-muted mb-1">{c.INFO_HOURS_TITLE}</p>
-            <p class="text-[18px] text-black">{c.INFO_HOURS}</p>
+            <p class="text-[18px] text-black">{info.hours}</p>
           </div>
           <div>
             <p class="text-[12px] font-semibold uppercase tracking-[2px] text-muted mb-1">Address</p>
-            <p class="text-[18px] text-black">{c.INFO_ADDRESS}</p>
+            <p class="text-[18px] text-black">{info.address}</p>
           </div>
         </div>
       </div>

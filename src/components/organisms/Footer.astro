@@ -1,5 +1,6 @@
 ---
 import { t, localizedUrl } from '@/lib/i18n';
+import { getSiteContactAsync } from '@/data/site';
 
 interface Props {
   locale?: string;
@@ -7,6 +8,7 @@ interface Props {
 
 const { locale = 'es' } = Astro.props;
 const i18n = t(locale);
+const contact = await getSiteContactAsync(locale);
 
 const serviceLinks = [
   { label: i18n.SERVICES.STREAMING.NAME, href: localizedUrl('/servicios/streaming/', locale) },
@@ -59,8 +61,8 @@ const socialLinks = [
           <img src="/logo.svg" alt={i18n.GLOBAL.OWNER} class="w-28" width="132" height="34" />
         </a>
         <p class="text-secondary text-[14px] font-light mb-4">{i18n.FOOTER.BRAND_TAGLINE}</p>
-        <p class="text-secondary text-[14px] font-light">info@obliqproductions.com</p>
-        <p class="text-secondary text-[14px] font-light">+34 675 489 980</p>
+        <p class="text-secondary text-[14px] font-light">{contact.email}</p>
+        <p class="text-secondary text-[14px] font-light">{contact.phone}</p>
         <div class="flex gap-4 mt-6">
           {socialLinks.map((link) => (
             <a

@@ -8,6 +8,7 @@ import WhatsAppFAB from '@/components/organisms/WhatsAppFAB.astro';
 import CartBottomBar from '@/components/organisms/CartBottomBar.astro';
 import { getLocale, alternateUrl } from '@/lib/i18n';
 import { localBusinessSchema } from '@/lib/schema';
+import { getSiteContactAsync } from '@/data/site';
 import { ClientRouter } from 'astro:transitions';
 
 interface Props {
@@ -31,6 +32,7 @@ const {
 } = Astro.props;
 
 const locale = localeProp ?? getLocale(Astro.url);
+const contact = await getSiteContactAsync(locale);
 const altLocale = locale === 'es' ? 'en' : 'es';
 const altPath = alternateUrl(Astro.url.pathname, locale);
 const siteUrl = 'https://obliqproductions.com';
@@ -84,7 +86,13 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
     <meta name="google-site-verification" content="bcIGNgcRlmTeFWASR-elUipgGBy9_WO9lzsvy-Vbq4A" />
 
     <!-- Schema.org LocalBusiness -->
-    <script type="application/ld+json" set:html={JSON.stringify(localBusinessSchema())} />
+    <script type="application/ld+json" set:html={JSON.stringify(localBusinessSchema({
+      telephone: contact.phoneTel,
+      email: contact.email,
+      streetAddress: contact.addressStreet,
+      postalCode: contact.addressPostal,
+      addressLocality: contact.addressCity,
+    }))} />
     {schema && (
       <script type="application/ld+json" set:html={JSON.stringify(schema)} />
     )}

@@ -15,6 +15,7 @@ import type {
   WPAlquiler,
   WPAlquilerPack,
   WPCliente,
+  WPContenido,
   WPRentalCategoryTerm,
   WPPortfolioCategoryTerm,
 } from './wp-types';
@@ -68,6 +69,19 @@ export function jetMediaUrl(value: unknown): string | undefined {
     return (value as { url: string }).url || undefined;
   }
   return undefined;
+}
+
+/**
+ * Lee un campo de texto de una respuesta WP. Devuelve `undefined` si falta o
+ * está vacío, para que quien llame pueda encadenar `?? valorPorDefecto` y
+ * hacer fallback CAMPO A CAMPO (un campo vaciado por error en wp-admin no
+ * deja un hueco en blanco en la web: cae al texto de src/i18n).
+ */
+export function wpText(source: Record<string, unknown> | null | undefined, key: string): string | undefined {
+  const value = source?.[key];
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 export function jetNum(value: unknown): number {
@@ -362,4 +376,45 @@ export async function getDirectors(): Promise<DirectorData[]> {
 export async function getClients(): Promise<ClientData[]> {
   const raw = await wpFetch<WPCliente>('cliente', { orderby: 'menu_order', order: 'asc' });
   return raw.map(transformClient).sort((a, b) => a.order - b.order);
+}
+
+// ---------- CPT: contenido (páginas fijas) ----------
+
+export interface ContenidoBundle {
+  about: WPContenido | null;
+  contact: WPContenido | null;
+}
+
+/**
+ * Caché a nivel de módulo: `contenido` se consume desde BaseLayout (Footer,
+ * WhatsAppFAB y JSON-LD), es decir desde TODAS las páginas del sitio. Sin esta
+ * caché el build lanzaría una petición por ruta (~78). Con ella se lanza UNA
+ * por build, compartida además entre las facades about.ts y site.ts.
+ */
+let contenidoCache: Promise<ContenidoBundle> | null = null;
+
+const EMPTY_CONTENIDO: ContenidoBundle = { about: null, contact: null };
+
+/**
+ * Devuelve las dos entradas singleton del CPT `contenido` en una sola petición.
+ * Se discriminan por el meta `_obliq_key`, no por slug ni título: el cliente
+ * puede renombrar las entradas en wp-admin sin romper el frontend.
+ *
+ * Nunca rechaza: si WP falla devuelve las dos entradas a null y avisa UNA vez
+ * (si no, el aviso se repetiría en cada una de las ~78 páginas del build).
+ * Quien llame hace fallback a src/i18n.
+ */
+export function getContenido(): Promise<ContenidoBundle> {
+  if (!contenidoCache) {
+    contenidoCache = wpFetch<WPContenido>('contenido')
+      .then((rows) => ({
+        about: rows.find((r) => r._obliq_key === 'about') ?? null,
+        contact: rows.find((r) => r._obliq_key === 'contact') ?? null,
+      }))
+      .catch((e) => {
+        console.warn('[contenido] WP fetch failed, using i18n/static content:', e);
+        return EMPTY_CONTENIDO;
+      });
+  }
+  return contenidoCache;
 }
