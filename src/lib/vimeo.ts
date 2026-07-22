@@ -41,6 +41,41 @@ export function getVimeoEmbedUrl(url: string): string | null {
   return `https://player.vimeo.com/video/${ref.id}?${params.toString()}`;
 }
 
+/**
+ * URL de embed para vídeo de FONDO (hero de la home).
+ *
+ * NO confundir con getVimeoEmbedUrl (lightbox del portfolio): allí el vídeo se
+ * reproduce con sonido y con controles porque el usuario lo ha pedido; aquí es
+ * decorativo y debe ser mudo, en bucle y sin UI.
+ *
+ * `background=1` ya implica muted + loop + sin controles, pero se pasan también
+ * explícitos: si Vimeo cambiara el comportamiento del flag, el fondo seguiría
+ * sin sonido ni botones. `autopause=0` evita que el player se detenga solo
+ * cuando otro vídeo de Vimeo arranca en la misma pestaña.
+ *
+ * OJO: `background=1` es una función de los planes Vimeo Plus/Pro en adelante.
+ * En una cuenta Basic el vídeo se sirve igualmente, pero con la UI del player
+ * encima.
+ */
+export function getVimeoBackgroundUrl(url: string): string | null {
+  const ref = parseVimeoUrl(url);
+  if (!ref) return null;
+  const params = new URLSearchParams({
+    ...(ref.hash && { h: ref.hash }), // hash de privacidad (vídeos no listados)
+    background: '1',
+    autoplay: '1',
+    loop: '1',
+    muted: '1',
+    autopause: '0',
+    controls: '0',
+    title: '0',
+    byline: '0',
+    portrait: '0',
+    dnt: '1', // sin cookies de tracking de Vimeo (RGPD)
+  });
+  return `https://player.vimeo.com/video/${ref.id}?${params.toString()}`;
+}
+
 // ---------- Thumbnails (oEmbed, build-time) ----------
 
 const thumbnailCache = new Map<string, string | null>();

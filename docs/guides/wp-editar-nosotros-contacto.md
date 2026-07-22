@@ -1,7 +1,8 @@
-# Cómo cambiar los textos de "Nosotros" y los datos de contacto (para el equipo de Obliq)
+# Cómo cambiar los textos de "Nosotros", los datos de contacto y el vídeo de la portada (para el equipo de Obliq)
 
-Esta guía explica cómo **editar los textos de la página Nosotros** y **los datos de
-contacto de la empresa** (teléfono, email, dirección, horario) desde WordPress.
+Esta guía explica cómo **editar los textos de la página Nosotros**, **los datos de
+contacto de la empresa** (teléfono, email, dirección, horario) y **el vídeo de la cabecera
+de la portada** desde WordPress.
 **No hace falta saber programar ni avisar a nadie**: cuando guardas un cambio, la web se
 reconstruye y se publica **sola en 1-2 minutos**.
 
@@ -13,14 +14,15 @@ reconstruye y se publica **sola en 1-2 minutos**.
 2. Inicia sesión con tu usuario y contraseña.
 3. En el menú de la izquierda verás **Contenido de páginas** (icono de documento).
 
-Dentro hay **dos fichas fijas**:
+Dentro hay **tres fichas fijas**:
 
 | Ficha | Para qué sirve |
 |---|---|
 | **Nosotros** | Todos los textos de la página *Nosotros* |
 | **Datos de contacto** | Teléfono, email, dirección y horario de la empresa |
+| **Inicio** | El vídeo y la imagen de la cabecera de la portada |
 
-Estas dos fichas **no se pueden borrar ni crear de nuevo**: siempre estarán ahí. Solo se
+Estas tres fichas **no se pueden borrar ni crear de nuevo**: siempre estarán ahí. Solo se
 editan. Es a propósito, para que no se pueda dejar la web sin datos por accidente.
 
 ---
@@ -132,6 +134,63 @@ Pulsa **Actualizar** cuando acabes.
 
 ---
 
+## Ficha "Inicio" — el vídeo de la portada
+
+Entra en **Contenido de páginas → Inicio**. Aquí se decide **qué se ve de fondo en la
+cabecera de la portada**: un vídeo o una imagen.
+
+### Hero — vídeo de Vimeo (URL)
+
+Pega aquí la dirección del vídeo tal y como la da Vimeo. Por ejemplo:
+
+```text
+https://vimeo.com/1165652157
+```
+
+Si el vídeo es **no listado** (privado por enlace), copia la dirección **completa**, con el
+código que lleva detrás:
+
+```text
+https://vimeo.com/1165652157/a1b2c3d4e5
+```
+
+**Para quitar el vídeo y volver a la cabecera con imagen: borra el contenido del campo y
+guarda.** Es el único interruptor; no hay ninguna casilla que activar.
+
+### Hero — imagen
+
+La imagen que se ve:
+
+- mientras el vídeo carga (**los primeros segundos, siempre**),
+- **en móviles**,
+- y si algún día quitas el vídeo.
+
+Conviene que sea un fotograma del propio vídeo o algo muy parecido: así el salto de la
+imagen al vídeo no se nota.
+
+### Antes de pegar la URL: autorizar el dominio en Vimeo
+
+En Vimeo, dentro de los ajustes del vídeo, en **Privacidad → Dónde se puede incrustar**:
+si está puesto "solo en dominios concretos", el dominio de la web tiene que estar en esa
+lista. Si no, en la portada se verá un mensaje de error de Vimeo en vez del vídeo.
+
+### Cómo se comporta el vídeo
+
+| Situación | Qué se ve |
+|---|---|
+| Ordenador | El vídeo, sin sonido, en bucle y sin los botones de Vimeo |
+| Móvil (pantallas pequeñas) | Solo la imagen — para no gastar los datos del visitante |
+| Visitante con "ahorro de datos" activado | Solo la imagen |
+| Visitante que ha pedido "reducir animaciones" en su sistema | Solo la imagen |
+
+Sobre el vídeo aparece un **botón pequeño de pausa** abajo a la derecha. Es obligatorio
+por accesibilidad: cualquiera tiene que poder detener una imagen en movimiento.
+
+> El vídeo **no lleva sonido nunca**: los navegadores no permiten que una web arranque con
+> audio, y además sería intrusivo. Si el vídeo tiene música, no se oirá.
+
+---
+
 ## Qué NO se toca desde aquí
 
 | Esto | Dónde se gestiona |
@@ -163,7 +222,13 @@ que la actualización automática necesite una revisión (ver `auto-rebuild.md`)
 
 **¿Puedo romper la web editando aquí?**
 No. Solo editas textos e imágenes; el diseño, la estructura y el formulario están
-protegidos. Tampoco puedes borrar las dos fichas.
+protegidos. Tampoco puedes borrar las tres fichas.
+
+**He pegado la URL del vídeo y en la portada sigue viéndose la imagen.**
+Tres posibilidades, por orden de probabilidad: (1) lo estás mirando **en el móvil**, donde
+solo se muestra la imagen a propósito; (2) el **dominio no está autorizado** en los ajustes
+de privacidad del vídeo en Vimeo; (3) la dirección pegada no es una URL de Vimeo
+reconocible — en ese caso la web se queda con la imagen en vez de romperse.
 
 **¿Puedo dejar un campo en inglés vacío?**
 Sí, pero entonces la web en inglés seguirá mostrando el texto anterior. Lo ideal es

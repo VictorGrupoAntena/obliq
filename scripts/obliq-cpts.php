@@ -563,7 +563,7 @@ function obliq_save_meta_fields( $post_id, $post ) {
 // ============================================================
 // CPT `contenido` — textos de páginas fijas
 //
-// Dos entradas SINGLETON creadas por auto-seed, discriminadas por
+// Tres entradas SINGLETON creadas por auto-seed, discriminadas por
 // el meta `_obliq_key` (NO por slug ni título → el cliente puede
 // renombrarlas sin romper el frontend):
 //
@@ -571,6 +571,7 @@ function obliq_save_meta_fields( $post_id, $post ) {
 //   _obliq_key = 'contact'  → datos de contacto GLOBALES del sitio
 //                             (página de contacto + footer + WhatsApp
 //                              + JSON-LD LocalBusiness)
+//   _obliq_key = 'home'     → fondo del hero de la portada (vídeo + imagen)
 //
 // El cliente NO puede crear ni borrar entradas de este CPT.
 // El equipo (CPT `director`) y los clientes (CPT `cliente`) NO se
@@ -580,8 +581,12 @@ function obliq_save_meta_fields( $post_id, $post ) {
 
 // Versión del seed. Subir este número solo si se AÑADEN campos nuevos
 // que deban precargarse; el seed nunca sobrescribe lo ya escrito.
+//
+//   v2 — entrada «Inicio» (_obliq_key = 'home'). Sin subir la versión, el
+//        guard `obliq_contenido_seeded` impediría crearla en el WP ya
+//        instalado y el campo de vídeo no aparecería nunca en wp-admin.
 if ( ! defined( 'OBLIQ_CONTENIDO_SEED_VERSION' ) ) {
-    define( 'OBLIQ_CONTENIDO_SEED_VERSION', '1' );
+    define( 'OBLIQ_CONTENIDO_SEED_VERSION', '2' );
 }
 
 /**
@@ -648,12 +653,17 @@ function obliq_contenido_field_defs() {
         'ct_address_street'     => array( 'Dirección — calle y número', 'text' ),
         'ct_address_postal'     => array( 'Dirección — código postal', 'text' ),
         'ct_address_city'       => array( 'Dirección — ciudad', 'text' ),
+
+        // ---------- Entrada "Inicio" (2 campos) ----------
+        'hm_hero_vimeo_url'     => array( 'Hero — vídeo de Vimeo (URL). Si se deja vacío se muestra solo la imagen.', 'text' ),
+        'hm_hero_fallback_image' => array( 'Hero — imagen (se ve mientras carga el vídeo, en móvil y si no hay vídeo)', 'media' ),
     );
 }
 
-/** Lista de meta_keys de una entrada: 'about' | 'contact' | 'all' */
+/** Lista de meta_keys de una entrada: 'about' | 'contact' | 'home' | 'all' */
 function obliq_contenido_keys( $which = 'all' ) {
-    $prefix = ( $which === 'about' ) ? 'ab_' : ( ( $which === 'contact' ) ? 'ct_' : '' );
+    $prefixes = array( 'about' => 'ab_', 'contact' => 'ct_', 'home' => 'hm_' );
+    $prefix   = isset( $prefixes[ $which ] ) ? $prefixes[ $which ] : '';
     $keys   = array();
     foreach ( obliq_contenido_field_defs() as $key => $def ) {
         if ( $prefix === '' || strpos( $key, $prefix ) === 0 ) $keys[] = $key;
@@ -827,6 +837,24 @@ function obliq_contenido_meta_html( $post ) {
         return;
     }
 
+    if ( 'home' === $key ) {
+        echo '<p><em>Fondo de la cabecera de la <strong>portada</strong> (/ y /en/).<br>';
+        echo 'Los textos y los botones de la cabecera no se editan desde aquí.</em></p>';
+        echo '<hr><h4>Cabecera de la portada</h4>';
+        obliq_contenido_render_fields( $id, array( 'hm_hero_vimeo_url', 'hm_hero_fallback_image' ) );
+        echo '<p style="background:#fff8e5;border-left:4px solid #dba617;padding:10px 12px;max-width:760px">';
+        echo '<strong>Sobre el vídeo:</strong><br>';
+        echo '• Pega la dirección del vídeo tal cual la da Vimeo (por ejemplo <code>https://vimeo.com/123456789</code>). ';
+        echo 'Si el vídeo es <em>no listado</em>, copia la dirección completa con el código que lleva detrás.<br>';
+        echo '• En Vimeo, dentro de los ajustes del vídeo, en <em>Privacidad → Dónde se puede incrustar</em>, ';
+        echo 'el dominio de la web tiene que estar autorizado.<br>';
+        echo '• El vídeo se reproduce sin sonido y en bucle. En móviles y con el ahorro de datos activado ';
+        echo 'se muestra solo la imagen, para no consumir datos del visitante.<br>';
+        echo '• <strong>Para volver a la cabecera con imagen, vacía este campo.</strong>';
+        echo '</p>';
+        return;
+    }
+
     echo '<p><strong>Entrada no reconocida.</strong> Falta el identificador interno <code>_obliq_key</code>.</p>';
 }
 
@@ -872,6 +900,7 @@ function obliq_contenido_seed() {
     $entries = array(
         'about'   => array( 'Nosotros', obliq_contenido_seed_about() ),
         'contact' => array( 'Datos de contacto', obliq_contenido_seed_contact() ),
+        'home'    => array( 'Inicio', obliq_contenido_seed_home() ),
     );
 
     foreach ( $entries as $obliq_key => $entry ) {
@@ -963,5 +992,19 @@ function obliq_contenido_seed_contact() {
         'ct_address_street'   => 'C/ Pintor Navarro Llorens bajo 3',
         'ct_address_postal'   => '46008',
         'ct_address_city'     => 'Valencia',
+    );
+}
+
+/**
+ * Valores iniciales de "Inicio".
+ *
+ * El campo de vídeo nace VACÍO a propósito: así, al instalar esta versión del
+ * plugin, la portada se reconstruye exactamente igual que antes (cabecera con
+ * imagen). El vídeo solo aparece cuando alguien pega una URL en wp-admin.
+ */
+function obliq_contenido_seed_home() {
+    return array(
+        'hm_hero_vimeo_url'      => '',
+        'hm_hero_fallback_image' => '/hero.jpg', // la imagen que hoy vive en el repo
     );
 }

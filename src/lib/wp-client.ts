@@ -383,20 +383,21 @@ export async function getClients(): Promise<ClientData[]> {
 export interface ContenidoBundle {
   about: WPContenido | null;
   contact: WPContenido | null;
+  home: WPContenido | null;
 }
 
 /**
  * Caché a nivel de módulo: `contenido` se consume desde BaseLayout (Footer,
  * WhatsAppFAB y JSON-LD), es decir desde TODAS las páginas del sitio. Sin esta
  * caché el build lanzaría una petición por ruta (~78). Con ella se lanza UNA
- * por build, compartida además entre las facades about.ts y site.ts.
+ * por build, compartida además entre las facades about.ts, site.ts y home.ts.
  */
 let contenidoCache: Promise<ContenidoBundle> | null = null;
 
-const EMPTY_CONTENIDO: ContenidoBundle = { about: null, contact: null };
+const EMPTY_CONTENIDO: ContenidoBundle = { about: null, contact: null, home: null };
 
 /**
- * Devuelve las dos entradas singleton del CPT `contenido` en una sola petición.
+ * Devuelve las entradas singleton del CPT `contenido` en una sola petición.
  * Se discriminan por el meta `_obliq_key`, no por slug ni título: el cliente
  * puede renombrar las entradas en wp-admin sin romper el frontend.
  *
@@ -410,6 +411,9 @@ export function getContenido(): Promise<ContenidoBundle> {
       .then((rows) => ({
         about: rows.find((r) => r._obliq_key === 'about') ?? null,
         contact: rows.find((r) => r._obliq_key === 'contact') ?? null,
+        // `home` falta en instalaciones donde el mu-plugin aún no ha sembrado
+        // la entrada (seed v2) → null y la home cae a su contenido estático.
+        home: rows.find((r) => r._obliq_key === 'home') ?? null,
       }))
       .catch((e) => {
         console.warn('[contenido] WP fetch failed, using i18n/static content:', e);

@@ -2,12 +2,24 @@
 import Tag from '@/components/atoms/Tag.astro';
 import Heading from '@/components/atoms/Heading.astro';
 import Paragraph from '@/components/atoms/Paragraph.astro';
+import { getVimeoBackgroundUrl } from '@/lib/vimeo';
 
 interface Props {
   tag?: string;
   title: string;
   subtitle?: string;
   backgroundImage?: string;
+  /**
+   * Vídeo de fondo (URL de Vimeo). Opcional y hoy solo lo usa la home.
+   * Sin esta prop el componente renderiza EXACTAMENTE el mismo HTML que antes
+   * — las otras 15 páginas que usan HeroSection no se enteran de que existe.
+   * `backgroundImage` sigue siendo obligatoria en modo vídeo: hace de póster.
+   */
+  backgroundVideoUrl?: string;
+  /** aria-label del botón de pausa (i18n). Requerido si hay vídeo. */
+  videoPauseLabel?: string;
+  /** aria-label del mismo botón cuando el vídeo está pausado (i18n). */
+  videoPlayLabel?: string;
   height?: string;
   class?: string;
 }
@@ -17,9 +29,16 @@ const {
   title,
   subtitle,
   backgroundImage,
+  backgroundVideoUrl,
+  videoPauseLabel,
+  videoPlayLabel,
   height = 'min-h-[80vh] md:min-h-[900px]',
   class: className,
 } = Astro.props;
+
+// null si no hay URL o si lo pegado en wp-admin no es una URL de Vimeo
+// reconocible → el hero se queda en modo imagen. Nunca a medio romper.
+const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideoUrl) : null;
 ---
 
 <section
@@ -36,9 +55,115 @@ const {
         alt=""
         class="w-full h-full object-cover"
         aria-hidden="true"
-      />
+      />{/* Las expresiones van PEGADAS a la etiqueta anterior a propósito:
+           separadas por un salto de línea añadirían un nodo de texto y, con
+           él, un espacio extra en el HTML de las 16 páginas que usan este
+           componente aunque no tengan vídeo. */}{videoEmbedUrl && (
+        <div
+          data-hero-video={videoEmbedUrl}
+          class="absolute inset-0 overflow-hidden opacity-0 transition-opacity"
+          style="transition-duration:700ms"
+        />
+      )}
       <div class="absolute inset-0 bg-black/40" />
     </div>
+  )}{videoEmbedUrl && (
+    <Fragment>
+    <button
+      type="button"
+      data-hero-video-toggle
+      data-label-pause={videoPauseLabel}
+      data-label-play={videoPlayLabel}
+      aria-label={videoPauseLabel}
+      class="w-11 h-11 flex items-center justify-center text-white border border-white/30 hover:border-white transition-colors cursor-pointer"
+      style="display:none;position:absolute;bottom:1rem;right:1rem;z-index:20"
+    >
+      <svg data-icon="pause" width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+        <rect x="2" y="1" width="3.5" height="12" />
+        <rect x="8.5" y="1" width="3.5" height="12" />
+      </svg>
+      <svg data-icon="play" width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true" style="display:none">
+        <path d="M3 1l9 6-9 6z" />
+      </svg>
+    </button>
+  <script is:inline>
+    /*
+     * Vídeo de fondo del hero. `is:inline` a propósito: un <script> normal lo
+     * empaquetaría Astro y acabaría inyectado en las 16 páginas que usan
+     * HeroSection, aunque solo la home tenga vídeo. Así el coste es cero para
+     * las demás. Por el mismo motivo la geometría va en `style` y no en clases
+     * nuevas de Tailwind (que entrarían en el CSS global de todo el sitio).
+     */
+    (function () {
+      function mountHeroVideo() {
+        var holder = document.querySelector('[data-hero-video]');
+        var toggle = document.querySelector('[data-hero-video-toggle]');
+        if (!holder || !toggle || holder.dataset.mounted) return;
+
+        // Motivos para NO montar el vídeo. En todos ellos el póster ya está
+        // pintado en el HTML, así que el hero se ve igual de bien.
+        var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var isNarrow = window.innerWidth < 768;
+        var saveData = !!(navigator.connection && navigator.connection.saveData);
+        if (reducedMotion || isNarrow || saveData) return;
+
+        holder.dataset.mounted = '1';
+
+        var iframe = document.createElement('iframe');
+        iframe.src = holder.dataset.heroVideo;
+        iframe.setAttribute('allow', 'autoplay; fullscreen');
+        iframe.setAttribute('aria-hidden', 'true'); // decorativo: no aporta información
+        iframe.setAttribute('tabindex', '-1');      // fuera del orden de tabulación
+        // "cover" sin object-fit (que no aplica a iframes): caja de 16:9
+        // centrada que desborda por el lado que haga falta hasta tapar el hero.
+        iframe.style.cssText =
+          'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
+          'width:auto;height:auto;min-width:100%;min-height:100%;aspect-ratio:16/9;' +
+          'border:0;pointer-events:none';
+
+        iframe.addEventListener('load', function () {
+          holder.style.opacity = '1'; // fundido sobre el póster
+          toggle.style.display = '';  // el botón de pausa solo si hay algo que pausar
+        });
+
+        holder.appendChild(iframe);
+
+        var playing = true;
+        toggle.addEventListener('click', function () {
+          playing = !playing;
+          // API postMessage del player de Vimeo: no hace falta cargar su SDK.
+          try {
+            iframe.contentWindow.postMessage(
+              JSON.stringify({ method: playing ? 'play' : 'pause' }),
+              'https://player.vimeo.com'
+            );
+          } catch (e) {
+            /* player aún no listo; el siguiente clic vuelve a intentarlo */
+          }
+          toggle.setAttribute('aria-label', playing ? toggle.dataset.labelPause : toggle.dataset.labelPlay);
+          toggle.querySelector('[data-icon="pause"]').style.display = playing ? '' : 'none';
+          toggle.querySelector('[data-icon="play"]').style.display = playing ? 'none' : '';
+        });
+      }
+
+      // Fuera de la ruta crítica: el LCP es el póster, el iframe entra después.
+      function schedule() {
+        if ('requestIdleCallback' in window) requestIdleCallback(mountHeroVideo, { timeout: 2000 });
+        else setTimeout(mountHeroVideo, 300);
+      }
+
+      if (document.readyState === 'complete') schedule();
+      else window.addEventListener('load', schedule, { once: true });
+
+      // View Transitions: al volver a la home el DOM es otro. El guard evita
+      // acumular listeners cada vez que este script se reejecuta tras un swap.
+      if (!window.__obliqHeroVideoBound) {
+        window.__obliqHeroVideoBound = true;
+        document.addEventListener('astro:after-swap', schedule);
+      }
+    })();
+  </script>
+    </Fragment>
   )}
 
   <div class="relative z-10 max-w-4xl">
