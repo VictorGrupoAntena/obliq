@@ -436,7 +436,22 @@ $html = '<!DOCTYPE html>
 // ---------------------------------------------------------------------------
 // Send email
 // ---------------------------------------------------------------------------
-$to      = 'info@obliqproductions.com';
+// Destinatario configurable por ENTORNO (variable OBLIQ_MAIL_TO). El buzón real
+// del cliente (info@obliqproductions.com) se define SOLO en producción; en
+// staging se apunta a un buzón de pruebas. Fail-closed: sin configurar NO se
+// envía al buzón real por accidente (p. ej. durante la validación E2E).
+// Se define por dominio en Plesk (PHP-FPM env) — NO en el repo, para que
+// staging y producción tengan valores distintos.
+$to = getenv('OBLIQ_MAIL_TO');
+if ($to === false || trim($to) === '') {
+    $to = $_SERVER['OBLIQ_MAIL_TO'] ?? ($_ENV['OBLIQ_MAIL_TO'] ?? '');
+}
+$to = trim($to);
+if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+    error_log('[send-quote] OBLIQ_MAIL_TO no configurado o inválido — envío abortado.');
+    respond(false, $tr['error_send'], 500);
+}
+
 $subject = $tr['subject'] . ' — ' . $company;
 
 $headers  = "From: noreply@obliqproductions.com\r\n";
