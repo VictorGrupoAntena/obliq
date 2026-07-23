@@ -13,6 +13,7 @@
 - Títulos/años/clientes **reales** de los 11 proyectos (hoy «Proyecto {cat} {n}»).
 - Diagnóstico **DNS/correo** del dominio (dónde están los DNS; MX está en **Google Workspace**).
 - **SPF/DKIM/DMARC** del servidor: `mail()` entrega, pero revisar que no caiga en spam (envío server→Google en nombre de obliqproductions.com).
+- **🔴 Tarifa de operador — condiciones PROVISIONALES sin confirmar (bloqueante).** El singleton WP «Alquiler · Tarifa de operador» nace con `op_terms_es`/`op_terms_en` marcados `[PENDIENTE DE CONFIRMAR CON CLIENTE]` (formato/plazo de brutos, límite horario de media jornada, desplazamiento). **El build emite un WARNING** (`[operator] ⚠️ …`) listando estos campos en cada rebuild mientras sigan provisionales. No salir a producción hasta sustituirlos por los datos reales en WP. Además, el **default de los contadores de operador** (n_jornadas / n_medias_jornadas) queda pendiente de decisión del cliente: hoy arrancan en 0/0 con restricción ≥1 (sin default comercial).
 
 **Backlog restante:**
 
@@ -23,6 +24,20 @@
 - **Credencial staging** (Basic Auth nginx): user `obliq`, pass reseteada 17-Jul (guardada aparte, NO en repo).
 
 > ⚠️ **Todo lo listado en este MEMORY vive en la rama `redesign` y NO está en producción.** Producción sigue sirviendo `main` (SSR Node en `~/httpdocs`) y el auto-deploy apunta a staging (`DEPLOY_TARGET`). Esto incluye el CMS de páginas fijas (CPT `contenido`) y el hero de vídeo editable: **salen a producción en el cutover, no antes**. El mu-plugin `obliq-cpts.php` sí está ya activo en el WP compartido (`~/admin.obliqproductions.com`), que es único para staging y producción: los campos existen en wp-admin aunque la web pública todavía no los use.
+
+---
+
+### Sprint Alquiler siempre con operador — ✅ CÓDIGO EN `redesign` (23-Jul-2026); pendiente deploy mu-plugin a WP + staging
+
+- **Qué:** el alquiler de equipos pasa a ser **siempre con operador** (modelo **aditivo**: `TOTAL = material + operador`). Tarifa confirmada por Dirección: **300 €/jornada · 200 €/media jornada (sin IVA)**, entrega de brutos incluida. Encargo `brain-it:it-brief`. Fase 0 (audit) + Fase 1 (plan) + Fase 2 (ejecución) en `docs/audits/alquiler-operador-fase0.md` y `docs/sprints/plan-alquiler-operador.md`.
+- **Dónde vive la tarifa (D1):** **cuarta entrada singleton** del CPT `contenido`, `_obliq_key = 'alquiler'`, título «Alquiler · Tarifa de operador». Campos `op_jornada_price`, `op_media_price` (number), `op_includes_es/_en`, `op_terms_es/_en` (textarea). **🔑 `OBLIQ_CONTENIDO_SEED_VERSION` → `'3'`** (sin subirla no se crea en el WP ya instalado). Editable en WP nativo, sin código. El **deploy hook ya cubre `contenido`** → no se tocó `obliq-deploy-hook.php`. Se descartó Options Page (no existe) y CPT nuevo (sobredimensionado).
+- **Data layer:** `src/data/operator.ts` → `getOperatorTariffAsync()` (memoizado). **A2: el build FALLA** (`throw`) si `op_jornada_price`/`op_media_price` no resuelven a >0 en modo WP — sin fallback a 0/vacío; sin WP usa mock 300/200 (build local/CI verde). **A2b: WARNING** (no error) listando campos con `[PENDIENTE DE CONFIRMAR CON CLIENTE]`.
+- **Presentación (D2):** precio del material re-etiquetado `Equipo · {price}€/día + IVA` + badge «Siempre con operador» en tarjetas (`ProductCard`, `PackCard`), fichas y banda en las landings `/alquiler/`. Bloque de operador (aviso + qué incluye con brutos + condiciones) desde el singleton.
+- **Formulario (D3):** el CTA «Alquilar» **añade al carrito** (no `?producto=`); el alquiler va por **`send-quote.php`** (no `send-contact.php`). Operador **por solicitud** → en la página de presupuesto (`presupuesto.astro` / `en/quote.astro`) **dos contadores** `n_jornadas` + `n_medias_jornadas` (independientes de los `days` del material; el selector binario se descartó por no expresar reservas multi-día). Total aditivo con línea de operador desglosada. **Con n+m=0 el resumen NO muestra importe**: texto «Indica las jornadas de operador…» + submit deshabilitado (validación cliente) + **422** en `send-quote.php` (`error_operator`). Precios inyectados en build desde WP (`data-*`), nunca hardcodeados. Email con bloque de operador + «Entrega de brutos incluida» + gran total material+operador. **Default de contadores pendiente de cliente** (hoy 0/0).
+- **SEO (D4):** `productSchema()` **ya no emite `offers`/`price`** (con operador obligatorio, el precio pelado no es contratable → snippet engañoso; se acepta la pérdida en las fichas). El precio real y fijo se publica como **`Service`** en la landing `/alquiler/` (`rentalServiceSchema`): tarifa de operador desde el singleton, `areaServed` Valencia/Alicante/Castellón, provider el LocalBusiness existente. **NO** se añade `Service` a las fichas. A1 verificado: no había precio en title/meta/OG (nada que retirar).
+- **Gates:** 🔒 Gate 1 (crear meta en WP) y 🔒 Gate 3 (staging) → **handoff pendiente** (sin acceso de escritura a WP ni al pipeline desde la sesión). Gate 2 (`send-quote.php`) hecho en su commit. `send-contact.php` no se tocó. `main` intacto.
+- **Commits en `redesign`:** `2412bf6` (mu-plugin) · `1966da4` (data layer) · i18n · `acfc7fa` (D2) · `d4bafc9` (D3) · `0c2bcac` (D4).
+- **⏭️ Para cerrar:** (1) desplegar `scripts/obliq-cpts.php` (seed v3) al WP compartido → auto-siembra el singleton; verificar `contenido?_obliq_key=alquiler` en REST. (2) `npm run build` (ya en modo WP resuelve la tarifa). (3) deploy a staging + validar E2E (cambiar precio en WP → verlo tras rebuild; probar 422 y el estado n+m=0). (4) cliente rellena `op_terms_*` reales (bloqueante de cutover).
 
 ---
 
