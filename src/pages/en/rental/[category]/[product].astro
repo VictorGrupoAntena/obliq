@@ -41,7 +41,7 @@ const operatorNotice = r.OPERATOR_NOTICE
   .replace('{jornada}', String(operator.jornadaPrice))
   .replace('{media}', String(operator.mediaPrice));
 
-const schema = productSchema(product.name, String(product.price), product.image);
+const schema = productSchema(product.name, product.image);
 ---
 
 <BaseLayout

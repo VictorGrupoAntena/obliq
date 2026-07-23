@@ -11,10 +11,12 @@ import PackCard from '@/components/cards/PackCard.astro';
 import { t, localizedUrl } from '@/lib/i18n';
 import { getCategoriesAsync, getFeaturedProductsAsync, getPacksAsync, getPackWithProducts } from '@/data/rental';
 import { getOperatorTariffAsync } from '@/data/operator';
+import { rentalServiceSchema } from '@/lib/schema';
 
 const locale = 'en';
 const i18n = t(locale);
 const r = i18n.RENTAL;
+const q = i18n.QUOTE;
 const categories = await getCategoriesAsync();
 const featured = await getFeaturedProductsAsync();
 const packs = await getPacksAsync();
@@ -22,6 +24,16 @@ const operator = await getOperatorTariffAsync();
 const operatorNotice = r.OPERATOR_NOTICE
   .replace('{jornada}', String(operator.jornadaPrice))
   .replace('{media}', String(operator.mediaPrice));
+
+// Vertical Service: publishes the operator tariff (the real, fixed price).
+const schema = rentalServiceSchema({
+  name: r.TITLE,
+  description: r.HERO_SUBTITLE,
+  jornadaPrice: operator.jornadaPrice,
+  jornadaLabel: q.OPERATOR_FULL_DAYS,
+  mediaPrice: operator.mediaPrice,
+  mediaLabel: q.OPERATOR_HALF_DAYS,
+});
 
 const breadcrumbItems = [
   { label: i18n.BREADCRUMBS.HOME, href: '/en/' },
@@ -34,6 +46,7 @@ const breadcrumbItems = [
   description={r.HERO_SUBTITLE}
   locale={locale}
   pageColor="white"
+  schema={schema}
 >
   <Breadcrumbs items={breadcrumbItems} />
 

@@ -85,9 +85,17 @@ export function serviceSchema(name: string, description: string, price?: string)
   };
 }
 
+/**
+ * Product para una ficha de alquiler.
+ *
+ * NO emite `offers`/`price`: el alquiler es SIEMPRE con operador (modelo
+ * aditivo), de modo que el precio/día del material no es contratable por sí
+ * solo. Publicar `Offer/price` con el precio pelado sería un rich snippet
+ * engañoso. El único precio fijo y contratable (la tarifa de operador) se
+ * publica como Service en la landing /alquiler/ (ver `rentalServiceSchema`).
+ */
 export function productSchema(
   name: string,
-  price: string,
   image: string,
   specs?: Record<string, string>,
 ) {
@@ -96,12 +104,6 @@ export function productSchema(
     '@type': 'Product',
     name,
     image,
-    offers: {
-      '@type': 'Offer',
-      price,
-      priceCurrency: 'EUR',
-      availability: 'https://schema.org/InStock',
-    },
     ...(specs
       ? {
           additionalProperty: Object.entries(specs).map(([name, value]) => ({
@@ -111,5 +113,49 @@ export function productSchema(
           })),
         }
       : {}),
+  };
+}
+
+/**
+ * Service de la vertical de alquiler (landing /alquiler/).
+ *
+ * Publica el ÚNICO precio fijo y contratable: la tarifa de operador
+ * (jornada / media jornada), leída del singleton WP — nunca hardcodeada.
+ * Sustituye al `Product/offers` retirado de las fichas (D4).
+ */
+export function rentalServiceSchema(opts: {
+  name: string;
+  description: string;
+  jornadaPrice: number;
+  jornadaLabel: string;
+  mediaPrice: number;
+  mediaLabel: string;
+  areaServed?: string[];
+}) {
+  const areas = opts.areaServed ?? ['Valencia', 'Alicante', 'Castellón'];
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: opts.name,
+    description: opts.description,
+    provider: {
+      '@type': 'LocalBusiness',
+      '@id': 'https://obliqproductions.com/#organization',
+    },
+    areaServed: areas.map((a) => ({ '@type': 'Place', name: a })),
+    offers: [
+      {
+        '@type': 'Offer',
+        name: opts.jornadaLabel,
+        price: String(opts.jornadaPrice),
+        priceCurrency: 'EUR',
+      },
+      {
+        '@type': 'Offer',
+        name: opts.mediaLabel,
+        price: String(opts.mediaPrice),
+        priceCurrency: 'EUR',
+      },
+    ],
   };
 }
