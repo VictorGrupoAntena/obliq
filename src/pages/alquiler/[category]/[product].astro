@@ -10,6 +10,7 @@ import Button from '@/components/atoms/Button.astro';
 import { t, localizedUrl } from '@/lib/i18n';
 import { productSchema, breadcrumbSchema } from '@/lib/schema';
 import { getCategoriesAsync, discountTiers, getDiscountedPrice } from '@/data/rental';
+import { getOperatorTariffAsync } from '@/data/operator';
 
 export async function getStaticPaths() {
   const categories = await getCategoriesAsync();
@@ -34,6 +35,11 @@ const breadcrumbItems = [
   { label: category.name.es, href: localizedUrl('/alquiler/' + categorySlug + '/', locale) },
   { label: product.name },
 ];
+
+const operator = await getOperatorTariffAsync();
+const operatorNotice = r.OPERATOR_NOTICE
+  .replace('{jornada}', String(operator.jornadaPrice))
+  .replace('{media}', String(operator.mediaPrice));
 
 const schema = productSchema(product.name, String(product.price), product.image);
 ---
@@ -67,11 +73,32 @@ const schema = productSchema(product.name, String(product.price), product.image)
       <!-- Info -->
       <div>
         <Heading level={1} italic={false} class="text-black mb-4">{product.name}</Heading>
-        <p class="mb-6">
+        <p class="mb-4">
+          <span class="text-[13px] font-medium uppercase tracking-[1px] text-muted mr-1">{r.MATERIAL_LABEL} ·</span>
           <span class="text-[32px] font-extrabold text-black">{product.price}€</span>
           <span class="text-[16px] font-light text-muted">{r.PER_DAY}</span>
           <span class="text-[13px] font-light text-muted ml-1">{r.VAT}</span>
         </p>
+
+        <!-- Siempre con operador -->
+        <div class="mb-8 border border-border-light bg-white p-4">
+          <p class="mb-2">
+            <span class="inline-block text-[10px] font-semibold uppercase tracking-[1.5px] text-black border border-border-light px-2 py-0.5">{r.WITH_OPERATOR_BADGE}</span>
+          </p>
+          <p class="text-[13px] text-muted mb-3">{operatorNotice}</p>
+          <p class="text-[12px] font-semibold uppercase tracking-[1px] text-black mb-2">{r.INCLUDES_TITLE}</p>
+          <ul class="space-y-1 mb-3">
+            {operator.includes.es.map((item) => (
+              <li class="flex items-start gap-2 text-[13px] text-muted">
+                <span aria-hidden="true">·</span><span>{item}</span>
+              </li>
+            ))}
+          </ul>
+          {operator.terms.es && (
+            <p class="text-[11px] text-muted leading-relaxed opacity-80">{operator.terms.es}</p>
+          )}
+        </div>
+
         <Paragraph class="text-muted mb-8">{product.description.es}</Paragraph>
 
         <!-- Specs -->

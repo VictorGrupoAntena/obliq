@@ -13,6 +13,8 @@ interface Props {
   addedText?: string;
   perDay: string;
   vat: string;
+  materialLabel?: string;
+  operatorBadge?: string;
   theme?: 'dark' | 'light';
 }
 
@@ -28,6 +30,8 @@ const {
   addedText = 'AÑADIDO ✓',
   perDay,
   vat,
+  materialLabel = '',
+  operatorBadge = '',
   theme = 'light',
 } = Astro.props;
 
@@ -56,7 +60,12 @@ const isDark = theme === 'dark';
       <h3 class:list={['text-[18px] font-bold mb-2', isDark ? 'text-white' : 'text-black']}>
         {name}
       </h3>
-      <p class="mb-3">
+      <p class="mb-2">
+        {materialLabel && (
+          <span class:list={['text-[11px] font-medium uppercase tracking-[1px] mr-1', isDark ? 'text-dim' : 'text-muted']}>
+            {materialLabel} ·
+          </span>
+        )}
         <span class:list={['text-[20px] font-extrabold', isDark ? 'text-white' : 'text-black']}>
           {price}€
         </span>
@@ -67,6 +76,13 @@ const isDark = theme === 'dark';
           {vat}
         </span>
       </p>
+      {operatorBadge && (
+        <p class="mb-3">
+          <span class:list={['inline-block text-[10px] font-semibold uppercase tracking-[1.5px] px-2 py-0.5 border', isDark ? 'text-white border-white/40' : 'text-black border-border-light']}>
+            {operatorBadge}
+          </span>
+        </p>
+      )}
     </div>
   </a>
   <div class="px-4 pb-4">

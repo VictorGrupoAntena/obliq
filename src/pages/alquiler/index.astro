@@ -10,6 +10,7 @@ import Button from '@/components/atoms/Button.astro';
 import PackCard from '@/components/cards/PackCard.astro';
 import { t, localizedUrl } from '@/lib/i18n';
 import { getCategoriesAsync, getFeaturedProductsAsync, getPacksAsync, getPackWithProducts } from '@/data/rental';
+import { getOperatorTariffAsync } from '@/data/operator';
 
 const locale = 'es';
 const i18n = t(locale);
@@ -17,6 +18,10 @@ const r = i18n.RENTAL;
 const categories = await getCategoriesAsync();
 const featured = await getFeaturedProductsAsync();
 const packs = await getPacksAsync();
+const operator = await getOperatorTariffAsync();
+const operatorNotice = r.OPERATOR_NOTICE
+  .replace('{jornada}', String(operator.jornadaPrice))
+  .replace('{media}', String(operator.mediaPrice));
 
 const breadcrumbItems = [
   { label: i18n.BREADCRUMBS.HOME, href: '/' },
@@ -45,6 +50,16 @@ const breadcrumbItems = [
       {r.VIEW_CATEGORY}
     </Button>
   </HeroSection>
+
+  <!-- Siempre con operador (banda de la vertical) -->
+  <section class="bg-black px-4 md:px-section py-6">
+    <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
+      <span class="inline-block shrink-0 text-[10px] font-semibold uppercase tracking-[2px] text-black bg-white px-3 py-1">
+        {r.WITH_OPERATOR_BADGE}
+      </span>
+      <p class="text-[14px] font-light text-secondary">{operatorNotice}</p>
+    </div>
+  </section>
 
   <!-- Categories -->
   <section id="categories" class="bg-white py-section px-4 md:px-section">
@@ -84,6 +99,8 @@ const breadcrumbItems = [
             addedText={r.CART_ADDED}
             perDay={r.PER_DAY}
             vat={r.VAT}
+            materialLabel={r.MATERIAL_LABEL}
+            operatorBadge={r.WITH_OPERATOR_BADGE}
             savingsLabel={r.PACKS_SAVINGS}
             includesLabel={r.PACKS_INCLUDES}
           />
@@ -112,6 +129,8 @@ const breadcrumbItems = [
             addedText={r.CART_ADDED}
             perDay={r.PER_DAY}
             vat={r.VAT}
+            materialLabel={r.MATERIAL_LABEL}
+            operatorBadge={r.WITH_OPERATOR_BADGE}
             theme="light"
           />
         );
