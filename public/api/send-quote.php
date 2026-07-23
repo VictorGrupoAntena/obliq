@@ -70,6 +70,11 @@ function t(string $lang): array
             'discount'          => 'Descuento',
             'total'             => 'Total',
             'vat_note'          => 'IVA no incluido',
+            'operator'          => 'Operador',
+            'operator_full'     => 'Jornadas completas',
+            'operator_half'     => 'Medias jornadas',
+            'operator_brutos'   => 'Entrega de brutos incluida',
+            'error_operator'    => 'Indica al menos media jornada de operador.',
             'client_info'       => 'Datos del cliente',
             'company'           => 'Empresa',
             'email'             => 'Email',
@@ -100,6 +105,11 @@ function t(string $lang): array
             'discount'          => 'Discount',
             'total'             => 'Total',
             'vat_note'          => 'VAT not included',
+            'operator'          => 'Operator',
+            'operator_full'     => 'Full days',
+            'operator_half'     => 'Half days',
+            'operator_brutos'   => 'Raw footage delivery included',
+            'error_operator'    => 'Please indicate at least a half day of operator.',
             'client_info'       => 'Client Information',
             'company'           => 'Company',
             'email'             => 'Email',
@@ -205,6 +215,13 @@ $total     = (float) ($data['total'] ?? 0);
 $discount  = (float) ($data['discount'] ?? 0);
 $products  = $data['products'] ?? [];
 
+// Operador (obligatorio por solicitud, modelo aditivo). Precios informativos
+// (los edita el cliente en WP; el email va a info@ para revisión humana).
+$nJornadas = max(0, (int) ($data['n_jornadas'] ?? 0));
+$nMedias   = max(0, (int) ($data['n_medias_jornadas'] ?? 0));
+$opJornadaP = max(0, (float) ($data['operator_jornada_price'] ?? 0));
+$opMediaP   = max(0, (float) ($data['operator_media_price'] ?? 0));
+
 if ($company === '' || $email === '' || $phone === '' || $startDate === '') {
     respond(false, $tr['error_required'], 422);
 }
@@ -232,6 +249,15 @@ if ($startDtCheck < $today) {
 if (!is_array($products) || count($products) === 0) {
     respond(false, $tr['error_products'], 422);
 }
+
+// R2: mínimo media jornada de operador por solicitud.
+if (($nJornadas + $nMedias) < 1) {
+    respond(false, $tr['error_operator'], 422);
+}
+
+// Total aditivo: material (calculado en cliente) + operador.
+$operatorTotal = $nJornadas * $opJornadaP + $nMedias * $opMediaP;
+$grandTotal    = $total + $operatorTotal;
 
 // ---------------------------------------------------------------------------
 // Calculate return date
@@ -281,6 +307,27 @@ if ($discount > 0) {
         </tr>';
 }
 
+// Operador (obligatorio): una fila por modalidad usada + nota de brutos.
+$operatorRows = '';
+if ($nJornadas > 0) {
+    $operatorRows .= '
+        <tr style="border-bottom:1px solid #333;">
+            <td colspan="3" style="padding:10px 12px;color:#eee;text-align:right;">' . $tr['operator'] . ' &mdash; ' . $tr['operator_full'] . ' (' . $nJornadas . ' &times; ' . number_format($opJornadaP, 2, ',', '.') . ' &euro;)</td>
+            <td style="padding:10px 12px;color:#eee;text-align:right;">' . number_format($nJornadas * $opJornadaP, 2, ',', '.') . ' &euro;</td>
+        </tr>';
+}
+if ($nMedias > 0) {
+    $operatorRows .= '
+        <tr style="border-bottom:1px solid #333;">
+            <td colspan="3" style="padding:10px 12px;color:#eee;text-align:right;">' . $tr['operator'] . ' &mdash; ' . $tr['operator_half'] . ' (' . $nMedias . ' &times; ' . number_format($opMediaP, 2, ',', '.') . ' &euro;)</td>
+            <td style="padding:10px 12px;color:#eee;text-align:right;">' . number_format($nMedias * $opMediaP, 2, ',', '.') . ' &euro;</td>
+        </tr>';
+}
+$operatorRows .= '
+        <tr>
+            <td colspan="4" style="padding:4px 12px;color:#888;font-size:11px;text-align:right;">' . $tr['operator_brutos'] . '</td>
+        </tr>';
+
 $notesSection = '';
 if ($notes !== '') {
     $notesSection = '
@@ -321,11 +368,12 @@ $html = '<!DOCTYPE html>
                 <tbody>
                     ' . $productRows . '
                     ' . $discountRow . '
+                    ' . $operatorRows . '
                 </tbody>
                 <tfoot>
                     <tr style="background:#1a1a1a;">
                         <td colspan="3" style="padding:14px 12px;color:#fff;font-weight:bold;text-align:right;font-size:15px;">' . $tr['total'] . '</td>
-                        <td style="padding:14px 12px;color:#fff;font-weight:bold;text-align:right;font-size:18px;">' . number_format($total, 2, ',', '.') . ' &euro;</td>
+                        <td style="padding:14px 12px;color:#fff;font-weight:bold;text-align:right;font-size:18px;">' . number_format($grandTotal, 2, ',', '.') . ' &euro;</td>
                     </tr>
                     <tr>
                         <td colspan="4" style="padding:4px 12px 12px;color:#666;font-size:11px;text-align:right;background:#1a1a1a;">' . $tr['vat_note'] . '</td>

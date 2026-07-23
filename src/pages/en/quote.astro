@@ -2,11 +2,13 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HeroSection from '@/components/sections/HeroSection.astro';
 import { t, localizedUrl } from '@/lib/i18n';
+import { getOperatorTariffAsync } from '@/data/operator';
 
 const locale = 'en';
 const i18n = t(locale);
 const q = i18n.QUOTE;
 const r = i18n.RENTAL;
+const operator = await getOperatorTariffAsync();
 ---
 
 <BaseLayout title={q.TITLE} description={q.SUBTITLE} locale={locale} pageColor="black">
@@ -46,17 +48,27 @@ const r = i18n.RENTAL;
 
           <!-- Totals -->
           <div class="border-t border-white/10 pt-4 space-y-2">
-            <div id="quote-discount-row" class="hidden flex items-center justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-dim text-[13px]">{q.MATERIAL_SUBTOTAL}</span>
+              <span id="quote-material" class="text-dim text-[13px]">0€</span>
+            </div>
+            <div id="quote-discount-row" class="hidden items-center justify-between">
               <span class="text-dim text-[13px]">{q.DISCOUNT_APPLIED}</span>
               <span id="quote-discount-value" class="text-dim text-[13px]">-0%</span>
             </div>
             <div class="flex items-center justify-between">
+              <span class="text-dim text-[13px]">{q.OPERATOR_LINE}</span>
+              <span id="quote-operator-value" class="text-dim text-[13px]">0€</span>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-white/10">
               <span class="text-white text-[14px] font-medium">{q.TOTAL}</span>
               <div class="text-right">
                 <span id="quote-total" class="text-white text-[28px] font-black">0€</span>
-                <span class="text-dim text-[11px] ml-1">{q.VAT_NOTE}</span>
+                <span id="quote-total-vat" class="text-dim text-[11px] ml-1">{q.VAT_NOTE}</span>
               </div>
             </div>
+            <!-- With n+m=0 the amount is NOT shown: the user is asked to set operator days (Dirección) -->
+            <p id="quote-operator-required" class="hidden text-yellow-400/90 text-[13px] pt-1">{q.OPERATOR_REQUIRED}</p>
           </div>
         </div>
 
@@ -132,6 +144,47 @@ const r = i18n.RENTAL;
                 <span id="quote-return-date" class="text-white text-[18px] font-bold">—</span>
               </div>
             </div>
+
+            <!-- Operator (required, per request) -->
+            <fieldset
+              id="operator-fieldset"
+              data-jornada-price={String(operator.jornadaPrice)}
+              data-media-price={String(operator.mediaPrice)}
+              class="border border-white/20 p-4"
+            >
+              <legend class="text-[12px] font-semibold uppercase tracking-[2px] text-white px-2">{q.OPERATOR_TITLE} *</legend>
+              <p class="text-dim text-[13px] mb-4">{q.OPERATOR_INTRO}</p>
+              <div class="flex gap-4">
+                <div class="flex-1">
+                  <label for="n_jornadas" class="block text-[12px] text-dim mb-1">{q.OPERATOR_FULL_DAYS} · {operator.jornadaPrice}€ {q.OPERATOR_EACH}</label>
+                  <input
+                    type="number"
+                    id="n_jornadas"
+                    name="n_jornadas"
+                    min="0"
+                    step="1"
+                    value="0"
+                    inputmode="numeric"
+                    class="w-full border border-white/20 bg-transparent px-4 py-3 text-[16px] text-white focus:border-white focus:outline-none transition-colors [color-scheme:dark]"
+                  />
+                </div>
+                <div class="flex-1">
+                  <label for="n_medias_jornadas" class="block text-[12px] text-dim mb-1">{q.OPERATOR_HALF_DAYS} · {operator.mediaPrice}€ {q.OPERATOR_EACH}</label>
+                  <input
+                    type="number"
+                    id="n_medias_jornadas"
+                    name="n_medias_jornadas"
+                    min="0"
+                    step="1"
+                    value="0"
+                    inputmode="numeric"
+                    class="w-full border border-white/20 bg-transparent px-4 py-3 text-[16px] text-white focus:border-white focus:outline-none transition-colors [color-scheme:dark]"
+                  />
+                </div>
+              </div>
+              <p class="text-dim text-[12px] mt-2">{q.OPERATOR_INCLUDES_BRUTOS}</p>
+              <p id="operator-error" class="hidden text-red-400 text-[13px] mt-2">{q.OPERATOR_MIN_ERROR}</p>
+            </fieldset>
 
             <div>
               <label for="notes" class="block text-[12px] font-semibold uppercase tracking-[2px] text-dim mb-2">{q.NOTES}</label>
@@ -212,6 +265,23 @@ const r = i18n.RENTAL;
     const submitBtn = document.getElementById('quote-submit-btn') as HTMLButtonElement | null;
     const submitText = document.getElementById('quote-submit-text');
     const startDateInput = document.getElementById('startDate') as HTMLInputElement | null;
+    const materialEl = document.getElementById('quote-material');
+    const operatorValueEl = document.getElementById('quote-operator-value');
+    const operatorRequiredEl = document.getElementById('quote-operator-required');
+    const totalVatEl = document.getElementById('quote-total-vat');
+    const operatorFieldset = document.getElementById('operator-fieldset');
+    const nJornadasInput = document.getElementById('n_jornadas') as HTMLInputElement | null;
+    const nMediasInput = document.getElementById('n_medias_jornadas') as HTMLInputElement | null;
+    const operatorErrorEl = document.getElementById('operator-error');
+    const jornadaPrice = Number(operatorFieldset?.dataset.jornadaPrice) || 0;
+    const mediaPrice = Number(operatorFieldset?.dataset.mediaPrice) || 0;
+
+    // Operator per request: n full days + m half days. Additive: TOTAL = material + (n·full + m·half).
+    function readOperator() {
+      const n = Math.max(0, Math.floor(Number(nJornadasInput?.value) || 0));
+      const m = Math.max(0, Math.floor(Number(nMediasInput?.value) || 0));
+      return { n, m, count: n + m, total: n * jornadaPrice + m * mediaPrice };
+    }
 
     if (!emptyEl || !formWrapper || !successEl || !form) return;
 
@@ -270,6 +340,31 @@ const r = i18n.RENTAL;
     }
 
     startDateInput?.addEventListener('change', updateReturnDate);
+
+    function updateSubmitState() {
+      if (submitBtn) submitBtn.disabled = readOperator().count < 1;
+    }
+
+    // Recompute material + operator. With n+m=0 the amount is NOT shown: the
+    // user is asked to indicate the operator days (Dirección).
+    function updateTotals() {
+      const material = getTotal();
+      const op = readOperator();
+      const enough = op.count >= 1;
+      if (materialEl) materialEl.textContent = material.toFixed(0) + '€';
+      if (operatorValueEl) operatorValueEl.textContent = op.total.toFixed(0) + '€';
+      if (totalEl) {
+        totalEl.classList.toggle('hidden', !enough);
+        if (enough) totalEl.textContent = (material + op.total).toFixed(0) + '€';
+      }
+      if (totalVatEl) totalVatEl.classList.toggle('hidden', !enough);
+      if (operatorRequiredEl) operatorRequiredEl.classList.toggle('hidden', enough);
+      if (enough && operatorErrorEl) operatorErrorEl.classList.add('hidden');
+      updateSubmitState();
+    }
+
+    nJornadasInput?.addEventListener('input', updateTotals);
+    nMediasInput?.addEventListener('input', updateTotals);
 
     function render() {
       const cart = getCart();
@@ -384,7 +479,7 @@ const r = i18n.RENTAL;
         }
       }
 
-      if (totalEl) totalEl.textContent = getTotal().toFixed(0) + '€';
+      updateTotals();
       updateReturnDate();
     }
 
@@ -395,6 +490,14 @@ const r = i18n.RENTAL;
       e.preventDefault();
 
       if (!form.checkValidity()) { form.reportValidity(); return; }
+
+      // R2: at least a half day of operator per request.
+      const op = readOperator();
+      if (op.count < 1) {
+        if (operatorErrorEl) operatorErrorEl.classList.remove('hidden');
+        nJornadasInput?.focus();
+        return;
+      }
 
       if (submitBtn) submitBtn.disabled = true;
       if (submitText) submitText.textContent = submitText.dataset.submitting || 'SENDING...';
@@ -417,6 +520,10 @@ const r = i18n.RENTAL;
         notes: formData.get('notes') || '',
         total: cartData.total,
         discount: cartData.discount,
+        n_jornadas: op.n,
+        n_medias_jornadas: op.m,
+        operator_jornada_price: jornadaPrice,
+        operator_media_price: mediaPrice,
         lang: 'en',
         website: formData.get('website') || '',
         _token: token,
