@@ -384,6 +384,7 @@ export interface ContenidoBundle {
   about: WPContenido | null;
   contact: WPContenido | null;
   home: WPContenido | null;
+  alquiler: WPContenido | null;
 }
 
 /**
@@ -394,7 +395,7 @@ export interface ContenidoBundle {
  */
 let contenidoCache: Promise<ContenidoBundle> | null = null;
 
-const EMPTY_CONTENIDO: ContenidoBundle = { about: null, contact: null, home: null };
+const EMPTY_CONTENIDO: ContenidoBundle = { about: null, contact: null, home: null, alquiler: null };
 
 /**
  * Devuelve las entradas singleton del CPT `contenido` en una sola petición.
@@ -414,6 +415,9 @@ export function getContenido(): Promise<ContenidoBundle> {
         // `home` falta en instalaciones donde el mu-plugin aún no ha sembrado
         // la entrada (seed v2) → null y la home cae a su contenido estático.
         home: rows.find((r) => r._obliq_key === 'home') ?? null,
+        // `alquiler` (seed v3): tarifa de operador. Si falta, el data layer de
+        // operador (src/data/operator.ts) hace fallar el build a propósito (A2).
+        alquiler: rows.find((r) => r._obliq_key === 'alquiler') ?? null,
       }))
       .catch((e) => {
         console.warn('[contenido] WP fetch failed, using i18n/static content:', e);
