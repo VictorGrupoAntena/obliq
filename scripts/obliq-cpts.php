@@ -572,6 +572,11 @@ function obliq_save_meta_fields( $post_id, $post ) {
 //                             (página de contacto + footer + WhatsApp
 //                              + JSON-LD LocalBusiness)
 //   _obliq_key = 'home'     → fondo del hero de la portada (vídeo + imagen)
+//   _obliq_key = 'alquiler' → tarifa GLOBAL de operador de alquiler
+//                             (precio jornada/media, qué incluye, condiciones).
+//                             El alquiler es SIEMPRE con operador. La consume
+//                             el catálogo /alquiler/, la página de presupuesto
+//                             y el JSON-LD Service de la vertical.
 //
 // El cliente NO puede crear ni borrar entradas de este CPT.
 // El equipo (CPT `director`) y los clientes (CPT `cliente`) NO se
@@ -585,8 +590,11 @@ function obliq_save_meta_fields( $post_id, $post ) {
 //   v2 — entrada «Inicio» (_obliq_key = 'home'). Sin subir la versión, el
 //        guard `obliq_contenido_seeded` impediría crearla en el WP ya
 //        instalado y el campo de vídeo no aparecería nunca en wp-admin.
+//   v3 — entrada «Alquiler · Tarifa de operador» (_obliq_key = 'alquiler').
+//        Mismo motivo: sin subir la versión, el singleton de la tarifa de
+//        operador no se crearía en el WP ya instalado.
 if ( ! defined( 'OBLIQ_CONTENIDO_SEED_VERSION' ) ) {
-    define( 'OBLIQ_CONTENIDO_SEED_VERSION', '2' );
+    define( 'OBLIQ_CONTENIDO_SEED_VERSION', '3' );
 }
 
 /**
@@ -657,12 +665,22 @@ function obliq_contenido_field_defs() {
         // ---------- Entrada "Inicio" (2 campos) ----------
         'hm_hero_vimeo_url'     => array( 'Hero — vídeo de Vimeo (URL). Si se deja vacío se muestra solo la imagen.', 'text' ),
         'hm_hero_fallback_image' => array( 'Hero — imagen (se ve mientras carga el vídeo, en móvil y si no hay vídeo)', 'media' ),
+
+        // ---------- Entrada "Alquiler · Tarifa de operador" (6 campos) ----------
+        // El alquiler es SIEMPRE con operador. Precios SIN IVA (mismo criterio
+        // que el resto del catálogo). Modelo aditivo: TOTAL = material + operador.
+        'op_jornada_price'      => array( 'Operador — tarifa por JORNADA COMPLETA (€, sin IVA). Solo el número, p. ej. 300', 'number' ),
+        'op_media_price'        => array( 'Operador — tarifa por MEDIA JORNADA (€, sin IVA). Solo el número, p. ej. 200', 'number' ),
+        'op_includes_es'        => array( 'Qué incluye la tarifa de operador — una línea por ítem (ES)', 'textarea' ),
+        'op_includes_en'        => array( 'Qué incluye la tarifa de operador — una línea por ítem (EN)', 'textarea' ),
+        'op_terms_es'           => array( 'Condiciones (brutos, límite de media jornada, desplazamiento) (ES)', 'textarea' ),
+        'op_terms_en'           => array( 'Condiciones (brutos, límite de media jornada, desplazamiento) (EN)', 'textarea' ),
     );
 }
 
-/** Lista de meta_keys de una entrada: 'about' | 'contact' | 'home' | 'all' */
+/** Lista de meta_keys de una entrada: 'about' | 'contact' | 'home' | 'alquiler' | 'all' */
 function obliq_contenido_keys( $which = 'all' ) {
-    $prefixes = array( 'about' => 'ab_', 'contact' => 'ct_', 'home' => 'hm_' );
+    $prefixes = array( 'about' => 'ab_', 'contact' => 'ct_', 'home' => 'hm_', 'alquiler' => 'op_' );
     $prefix   = isset( $prefixes[ $which ] ) ? $prefixes[ $which ] : '';
     $keys   = array();
     foreach ( obliq_contenido_field_defs() as $key => $def ) {
@@ -855,6 +873,22 @@ function obliq_contenido_meta_html( $post ) {
         return;
     }
 
+    if ( 'alquiler' === $key ) {
+        echo '<p><em>Tarifa <strong>global</strong> del operador de alquiler. El alquiler de equipos es <strong>siempre con operador</strong>: este precio se <strong>suma</strong> al precio del material.<br>';
+        echo 'Se usa en el catálogo de alquiler, en la página de presupuesto y en los datos que lee Google.</em></p>';
+        echo '<hr><h4>Precios del operador (sin IVA)</h4>';
+        obliq_contenido_render_fields( $id, array( 'op_jornada_price', 'op_media_price' ) );
+        echo '<hr><h4>Qué incluye</h4>';
+        echo '<p><em>Una línea por ítem. La entrega de brutos debe figurar aquí.</em></p>';
+        obliq_contenido_render_fields( $id, array( 'op_includes_es', 'op_includes_en' ) );
+        echo '<hr><h4>Condiciones</h4>';
+        echo '<p style="background:#fff8e5;border-left:4px solid #dba617;padding:10px 12px;max-width:760px">';
+        echo '<strong>Pendiente de confirmar:</strong> el formato y plazo de entrega de los brutos, el límite horario de la media jornada y el desplazamiento incluido nacen marcados como <code>[PENDIENTE DE CONFIRMAR CON CLIENTE]</code>. Sustituye ese texto por los datos reales cuando estén definidos.';
+        echo '</p>';
+        obliq_contenido_render_fields( $id, array( 'op_terms_es', 'op_terms_en' ) );
+        return;
+    }
+
     echo '<p><strong>Entrada no reconocida.</strong> Falta el identificador interno <code>_obliq_key</code>.</p>';
 }
 
@@ -898,9 +932,11 @@ function obliq_contenido_seed() {
     if ( get_option( 'obliq_contenido_seeded' ) === OBLIQ_CONTENIDO_SEED_VERSION ) return;
 
     $entries = array(
-        'about'   => array( 'Nosotros', obliq_contenido_seed_about() ),
-        'contact' => array( 'Datos de contacto', obliq_contenido_seed_contact() ),
-        'home'    => array( 'Inicio', obliq_contenido_seed_home() ),
+        'about'    => array( 'Nosotros', obliq_contenido_seed_about() ),
+        'contact'  => array( 'Datos de contacto', obliq_contenido_seed_contact() ),
+        'home'     => array( 'Inicio', obliq_contenido_seed_home() ),
+        // Título inequívoco para que el cliente la localice en el listado sin ayuda.
+        'alquiler' => array( 'Alquiler · Tarifa de operador', obliq_contenido_seed_alquiler() ),
     );
 
     foreach ( $entries as $obliq_key => $entry ) {
@@ -1006,5 +1042,25 @@ function obliq_contenido_seed_home() {
     return array(
         'hm_hero_vimeo_url'      => '',
         'hm_hero_fallback_image' => '/hero.jpg', // la imagen que hoy vive en el repo
+    );
+}
+
+/**
+ * Valores iniciales de "Alquiler · Tarifa de operador".
+ *
+ * Precios confirmados por Dirección: 300 €/jornada, 200 €/media jornada (sin IVA).
+ * Las CONDICIONES (formato/plazo de brutos, límite de media jornada, desplazamiento)
+ * NO se conocen todavía: nacen marcadas con [PENDIENTE DE CONFIRMAR CON CLIENTE]
+ * — sin inventar formatos, plazos, horas ni radios. El build emite un WARNING
+ * listando los campos que aún contienen ese marcador (ítem bloqueante de cutover).
+ */
+function obliq_contenido_seed_alquiler() {
+    return array(
+        'op_jornada_price' => '300',
+        'op_media_price'   => '200',
+        'op_includes_es'   => "Operador profesional cualificado\nEntrega de brutos",
+        'op_includes_en'   => "Qualified professional operator\nRaw footage delivery",
+        'op_terms_es'      => '[PENDIENTE DE CONFIRMAR CON CLIENTE] Entrega de brutos: formato y plazo por definir. Media jornada: límite horario por definir. Desplazamiento: cobertura y radio por definir. Incluye operador y entrega de brutos; sin edición, etalonaje ni subtitulado.',
+        'op_terms_en'      => '[PENDIENTE DE CONFIRMAR CON CLIENTE] Raw footage delivery: format and lead time to be defined. Half day: time limit to be defined. Travel: coverage and radius to be defined. Includes operator and raw footage delivery; no editing, color grading or subtitling.',
     );
 }
