@@ -265,6 +265,7 @@
 6. Webhook auto-rebuild: WP publish → GitHub Actions → build → SFTP a Plesk
 7. Portfolio: URLs Vimeo reales + thumbnails (cliente proporciona)
 8. WhatsApp mensaje contextual según página
+9. **Deuda técnica — destinatario de correo inconsistente entre endpoints.** Desde el sprint «Alquiler con operador» (23-Jul-2026), `public/api/send-quote.php` lee el destinatario de la env **`OBLIQ_MAIL_TO`** (fail-closed, configurable por entorno), pero `public/api/send-contact.php` **mantiene `info@obliqproductions.com` hardcodeado**. Quedó **fuera del alcance** de ese sprint (el brief prohibía tocar `send-contact.php`). Pendiente: unificar `send-contact.php` al mismo patrón `OBLIQ_MAIL_TO` si se quiere consistencia y poder redirigir el contacto a un buzón de pruebas en staging.
 
 **PRIORIDAD BAJA:**
 9. Schema.org VideoObject en portfolio (cuando haya URLs Vimeo reales)

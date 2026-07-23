@@ -57,7 +57,17 @@ mv obliq-deploy-hook.php.OFF obliq-deploy-hook.php
 #   wp cron event list | grep obliq_deploy_dispatch   → si aparece: wp cron event delete obliq_deploy_dispatch
 ```
 
-**7. Cruzar el Gate 3 a mano** (deliberado): GitHub → Actions → «Deploy (build + rsync a Plesk)» → **Run workflow** → rama `redesign`. (Requisito previo: ver «Antes de la E2E» abajo.)
+**7. Cruzar el Gate 3 a mano** (deliberado, primer deploy controlado): GitHub → Actions → «Deploy (build + rsync a Plesk)» → **Run workflow** → rama `redesign`. (Requisito previo: ver «Antes de la E2E» abajo.)
+
+> ⚠️ `workflow_dispatch` es el **botón manual** y funciona **igual con el hook muerto**: NO prueba que la automatización (P4) siga viva. La reactivación del paso 6 hay que verificarla aparte (paso 8).
+
+**8. VERIFICAR QUE EL HOOK REVIVIÓ (obligatorio).** Un hook desactivado en silencio invalida P4 y el síntoma es que *no pasa nada*. Comprobación:
+
+1. Edita cualquier contenido de un CPT de `OBLIQ_DEPLOY_CPTS` en wp-admin (p. ej. abre «Alquiler · Tarifa de operador» y **Actualizar** sin cambiar nada).
+2. En GitHub → Actions, en ~90 s (debounce) debe aparecer un run **disparado por `repository_dispatch`** (evento `wp-content-update`), **no** `workflow_dispatch`. La columna de evento del run lo distingue.
+3. Si **no aparece** ningún run por `repository_dispatch`: el hook quedó muerto (¿te dejaste `obliq-deploy-hook.php.OFF`? ¿error en el fichero?). Revisa `wp-content/mu-plugins/` y `error_log` (`[obliq-deploy]`).
+
+Solo tras ver el run por `repository_dispatch` se da por bueno el Gate 1 (P4 intacto).
 
 ## Comprobar el singleton en la REST
 
