@@ -13,6 +13,7 @@
 - Títulos/años/clientes **reales** de los 11 proyectos (hoy «Proyecto {cat} {n}»).
 - Diagnóstico **DNS/correo** del dominio (dónde están los DNS; MX está en **Google Workspace**).
 - **SPF/DKIM/DMARC** del servidor: `mail()` entrega, pero revisar que no caiga en spam (envío server→Google en nombre de obliqproductions.com).
+- **🔴 `OBLIQ_MAIL_TO` en producción (bloqueante).** `send-quote.php` lee el destinatario de la env `OBLIQ_MAIL_TO` (fail-closed: sin ella → 500). En el cutover hay que definir `OBLIQ_MAIL_TO=info@obliqproductions.com` en el PHP-FPM del dominio de **producción** (en staging = buzón de pruebas). `send-contact.php` **sigue** con `info@` hardcodeado (fuera del alcance de este sprint; revisar aparte si se quiere el mismo patrón).
 - **🔴 Tarifa de operador — condiciones PROVISIONALES sin confirmar (bloqueante).** El singleton WP «Alquiler · Tarifa de operador» nace con `op_terms_es`/`op_terms_en` marcados `[PENDIENTE DE CONFIRMAR CON CLIENTE]` (formato/plazo de brutos, límite horario de media jornada, desplazamiento). **El build emite un WARNING** (`[operator] ⚠️ …`) listando estos campos en cada rebuild mientras sigan provisionales. No salir a producción hasta sustituirlos por los datos reales en WP. Además, el **default de los contadores de operador** (n_jornadas / n_medias_jornadas) queda pendiente de decisión del cliente: hoy arrancan en 0/0 con restricción ≥1 (sin default comercial).
 
 **Backlog restante:**
