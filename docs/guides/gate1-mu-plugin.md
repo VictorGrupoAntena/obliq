@@ -87,6 +87,8 @@ OK
 
 Si sale `FALTA`: abre el wp-admin una vez (dispara `init`) y repite. Confirma también la entrada «Alquiler · Tarifa de operador» en **wp-admin → Contenido de páginas**.
 
+> **Troubleshooting — el seed no corrió.** El razonamiento de «sin bump» descansa en que el WP instalado tiene `obliq_contenido_seeded = '2'`. Si el singleton no aparece, lo PRIMERO a revisar es esa opción: `wp option get obliq_contenido_seeded` (o en la tabla `wp_options`). Si ya vale `'3'`, el seed **no habrá corrido** (el guard corta) y hará falta **bump a `'4'`** en `OBLIQ_CONTENIDO_SEED_VERSION` para forzar la siembra. (El guard A2 lo detectaría igualmente rompiendo el build en modo WP, pero este diagnóstico es más directo.)
+
 ## Verificar que el build en modo WP pasa (camino feliz — hoy sin verificar)
 
 Con el singleton ya en la REST, desde el repo:
