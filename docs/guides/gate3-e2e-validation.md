@@ -29,7 +29,10 @@ En staging, con al menos un producto en el carrito, entra a `/presupuesto/` (y `
 
 - [ ] **Acotado 0..N:** con 5 días, escribir `m=9` deja el campo en `5` (atributo `max=5`).
 - [ ] **Desglose correcto:** con 5 días y `m=2` → «3 × jornada completa (900 €) + 2 × media jornada (400 €)», línea «Operador» = **1.300 €**, total = material + 1.300.
-- [ ] **Re-acotado al bajar N:** con `m=4`, pulsar el selector de **1 día** → `m` pasa a `1` y la etiqueta cambia al texto singular.
+- [ ] **Re-acotado al BAJAR N:** con `m=4`, pulsar el selector de **1 día** → `m` pasa a `1` y la etiqueta cambia al texto singular.
+- [ ] **N que SUBE (sin salir de la página):** con 2 líneas a 1 día y `m=1`, subir una línea a **5 días** → `N=5`, `m` **sigue en 1**, `max` pasa a 5 y el desglose da «4 × jornada completa (1.200 €) + 1 × media jornada (200 €)» = **1.400 €** de operador.
+
+> **Nota de comportamiento (no es defecto):** `m` vive solo en el DOM, **no se persiste**. Añadir un producto obliga a salir de `/presupuesto/` (se añade desde la ficha), así que al volver `m` reaparece en **0**. Por eso el caso de «N que sube» se prueba subiendo los días de una línea **dentro de la propia página**, no añadiendo un producto.
 - [ ] **Extremos:** `m=0` → todas completas; `m=N` → todas medias (0 completas).
 - [ ] **Concordancia:** con N=1 la etiqueta usa la variante singular («¿La jornada de alquiler es de media jornada?»), no «de las 1 jornadas».
 
