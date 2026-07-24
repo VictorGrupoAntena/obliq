@@ -211,6 +211,11 @@ if ($elapsed < 3) {
 }
 
 // Required fields
+// `$companyRaw` conserva el texto tal cual lo escribió el usuario: se usa SOLO
+// para la cabecera Subject, codificada en RFC 2047. `$company` (escapado con
+// htmlspecialchars) se sigue usando en el cuerpo HTML.
+// Se eliminan CR/LF para cerrar la inyección de cabeceras.
+$companyRaw = str_replace(["\r", "\n"], ' ', trim((string) ($data['company'] ?? '')));
 $company   = clean($data['company'] ?? '');
 $email     = trim($data['email'] ?? '');
 $phone     = clean($data['phone'] ?? '');
@@ -482,7 +487,14 @@ if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
     respond(false, $tr['error_send'], 500);
 }
 
-$subject = $tr['subject'] . ' — ' . $company;
+// Subject en RFC 2047: la cabecera lleva un dato de usuario (el nombre de
+// empresa), así que cualquier carácter no ASCII —«Muñoz», «Créations», y el
+// propio guion largo— se rompería al sanear mail() las cabeceras. Codificado,
+// llega íntegro a cualquier cliente. mbstring verificado en el PHP 8.3 de Plesk.
+$subjectRaw = $tr['subject'] . ' — ' . $companyRaw;
+$subject = function_exists('mb_encode_mimeheader')
+    ? mb_encode_mimeheader($subjectRaw, 'UTF-8', 'B', "\r\n")
+    : preg_replace('/[^\x20-\x7E]/', '', $subjectRaw); // fallback ASCII si faltara mbstring
 
 $headers  = "From: noreply@obliqproductions.com\r\n";
 $headers .= "Reply-To: " . $email . "\r\n";

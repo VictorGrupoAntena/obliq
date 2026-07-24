@@ -32,7 +32,10 @@ En staging, con al menos un producto en el carrito, entra a `/presupuesto/` (y `
 - [ ] **Re-acotado al BAJAR N:** con `m=4`, pulsar el selector de **1 día** → `m` pasa a `1` y la etiqueta cambia al texto singular.
 - [ ] **N que SUBE (sin salir de la página):** con 2 líneas a 1 día y `m=1`, subir una línea a **5 días** → `N=5`, `m` **sigue en 1**, `max` pasa a 5 y el desglose da «4 × jornada completa (1.200 €) + 1 × media jornada (200 €)» = **1.400 €** de operador.
 
-> **Nota de comportamiento (no es defecto):** `m` vive solo en el DOM, **no se persiste**. Añadir un producto obliga a salir de `/presupuesto/` (se añade desde la ficha), así que al volver `m` reaparece en **0**. Por eso el caso de «N que sube» se prueba subiendo los días de una línea **dentro de la propia página**, no añadiendo un producto.
+- [ ] **Persistencia de `m` (corregido 24-jul):** fijar `m=2` con N=5, **navegar a una ficha de producto y volver** a `/presupuesto/` → `m` **sigue en 2** y el desglose se mantiene (1.300 € de operador). Antes se reiniciaba a 0 en silencio, siempre hacia lo más caro.
+- [ ] **Clamp al REHIDRATAR:** con `m=5` guardado, si el carrito cambia por fuera y N baja a 1 (p. ej. otra pestaña), al cargar la página `m` se acota a **1**, el `max` pasa a 1 y el valor guardado se **corrige** en almacenamiento.
+
+> `m` se guarda junto al carrito (`obliq-quote-half-days`, misma vida útil) y se limpia al vaciar el carrito. El clamp se aplica al escribir **y** al leer.
 - [ ] **Extremos:** `m=0` → todas completas; `m=N` → todas medias (0 completas).
 - [ ] **Concordancia:** con N=1 la etiqueta usa la variante singular («¿La jornada de alquiler es de media jornada?»), no «de las 1 jornadas».
 
@@ -72,6 +75,16 @@ curl -s -w "\nn=1 → HTTP %{http_code}\n" -X POST -H "Content-Type: application
 - [ ] `HTTP 200`.
 - [ ] Llega el correo **al buzón de pruebas**, con: filas por modalidad, la **línea de resumen** «Operador: N dias de alquiler → n × jornada completa + m × media jornada» con su importe, «Entrega de brutos incluida», los **días** en el bloque de fechas, y el gran total = material + operador.
 - [ ] **NO** llega nada a `info@obliqproductions.com`.
+- [ ] **Asunto con acentos y ñ (el caso que importa, no el del guion):** enviar con `"company":"Muñoz & Créations S.L."` → el asunto llega **íntegro**: `Solicitud de presupuesto — Muñoz & Créations S.L.` El nombre de empresa es dato de usuario y va en una cabecera, así que se codifica en **RFC 2047** (`mb_encode_mimeheader`, verificado en el PHP 8.3 de Plesk); la cabecera viaja en **ASCII puro** y puede ir **plegada en varias líneas** — al comprobarla hay que **desplegar** las continuaciones, no leer solo la primera línea física.
+
+Para capturar el correo sin enviarlo de verdad (mismo método usado en la implementación):
+
+```bash
+# levanta PHP interceptando el envío a un fichero
+OBLIQ_MAIL_TO=sink@example.com php -S 127.0.0.1:8893 -t public -d sendmail_path="cat > /tmp/mail.txt"
+# tras el POST, decodificar la cabecera desplegada:
+python3 -c "import email;from email.header import decode_header,make_header;m=email.message_from_bytes(open('/tmp/mail.txt','rb').read());print(str(make_header(decode_header(m.get('Subject')))))"
+```
 
 **Criterio:** el correo llega al buzón de pruebas con el desglose de operador; el buzón real no recibe nada. ✅/❌
 

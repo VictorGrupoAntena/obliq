@@ -231,7 +231,8 @@ const operator = await getOperatorTariffAsync();
   import {
     getCart, getCount, getTotal, getItemTotal, getDiscountPercent,
     clearCart, getCartDataForQuote, setItemDays, setPackDays, DAY_OPTIONS,
-    removeFromCart, removePackFromCart
+    removeFromCart, removePackFromCart,
+    getRentalDays, getOperatorHalfDays, setOperatorHalfDays
   } from '@/lib/cart-store';
 
   const DISCOUNT_MAP: Record<number, number> = { 1: 0, 3: 10, 5: 15, 7: 20 };
@@ -266,20 +267,12 @@ const operator = await getOperatorTariffAsync();
     const breakdownTpl = operatorFieldset?.dataset.breakdown || '';
     const halfQuestionOneTpl = operatorFieldset?.dataset.halfQuestionOne || '';
 
-    /** Rental days = max days across cart lines. */
-    function rentalDays(): number {
-      const cart = getCart();
-      return cart.length > 0 ? Math.max(...cart.map((i) => i.days)) : 0;
-    }
-
     // Business rule (client, 24-Jul-2026): ONE operator day per rental day →
     // n + m === days, always. Only "how many of those N are half days" is asked;
     // n = N − m is DERIVED, so the invalid state is unreachable by construction.
     function readOperator() {
-      const N = rentalDays();
-      let m = Math.floor(Number(nMediasInput?.value) || 0);
-      if (!Number.isFinite(m) || m < 0) m = 0;
-      if (m > N) m = N; // re-clamp when N drops
+      const N = getRentalDays();
+      const m = getOperatorHalfDays(); // persisted, already clamped to 0..N
       const n = Math.max(0, N - m);
       return { N, n, m, total: n * jornadaPrice + m * mediaPrice };
     }
@@ -349,6 +342,7 @@ const operator = await getOperatorTariffAsync();
       const op = readOperator();
 
       // Re-clamp the input when N drops (day change or line removal).
+      setOperatorHalfDays(op.m); // re-persistir ya acotado (N pudo cambiar)
       if (nMediasInput) {
         nMediasInput.max = String(op.N);
         if (Number(nMediasInput.value) !== op.m) nMediasInput.value = String(op.m);
@@ -372,7 +366,10 @@ const operator = await getOperatorTariffAsync();
       if (operatorErrorEl) operatorErrorEl.classList.add('hidden');
     }
 
-    nMediasInput?.addEventListener('input', updateTotals);
+    nMediasInput?.addEventListener('input', () => {
+      setOperatorHalfDays(nMediasInput?.value);
+      updateTotals();
+    });
 
     function render() {
       const cart = getCart();

@@ -231,7 +231,8 @@ const operator = await getOperatorTariffAsync();
   import {
     getCart, getCount, getTotal, getItemTotal, getDiscountPercent,
     clearCart, getCartDataForQuote, setItemDays, setPackDays, DAY_OPTIONS,
-    removeFromCart, removePackFromCart
+    removeFromCart, removePackFromCart,
+    getRentalDays, getOperatorHalfDays, setOperatorHalfDays
   } from '@/lib/cart-store';
 
   const DISCOUNT_MAP: Record<number, number> = { 1: 0, 3: 10, 5: 15, 7: 20 };
@@ -266,21 +267,13 @@ const operator = await getOperatorTariffAsync();
     const breakdownTpl = operatorFieldset?.dataset.breakdown || '';
     const halfQuestionOneTpl = operatorFieldset?.dataset.halfQuestionOne || '';
 
-    /** Días de alquiler = máximo de días de las líneas del carrito. */
-    function rentalDays(): number {
-      const cart = getCart();
-      return cart.length > 0 ? Math.max(...cart.map((i) => i.days)) : 0;
-    }
-
     // Norma de negocio (cliente, 24-jul-2026): UNA jornada de operador por cada
     // día de alquiler → n + m === días, siempre. Solo se pregunta cuántas de esas
     // N son medias; n = N − m se DERIVA. Así el estado inválido es inalcanzable
     // (no se valida a posteriori: no se puede construir).
     function readOperator() {
-      const N = rentalDays();
-      let m = Math.floor(Number(nMediasInput?.value) || 0);
-      if (!Number.isFinite(m) || m < 0) m = 0;
-      if (m > N) m = N; // re-acotado cuando N baja
+      const N = getRentalDays();
+      const m = getOperatorHalfDays(); // persistido y ya acotado a 0..N
       const n = Math.max(0, N - m);
       return { N, n, m, total: n * jornadaPrice + m * mediaPrice };
     }
@@ -359,6 +352,7 @@ const operator = await getOperatorTariffAsync();
       const op = readOperator();
 
       // Re-acota el input cuando N baja (cambio de días o eliminar líneas).
+      setOperatorHalfDays(op.m); // re-persistir ya acotado (N pudo cambiar)
       if (nMediasInput) {
         nMediasInput.max = String(op.N);
         if (Number(nMediasInput.value) !== op.m) nMediasInput.value = String(op.m);
@@ -382,7 +376,10 @@ const operator = await getOperatorTariffAsync();
       if (operatorErrorEl) operatorErrorEl.classList.add('hidden');
     }
 
-    nMediasInput?.addEventListener('input', updateTotals);
+    nMediasInput?.addEventListener('input', () => {
+      setOperatorHalfDays(nMediasInput?.value);
+      updateTotals();
+    });
 
     // Reactive render — re-runs when cart changes
     function render() {

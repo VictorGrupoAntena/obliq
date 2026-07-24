@@ -4,6 +4,8 @@
  */
 
 const STORAGE_KEY = 'obliq-quote-cart';
+/** Medias jornadas de operador — se guarda junto al carrito (misma vida útil). */
+const HALF_DAYS_KEY = 'obliq-quote-half-days';
 
 export interface CartItem {
   productSlug: string;
@@ -101,6 +103,44 @@ export function toggleCart(item: CartItem): boolean {
 
 export function clearCart(): void {
   writeCart([]);
+  if (typeof localStorage !== 'undefined') localStorage.removeItem(HALF_DAYS_KEY);
+}
+
+// ---------------------------------------------------------------------------
+// Operador: medias jornadas (m) — PERSISTIDO junto al carrito.
+//
+// Norma: n + m === días de alquiler. Solo se guarda `m`; `n = días − m` se
+// deriva. Se persiste porque añadir material obliga a salir de /presupuesto/ y
+// al volver el valor se perdía en silencio, siempre hacia lo más caro (todas
+// jornadas completas). El clamp se aplica TAMBIÉN al rehidratar: el carrito
+// puede haber cambiado mientras tanto y `m` exceder el nuevo N.
+// ---------------------------------------------------------------------------
+
+/** Días de alquiler de la solicitud = máximo de días de las líneas. */
+export function getRentalDays(): number {
+  const cart = getCart();
+  return cart.length > 0 ? Math.max(...cart.map((i) => i.days)) : 0;
+}
+
+function clampHalfDays(value: unknown): number {
+  let m = Math.floor(Number(value) || 0);
+  if (!Number.isFinite(m) || m < 0) m = 0;
+  const days = getRentalDays();
+  return m > days ? days : m;
+}
+
+/** Medias jornadas guardadas, SIEMPRE acotadas a 0..días (clamp al rehidratar). */
+export function getOperatorHalfDays(): number {
+  if (typeof localStorage === 'undefined') return 0;
+  return clampHalfDays(localStorage.getItem(HALF_DAYS_KEY));
+}
+
+/** Guarda las medias jornadas ya acotadas a 0..días. */
+export function setOperatorHalfDays(value: unknown): number {
+  if (typeof localStorage === 'undefined') return 0;
+  const m = clampHalfDays(value);
+  localStorage.setItem(HALF_DAYS_KEY, String(m));
+  return m;
 }
 
 // ─── Per-item days ───
