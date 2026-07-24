@@ -74,7 +74,10 @@ function t(string $lang): array
             'operator_full'     => 'Jornadas completas',
             'operator_half'     => 'Medias jornadas',
             'operator_brutos'   => 'Entrega de brutos incluida',
-            'error_operator'    => 'Indica al menos media jornada de operador.',
+            'error_operator_mismatch' => 'Las jornadas de operador deben coincidir con los días de alquiler.',
+            'operator_summary'  => 'Operador',
+            'operator_full_n'   => '× jornada completa',
+            'operator_half_n'   => '× media jornada',
             'client_info'       => 'Datos del cliente',
             'company'           => 'Empresa',
             'email'             => 'Email',
@@ -109,7 +112,10 @@ function t(string $lang): array
             'operator_full'     => 'Full days',
             'operator_half'     => 'Half days',
             'operator_brutos'   => 'Raw footage delivery included',
-            'error_operator'    => 'Please indicate at least a half day of operator.',
+            'error_operator_mismatch' => 'Operator days must match the number of rental days.',
+            'operator_summary'  => 'Operator',
+            'operator_full_n'   => '× full day',
+            'operator_half_n'   => '× half day',
             'client_info'       => 'Client Information',
             'company'           => 'Company',
             'email'             => 'Email',
@@ -209,16 +215,21 @@ $company   = clean($data['company'] ?? '');
 $email     = trim($data['email'] ?? '');
 $phone     = clean($data['phone'] ?? '');
 $startDate = clean($data['startDate'] ?? '');
-$days      = (int) ($data['days'] ?? 1);
 $notes     = clean($data['notes'] ?? '');
 $total     = (float) ($data['total'] ?? 0);
 $discount  = (float) ($data['discount'] ?? 0);
 $products  = $data['products'] ?? [];
 
-// Operador (obligatorio por solicitud, modelo aditivo). Precios informativos
-// (los edita el cliente en WP; el email va a info@ para revisión humana).
-$nJornadas = max(0, (int) ($data['n_jornadas'] ?? 0));
-$nMedias   = max(0, (int) ($data['n_medias_jornadas'] ?? 0));
+// Operador. Norma de negocio (cliente 24-jul-2026): UNA jornada de operador por
+// cada día de alquiler → n + m === días. Precios informativos (los edita el
+// cliente en WP; el correo va a un humano en Obliq para su revisión).
+//
+// IMPORTANTE: `days` NO se lee del payload. Se DERIVA de products[].days. No hay
+// carrito en servidor, así que esto no es una frontera de confianza: es una
+// comprobación de COHERENCIA del payload, para que no llegue una solicitud
+// contradictoria e ilegible a quien la lea.
+$nJornadas  = max(0, (int) ($data['n_jornadas'] ?? 0));
+$nMedias    = max(0, (int) ($data['n_medias_jornadas'] ?? 0));
 $opJornadaP = max(0, (float) ($data['operator_jornada_price'] ?? 0));
 $opMediaP   = max(0, (float) ($data['operator_media_price'] ?? 0));
 
@@ -250,9 +261,19 @@ if (!is_array($products) || count($products) === 0) {
     respond(false, $tr['error_products'], 422);
 }
 
-// R2: mínimo media jornada de operador por solicitud.
-if (($nJornadas + $nMedias) < 1) {
-    respond(false, $tr['error_operator'], 422);
+// Días DERIVADOS del propio carrito recibido (se ignora cualquier `days` enviado).
+$days = 0;
+foreach ($products as $p) {
+    $pd = (int) ($p['days'] ?? 1);
+    if ($pd > $days) $days = $pd;
+}
+if ($days < 1) {
+    respond(false, $tr['error_products'], 422);
+}
+
+// Norma: n + m === días. Si no cuadra, la solicitud es incoherente → 422.
+if ($nMedias < 0 || $nMedias > $days || ($nJornadas + $nMedias) !== $days) {
+    respond(false, $tr['error_operator_mismatch'], 422);
 }
 
 // Total aditivo: material (calculado en cliente) + operador.
@@ -323,7 +344,16 @@ if ($nMedias > 0) {
             <td style="padding:10px 12px;color:#eee;text-align:right;">' . number_format($nMedias * $opMediaP, 2, ',', '.') . ' &euro;</td>
         </tr>';
 }
+// Resumen consolidado: días + desglose + importe de operador, en una línea.
+// Es lo que hace legible de un vistazo una solicitud rara.
 $operatorRows .= '
+        <tr style="border-bottom:1px solid #333;background:#151515;">
+            <td colspan="3" style="padding:10px 12px;color:#ccc;text-align:right;font-size:13px;">'
+                . $tr['operator_summary'] . ': ' . $days . ' ' . strtolower($tr['rental_days']) . ' &rarr; '
+                . $nJornadas . ' ' . $tr['operator_full_n'] . ' + ' . $nMedias . ' ' . $tr['operator_half_n'] .
+            '</td>
+            <td style="padding:10px 12px;color:#fff;text-align:right;font-weight:bold;">' . number_format($operatorTotal, 2, ',', '.') . ' &euro;</td>
+        </tr>
         <tr>
             <td colspan="4" style="padding:4px 12px;color:#888;font-size:11px;text-align:right;">' . $tr['operator_brutos'] . '</td>
         </tr>';

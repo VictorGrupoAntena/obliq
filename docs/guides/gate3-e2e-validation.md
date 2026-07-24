@@ -21,33 +21,43 @@
 
 **Criterio:** el cambio en WP se refleja en staging sin tocar código. ✅/❌
 
-## Escenario 2 — Estado `n+m = 0` (sin importe, submit bloqueado)
+## Escenario 2 — Campo único de operador (norma `n + m === días`)
 
-En staging, con al menos un producto en el carrito, entra a `/presupuesto/` (y `/en/quote/`):
+> ⚠️ **Obsoletos desde la norma del 24-jul-2026** (no ejecutar): el caso `n+m = 0` (ya no es alcanzable: el total siempre es calculable) y el barrido de 1/3/5/7 días con el operador fijo en 2+1 (ese estado ya no es válido).
 
-- [ ] Con los contadores a `0/0`: el resumen **no muestra importe total**; en su lugar el texto «**Indica las jornadas de operador para calcular el presupuesto**» (EN: «Indicate the operator days…»).
-- [ ] El botón de envío está **deshabilitado**.
-- [ ] Al poner `n_jornadas=1` (o media=1): aparece el total = material + operador, y el botón se habilita.
-- [ ] La línea «Operador» del resumen refleja `300·n + 200·m`.
+En staging, con al menos un producto en el carrito, entra a `/presupuesto/` (y `/en/quote/`). Hay **un solo campo**: «¿Cuántas de las N jornadas son de media jornada?» (`m`); `n = días − m` se deriva.
 
-**Criterio:** sin operador no hay importe ni envío; con operador, total aditivo correcto. ✅/❌
+- [ ] **Acotado 0..N:** con 5 días, escribir `m=9` deja el campo en `5` (atributo `max=5`).
+- [ ] **Desglose correcto:** con 5 días y `m=2` → «3 × jornada completa (900 €) + 2 × media jornada (400 €)», línea «Operador» = **1.300 €**, total = material + 1.300.
+- [ ] **Re-acotado al bajar N:** con `m=4`, pulsar el selector de **1 día** → `m` pasa a `1` y la etiqueta cambia al texto singular.
+- [ ] **Extremos:** `m=0` → todas completas; `m=N` → todas medias (0 completas).
+- [ ] **Concordancia:** con N=1 la etiqueta usa la variante singular («¿La jornada de alquiler es de media jornada?»), no «de las 1 jornadas».
 
-## Escenario 3 — 422 del endpoint por POST directo (no desde la UI)
+**Criterio:** el estado inválido es inalcanzable por construcción y el desglose cuadra. ✅/❌
 
-El submit está deshabilitado en cliente con `n+m=0`, así que la validación de servidor se prueba por `curl` directo (mismo método que en local). Contra staging:
+## Escenario 3 — 422 por descuadre, por POST directo (no desde la UI)
+
+La UI no puede generar un descuadre (el campo único lo impide), así que la validación de servidor se prueba por `curl` directo. **nginx no escucha en loopback**: se va por el backend Apache con `--resolve` para el SNI, **sin tocar la config de nginx**.
 
 ```bash
-BASE="https://obliq:<PASS>@staging.obliqproductions.com"   # Basic Auth
-SECRET="obliq_quote_$(date +%Y-%m-%d)"; TT=$(( $(date +%s) - 5 ))
-TOKEN=$(php -r "echo hash('sha256', \$argv[1].\$argv[2]);" "$SECRET" "$TT")
-START=$(date -v+1d +%Y-%m-%d)
-post() { printf '{"company":"QA","email":"qa@example.com","phone":"600111222","startDate":"%s","days":1,"products":[{"name":"X","days":1,"price":110,"subtotal":110}],"total":110,"discount":0,"n_jornadas":%s,"n_medias_jornadas":%s,"operator_jornada_price":300,"operator_media_price":200,"lang":"es","website":"","_token":"%s","_t":%s}' "$START" "$1" "$2" "$TOKEN" "$TT"; }
-
-# n+m=0 → 422 «Indica al menos media jornada de operador.»
-curl -s -o /dev/null -w "n=0 → HTTP %{http_code}\n" -X POST -H "Content-Type: application/json" --data "$(post 0 0)" "$BASE/api/send-quote.php"
+PHP=/opt/plesk/php/8.3/bin/php
+TT=$(( $(date +%s) - 6 )); SECRET="obliq_quote_$(date +%Y-%m-%d)"
+TOKEN=$($PHP -r "echo hash('sha256', \$argv[1].\$argv[2]);" "$SECRET" "$TT")
+START=$(date -d "+1 day" +%Y-%m-%d)
+URL="https://staging.obliqproductions.com:7081/api/send-quote.php"
+RES="--resolve staging.obliqproductions.com:7081:127.0.0.1"
+# $1 = días del producto, $2 = n, $3 = m, $4 = campo `days` del payload (debe ignorarse)
+mk(){ printf '{"company":"QA","email":"qa@example.com","phone":"600111222","startDate":"%s","days":%s,"products":[{"name":"X","days":%s,"price":110,"subtotal":467.5}],"total":467.5,"discount":15,"n_jornadas":%s,"n_medias_jornadas":%s,"operator_jornada_price":300,"operator_media_price":200,"lang":"es","website":"","_token":"%s","_t":%s}' "$START" "$4" "$1" "$2" "$3" "$TOKEN" "$TT"; }
+run(){ curl -s -k $RES -o /tmp/r.json -w "$1 → HTTP %{http_code}\n" -X POST -H "Content-Type: application/json" --data "$2" "$URL"; }
 ```
 
-**Criterio:** `HTTP 422`. ✅/❌ (Nota: el token es válido ~24 h del día en curso; regenéralo si cambia la fecha del servidor.)
+- [ ] `run "A cuadra"      "$(mk 5 3 2 5)"` → **200** (o 500 fail-closed si `OBLIQ_MAIL_TO` no está puesto aún).
+- [ ] `run "B no cuadra"    "$(mk 5 2 1 5)"` → **422** «Las jornadas de operador deben coincidir con los días de alquiler.»
+- [ ] `run "C m>N"          "$(mk 5 -1 6 5)"` → **422**.
+- [ ] `run "D days falseado" "$(mk 5 3 2 1)"` → **200**: el servidor **ignora** `days` y deriva 5 de `products[]`.
+- [ ] `run "E days falseado" "$(mk 1 3 2 5)"` → **422**: días reales = 1, `n+m = 5`.
+
+**Criterio:** el servidor deriva los días de `products[]`, ignora el `days` recibido y rechaza los descuadres. ✅/❌ (El token vale para la fecha del servidor; regenéralo si cambia el día.)
 
 ## Escenario 4 — Envío real al buzón de PRUEBAS (no a info@)
 
@@ -57,7 +67,7 @@ curl -s -w "\nn=1 → HTTP %{http_code}\n" -X POST -H "Content-Type: application
 ```
 
 - [ ] `HTTP 200`.
-- [ ] Llega el correo **al buzón de pruebas**, con el bloque «Operador — Jornadas completas (1 × 300,00 €)» + «Entrega de brutos incluida» + gran total = material + operador.
+- [ ] Llega el correo **al buzón de pruebas**, con: filas por modalidad, la **línea de resumen** «Operador: N dias de alquiler → n × jornada completa + m × media jornada» con su importe, «Entrega de brutos incluida», los **días** en el bloque de fechas, y el gran total = material + operador.
 - [ ] **NO** llega nada a `info@obliqproductions.com`.
 
 **Criterio:** el correo llega al buzón de pruebas con el desglose de operador; el buzón real no recibe nada. ✅/❌

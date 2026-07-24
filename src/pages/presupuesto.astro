@@ -67,8 +67,6 @@ const operator = await getOperatorTariffAsync();
                 <span id="quote-total-vat" class="text-dim text-[11px] ml-1">{q.VAT_NOTE}</span>
               </div>
             </div>
-            <!-- Con n+m=0 el importe NO se muestra: se pide indicar las jornadas (Dirección) -->
-            <p id="quote-operator-required" class="hidden text-yellow-400/90 text-[13px] pt-1">{q.OPERATOR_REQUIRED}</p>
           </div>
         </div>
 
@@ -150,40 +148,30 @@ const operator = await getOperatorTariffAsync();
               id="operator-fieldset"
               data-jornada-price={String(operator.jornadaPrice)}
               data-media-price={String(operator.mediaPrice)}
+              data-half-question={q.OPERATOR_HALF_QUESTION}
+              data-breakdown={q.OPERATOR_BREAKDOWN}
+              data-half-question-one={q.OPERATOR_HALF_QUESTION_ONE}
               class="border border-white/20 p-4"
             >
               <legend class="text-[12px] font-semibold uppercase tracking-[2px] text-white px-2">{q.OPERATOR_TITLE} *</legend>
               <p class="text-dim text-[13px] mb-4">{q.OPERATOR_INTRO}</p>
-              <div class="flex gap-4">
-                <div class="flex-1">
-                  <label for="n_jornadas" class="block text-[12px] text-dim mb-1">{q.OPERATOR_FULL_DAYS} · {operator.jornadaPrice}€ {q.OPERATOR_EACH}</label>
-                  <input
-                    type="number"
-                    id="n_jornadas"
-                    name="n_jornadas"
-                    min="0"
-                    step="1"
-                    value="0"
-                    inputmode="numeric"
-                    class="w-full border border-white/20 bg-transparent px-4 py-3 text-[16px] text-white focus:border-white focus:outline-none transition-colors [color-scheme:dark]"
-                  />
-                </div>
-                <div class="flex-1">
-                  <label for="n_medias_jornadas" class="block text-[12px] text-dim mb-1">{q.OPERATOR_HALF_DAYS} · {operator.mediaPrice}€ {q.OPERATOR_EACH}</label>
-                  <input
-                    type="number"
-                    id="n_medias_jornadas"
-                    name="n_medias_jornadas"
-                    min="0"
-                    step="1"
-                    value="0"
-                    inputmode="numeric"
-                    class="w-full border border-white/20 bg-transparent px-4 py-3 text-[16px] text-white focus:border-white focus:outline-none transition-colors [color-scheme:dark]"
-                  />
-                </div>
-              </div>
+              <!-- Campo ÚNICO: solo se pregunta cuántas de las N jornadas son medias.
+                   n = días − m se deriva, así la norma n+m===días no se puede violar. -->
+              <label for="n_medias_jornadas" id="operator-half-label" class="block text-[12px] text-dim mb-1">{q.OPERATOR_HALF_QUESTION_ONE}</label>
+              <input
+                type="number"
+                id="n_medias_jornadas"
+                name="n_medias_jornadas"
+                min="0"
+                max="1"
+                step="1"
+                value="0"
+                inputmode="numeric"
+                class="w-full border border-white/20 bg-transparent px-4 py-3 text-[16px] text-white focus:border-white focus:outline-none transition-colors [color-scheme:dark]"
+              />
+              <p id="operator-breakdown" class="text-white text-[13px] mt-3"></p>
               <p class="text-dim text-[12px] mt-2">{q.OPERATOR_INCLUDES_BRUTOS}</p>
-              <p id="operator-error" class="hidden text-red-400 text-[13px] mt-2">{q.OPERATOR_MIN_ERROR}</p>
+              <p id="operator-error" class="hidden text-red-400 text-[13px] mt-2">{q.OPERATOR_MISMATCH}</p>
             </fieldset>
 
             <div>
@@ -267,21 +255,34 @@ const operator = await getOperatorTariffAsync();
     const startDateInput = document.getElementById('startDate') as HTMLInputElement | null;
     const materialEl = document.getElementById('quote-material');
     const operatorValueEl = document.getElementById('quote-operator-value');
-    const operatorRequiredEl = document.getElementById('quote-operator-required');
-    const totalVatEl = document.getElementById('quote-total-vat');
     const operatorFieldset = document.getElementById('operator-fieldset');
-    const nJornadasInput = document.getElementById('n_jornadas') as HTMLInputElement | null;
     const nMediasInput = document.getElementById('n_medias_jornadas') as HTMLInputElement | null;
     const operatorErrorEl = document.getElementById('operator-error');
+    const breakdownEl = document.getElementById('operator-breakdown');
+    const halfLabelEl = document.getElementById('operator-half-label');
     const jornadaPrice = Number(operatorFieldset?.dataset.jornadaPrice) || 0;
     const mediaPrice = Number(operatorFieldset?.dataset.mediaPrice) || 0;
+    const halfQuestionTpl = operatorFieldset?.dataset.halfQuestion || '';
+    const breakdownTpl = operatorFieldset?.dataset.breakdown || '';
+    const halfQuestionOneTpl = operatorFieldset?.dataset.halfQuestionOne || '';
 
-    // Operador por solicitud: n jornadas completas + m medias jornadas.
-    // Modelo aditivo (Dirección): TOTAL = material + (n·jornada + m·media).
+    /** Días de alquiler = máximo de días de las líneas del carrito. */
+    function rentalDays(): number {
+      const cart = getCart();
+      return cart.length > 0 ? Math.max(...cart.map((i) => i.days)) : 0;
+    }
+
+    // Norma de negocio (cliente, 24-jul-2026): UNA jornada de operador por cada
+    // día de alquiler → n + m === días, siempre. Solo se pregunta cuántas de esas
+    // N son medias; n = N − m se DERIVA. Así el estado inválido es inalcanzable
+    // (no se valida a posteriori: no se puede construir).
     function readOperator() {
-      const n = Math.max(0, Math.floor(Number(nJornadasInput?.value) || 0));
-      const m = Math.max(0, Math.floor(Number(nMediasInput?.value) || 0));
-      return { n, m, count: n + m, total: n * jornadaPrice + m * mediaPrice };
+      const N = rentalDays();
+      let m = Math.floor(Number(nMediasInput?.value) || 0);
+      if (!Number.isFinite(m) || m < 0) m = 0;
+      if (m > N) m = N; // re-acotado cuando N baja
+      const n = Math.max(0, N - m);
+      return { N, n, m, total: n * jornadaPrice + m * mediaPrice };
     }
 
     if (!emptyEl || !formWrapper || !successEl || !form) return;
@@ -351,29 +352,36 @@ const operator = await getOperatorTariffAsync();
 
     startDateInput?.addEventListener('change', updateReturnDate);
 
-    function updateSubmitState() {
-      if (submitBtn) submitBtn.disabled = readOperator().count < 1;
-    }
-
-    // Recalcula material + operador. Con n+m=0 NO se muestra importe:
-    // se pide indicar las jornadas de operador (Dirección).
+    // Recalcula material + operador. Con el campo único el total SIEMPRE es
+    // calculable (n+m===días≥1), así que no hay estado «sin importe».
     function updateTotals() {
       const material = getTotal();
       const op = readOperator();
-      const enough = op.count >= 1;
+
+      // Re-acota el input cuando N baja (cambio de días o eliminar líneas).
+      if (nMediasInput) {
+        nMediasInput.max = String(op.N);
+        if (Number(nMediasInput.value) !== op.m) nMediasInput.value = String(op.m);
+      }
+      if (halfLabelEl) {
+        halfLabelEl.textContent = op.N === 1
+          ? halfQuestionOneTpl
+          : halfQuestionTpl.replace('{n}', String(op.N));
+      }
+
       if (materialEl) materialEl.textContent = material.toFixed(0) + '€';
       if (operatorValueEl) operatorValueEl.textContent = op.total.toFixed(0) + '€';
-      if (totalEl) {
-        totalEl.classList.toggle('hidden', !enough);
-        if (enough) totalEl.textContent = (material + op.total).toFixed(0) + '€';
+      if (breakdownEl) {
+        breakdownEl.textContent = breakdownTpl
+          .replace('{n}', String(op.n))
+          .replace('{na}', String(op.n * jornadaPrice))
+          .replace('{m}', String(op.m))
+          .replace('{ma}', String(op.m * mediaPrice));
       }
-      if (totalVatEl) totalVatEl.classList.toggle('hidden', !enough);
-      if (operatorRequiredEl) operatorRequiredEl.classList.toggle('hidden', enough);
-      if (enough && operatorErrorEl) operatorErrorEl.classList.add('hidden');
-      updateSubmitState();
+      if (totalEl) totalEl.textContent = (material + op.total).toFixed(0) + '€';
+      if (operatorErrorEl) operatorErrorEl.classList.add('hidden');
     }
 
-    nJornadasInput?.addEventListener('input', updateTotals);
     nMediasInput?.addEventListener('input', updateTotals);
 
     // Reactive render — re-runs when cart changes
@@ -512,11 +520,12 @@ const operator = await getOperatorTariffAsync();
 
       if (!form.checkValidity()) { form.reportValidity(); return; }
 
-      // R2: mínimo media jornada de operador por solicitud.
+      // Guard defensivo: con el campo único esto no debería fallar nunca
+      // (n = N − m), pero si el DOM se manipulara, no se envía.
       const op = readOperator();
-      if (op.count < 1) {
+      if (op.N < 1 || op.n + op.m !== op.N) {
         if (operatorErrorEl) operatorErrorEl.classList.remove('hidden');
-        nJornadasInput?.focus();
+        nMediasInput?.focus();
         return;
       }
 
@@ -526,18 +535,17 @@ const operator = await getOperatorTariffAsync();
 
       const formData = new FormData(form);
       const cartData = getCartDataForQuote();
-      const cart = getCart();
-      const maxDays = cart.length > 0 ? Math.max(...cart.map((i) => i.days)) : 1;
 
       const token = await generateToken(pageLoadTime);
 
+      // `days` NO se envía: el servidor lo deriva de products[].days e ignora
+      // cualquier valor recibido (no hay carrito en servidor → solo coherencia).
       const payload = {
         products: cartData.products,
         company: formData.get('company'),
         email: formData.get('email'),
         phone: formData.get('phone'),
         startDate: formData.get('startDate'),
-        days: maxDays,
         notes: formData.get('notes') || '',
         total: cartData.total,
         discount: cartData.discount,
