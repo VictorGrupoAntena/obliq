@@ -1048,11 +1048,12 @@ function obliq_contenido_seed_home() {
 /**
  * Valores iniciales de "Alquiler · Tarifa de operador".
  *
- * Precios confirmados por Dirección: 300 €/jornada, 200 €/media jornada (sin IVA).
- * Las CONDICIONES (formato/plazo de brutos, límite de media jornada, desplazamiento)
- * NO se conocen todavía: nacen marcadas con [PENDIENTE DE CONFIRMAR CON CLIENTE]
- * — sin inventar formatos, plazos, horas ni radios. El build emite un WARNING
- * listando los campos que aún contienen ese marcador (ítem bloqueante de cutover).
+ * Valores confirmados por el cliente (23-Jul-2026): 300 €/jornada, 200 €/media
+ * jornada (sin IVA); media jornada = 4 h, jornada completa = 8 h; entrega de
+ * brutos en 24 h; servicio en toda la Comunitat Valenciana. Ya NO llevan el
+ * marcador [PENDIENTE DE CONFIRMAR CON CLIENTE] → el build deja de avisar.
+ * Como el seed v3 NUNCA se subió, este texto entra en la PRIMERA creación del
+ * singleton; no requiere bump de versión.
  */
 function obliq_contenido_seed_alquiler() {
     return array(
@@ -1060,7 +1061,7 @@ function obliq_contenido_seed_alquiler() {
         'op_media_price'   => '200',
         'op_includes_es'   => "Operador profesional cualificado\nEntrega de brutos",
         'op_includes_en'   => "Qualified professional operator\nRaw footage delivery",
-        'op_terms_es'      => '[PENDIENTE DE CONFIRMAR CON CLIENTE] Entrega de brutos: formato y plazo por definir. Media jornada: límite horario por definir. Desplazamiento: cobertura y radio por definir. Incluye operador y entrega de brutos; sin edición, etalonaje ni subtitulado.',
-        'op_terms_en'      => '[PENDIENTE DE CONFIRMAR CON CLIENTE] Raw footage delivery: format and lead time to be defined. Half day: time limit to be defined. Travel: coverage and radius to be defined. Includes operator and raw footage delivery; no editing, color grading or subtitling.',
+        'op_terms_es'      => 'Todos los alquileres se realizan con operador. Media jornada: 4 horas. Jornada completa: 8 horas. Entrega de brutos en 24 h desde la finalización del rodaje. Servicio disponible en toda la Comunitat Valenciana; para desplazamientos fuera de la comunidad, consúltanos.',
+        'op_terms_en'      => 'All equipment rentals include an operator. Half day: 4 hours. Full day: 8 hours. Raw footage delivered within 24 hours of the end of the shoot. Available throughout the Valencian Community; for locations outside the region, get in touch.',
     );
 }
