@@ -54,6 +54,22 @@ function clean(string $value): string
 }
 
 /**
+ * Descuento por tramos de días (%).
+ *
+ * ⚠️ GEMELO de getDiscountPercent() en src/lib/cart-store.ts (tramos
+ * 1/3/5/7 = 0/10/15/20). Regla DUPLICADA front/back a propósito (no se
+ * unifica aquí para no abrir un refactor). Si el cliente cambia un tramo,
+ * hay que tocar LOS DOS sitios o la página y el correo divergen.
+ */
+function obliq_discount_percent(int $days): int
+{
+    if ($days >= 7) return 20;
+    if ($days >= 5) return 15;
+    if ($days >= 3) return 10;
+    return 0;
+}
+
+/**
  * Get translated strings for a given language.
  */
 function t(string $lang): array
@@ -315,23 +331,26 @@ foreach ($products as $p) {
         ? '<span style="display:inline-block;background:#333;color:#ccc;font-size:11px;padding:2px 6px;border-radius:3px;margin-left:6px;">' . $pPack . '</span>'
         : '';
 
+    // Descuento POR LÍNEA (según los días de ESTA fila), no global. El subtotal
+    // ya lo trae incorporado; la etiqueta solo lo hace visible donde aplica.
+    $pDiscount   = obliq_discount_percent($pDays);
+    $discountTag = $pDiscount > 0
+        ? '<span style="color:#888;font-size:11px;margin-left:6px;">(-' . $pDiscount . '%)</span>'
+        : '';
+
     $productRows .= '
         <tr style="border-bottom:1px solid #333;">
-            <td style="padding:10px 12px;color:#eee;">' . $pName . $packBadge . '</td>
+            <td style="padding:10px 12px;color:#eee;">' . $pName . $packBadge . $discountTag . '</td>
             <td style="padding:10px 12px;color:#eee;text-align:center;">' . $pDays . '</td>
             <td style="padding:10px 12px;color:#eee;text-align:right;">' . number_format($pPrice, 2, ',', '.') . ' &euro;</td>
             <td style="padding:10px 12px;color:#eee;text-align:right;">' . number_format($pSubtotal, 2, ',', '.') . ' &euro;</td>
         </tr>';
 }
 
-$discountRow = '';
-if ($discount > 0) {
-    $discountRow = '
-        <tr style="border-bottom:1px solid #333;">
-            <td colspan="3" style="padding:10px 12px;color:#aaa;text-align:right;">' . $tr['discount'] . ' (' . number_format($discount, 0) . '%)</td>
-            <td style="padding:10px 12px;color:#e74c3c;text-align:right;font-weight:bold;">-' . number_format($discount, 0) . '%</td>
-        </tr>';
-}
+// Sin fila global de descuento: el descuento por tramos es POR LÍNEA (etiqueta
+// en cada fila de producto + ya incorporado en su subtotal). Una fila global
+// mentía en carritos de días mixtos. El payload aún trae `discount` (tramo de
+// maxDays) pero ya no se pinta.
 
 // Operador (obligatorio): una fila por modalidad usada + nota de brutos.
 $operatorRows = '';
@@ -402,7 +421,6 @@ $html = '<!DOCTYPE html>
                 </thead>
                 <tbody>
                     ' . $productRows . '
-                    ' . $discountRow . '
                     ' . $operatorRows . '
                 </tbody>
                 <tfoot>

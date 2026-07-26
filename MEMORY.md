@@ -279,6 +279,7 @@
 7. Portfolio: URLs Vimeo reales + thumbnails (cliente proporciona)
 8. WhatsApp mensaje contextual según página
 9. **Deuda técnica — destinatario de correo inconsistente entre endpoints.** Desde el sprint «Alquiler con operador» (23-Jul-2026), `public/api/send-quote.php` lee el destinatario de la env **`OBLIQ_MAIL_TO`** (fail-closed, configurable por entorno), pero `public/api/send-contact.php` **mantiene `info@obliqproductions.com` hardcodeado**. Quedó **fuera del alcance** de ese sprint (el brief prohibía tocar `send-contact.php`). Pendiente: unificar `send-contact.php` al mismo patrón `OBLIQ_MAIL_TO` si se quiere consistencia y poder redirigir el contacto a un buzón de pruebas en staging.
+10. **Deuda técnica — fuente de descuentos por tramos DUPLICADA front/back (26-Jul-2026).** Al eliminar la fila global «Descuento multidía» (mentía en carritos de días mixtos) y pasar la etiqueta `(-X%)` a **por línea**, el correo (`send-quote.php`) necesitó su propio cálculo de tramo: `obliq_discount_percent($days)` es **gemelo** de `getDiscountPercent()` en `src/lib/cart-store.ts` (tramos 1/3/5/7 = 0/10/15/20). La regla vive en **dos sitios**. ⚠️ **Si el cliente edita un tramo y solo se toca uno, la página y el correo divergen.** No se unificó a propósito (sería un refactor aparte). Ambos ficheros llevan comentario que apunta a su gemelo. Pendiente: fuente única (p. ej. exponer los tramos desde WP o un JSON compartido) si los descuentos dejan de ser fijos.
 
 **PRIORIDAD BAJA:**
 9. Schema.org VideoObject en portfolio (cuando haya URLs Vimeo reales)
