@@ -61,13 +61,15 @@ jobs:
           rsync -avz --delete \
             --exclude='.php-ini' \
             --exclude='.php-version' \
-            --exclude='robots.txt' \
             --exclude='.htpasswd' \
             -e "ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=yes" \
             dist/ "${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}:${{ vars.DEPLOY_TARGET }}"
-        # NOTAS sobre los excludes de STAGING (preservan ficheros del servidor
-        # que no están en el repo y que --delete borraría):
-        #  - robots.txt : Disallow manual de staging (en cutover a producción,
-        #    ELIMINAR este exclude para publicar el robots.txt real del repo).
-        #  - .htpasswd  : credenciales del Basic Auth de nginx del staging
-        #    (protección de acceso; ver docs/guides/auto-rebuild.md).
+        # NOTAS sobre los excludes (preservan ficheros del servidor que no
+        # están en el repo y que --delete borraría):
+        #  - .htpasswd  : credenciales del Basic Auth de nginx (solo staging;
+        #    httpdocs/producción no tiene .htpasswd). Ver docs/guides/auto-rebuild.md.
+        #
+        # CUTOVER: el exclude de robots.txt se eliminó para publicar el
+        # robots.txt real del repo (Allow: /) en producción. El robots de
+        # staging (Disallow: /) ya no se preserva; si se vuelve a apuntar
+        # DEPLOY_TARGET a staging habría que restaurar ese exclude.
