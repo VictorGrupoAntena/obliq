@@ -5,8 +5,8 @@
  * Receives JSON POST data from the generic contact form,
  * validates and sanitizes inputs, applies the same 4-layer
  * anti-spam as send-quote.php (honeypot, JS token, minimum
- * time, rate limiting), and sends an HTML email to
- * info@obliqproductions.com.
+ * time, rate limiting), and sends an HTML email to the
+ * recipient configured in OBLIQ_MAIL_TO (fail-closed).
  */
 
 // ---------------------------------------------------------------------------
@@ -285,7 +285,22 @@ $html = '<!DOCTYPE html>
 // ---------------------------------------------------------------------------
 // Send email
 // ---------------------------------------------------------------------------
-$to      = 'info@obliqproductions.com';
+// Destinatario configurable por ENTORNO (variable OBLIQ_MAIL_TO), MISMO patrón
+// que send-quote.php. Antes estaba `info@obliqproductions.com` hardcodeado: el
+// destino no cambia (la variable del pool de producción vale exactamente eso),
+// cambia la FUENTE — staging puede ahora apuntar a un buzón de pruebas en vez
+// de escribir al buzón real del cliente. Fail-closed: sin variable NO se envía.
+// Se define por dominio en Plesk (PHP-FPM env) — NO en el repo.
+$to = getenv('OBLIQ_MAIL_TO');
+if ($to === false || trim($to) === '') {
+    $to = $_SERVER['OBLIQ_MAIL_TO'] ?? ($_ENV['OBLIQ_MAIL_TO'] ?? '');
+}
+$to = trim($to);
+if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+    error_log('[send-contact] OBLIQ_MAIL_TO no configurado o inválido — envío abortado.');
+    respond(false, $tr['error_send'], 500);
+}
+
 $subject = headerSafe($tr['subject'] . ' — ' . $name . ($interest !== '' ? ' (' . $interest . ')' : ''));
 
 $headers  = "From: noreply@obliqproductions.com\r\n";
@@ -294,7 +309,11 @@ $headers .= "MIME-Version: 1.0\r\n";
 $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
 $headers .= "X-Mailer: ObliqContactForm/1.0\r\n";
 
-$sent = mail($to, $subject, $html, $headers);
+// Remitente de SOBRE explícito — ver la nota extensa en send-quote.php. Resumen:
+// alinea el sobre con el `From:` para que DMARC (`p=quarantine; aspf=r`) pase
+// por SPF y no dependa de la firma DKIM de Plesk, que se cae al desactivar el
+// servicio de correo del dominio.
+$sent = mail($to, $subject, $html, $headers, '-f noreply@obliqproductions.com');
 
 if (!$sent) {
     respond(false, $tr['error_send'], 500);

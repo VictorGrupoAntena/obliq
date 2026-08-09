@@ -520,7 +520,17 @@ $headers .= "MIME-Version: 1.0\r\n";
 $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
 $headers .= "X-Mailer: ObliqQuoteForm/1.0\r\n";
 
-$sent = mail($to, $subject, $html, $headers);
+// Remitente de SOBRE (envelope sender) explícito. Sin el `-f`, mail() sale con
+// el remitente del usuario del sistema (…@servidor2.grupoantena.com), que NO
+// alinea con el `From:` del dominio; con DMARC en `p=quarantine; aspf=r` eso
+// deja la entrega colgando SOLO de la firma DKIM de Plesk — y esa firma se cae
+// si el dominio deja de tener el servicio de correo activo (que es justo lo que
+// hay que hacer para que el servidor respete el MX de Google Workspace).
+// Con el `-f`, el sobre alinea con el `From:` y el `+a:servidor2…` del SPF
+// autoriza al servidor → DMARC pasa por SPF, sin depender del DKIM.
+// Verificado en el PHP 8.3 de Plesk: `mail.force_extra_parameters` vacío, el
+// 5º parámetro llega a la línea de comandos de sendmail.
+$sent = mail($to, $subject, $html, $headers, '-f noreply@obliqproductions.com');
 
 if (!$sent) {
     respond(false, $tr['error_send'], 500);
