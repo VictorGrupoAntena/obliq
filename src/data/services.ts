@@ -380,8 +380,20 @@ export function getServiceSlugs(locale: 'es' | 'en') {
 
 // ---------- Async facade (WP + mock fallback) ----------
 
+/**
+ * Promise cache: los servicios se piden una vez por build, no una vez por
+ * página. Guardamos la PROMESA, no el resultado, para que las llamadas
+ * concurrentes compartan el mismo fetch en lugar de dispararlo en paralelo.
+ */
+let servicesPromise: Promise<ServiceData[]> | null = null;
+
 /** Fetch all services — WordPress or mock fallback */
-export async function getServicesAsync(): Promise<ServiceData[]> {
+export function getServicesAsync(): Promise<ServiceData[]> {
+  servicesPromise ??= fetchServices();
+  return servicesPromise;
+}
+
+async function fetchServices(): Promise<ServiceData[]> {
   if (!isWPEnabled()) return services;
   try {
     const wpServices = await wpGetServices();

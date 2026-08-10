@@ -1,5 +1,6 @@
 import es from '@/i18n/es.json';
 import en from '@/i18n/en.json';
+import { translateSegment } from '@/lib/routes';
 
 const translations: Record<string, typeof es> = { es, en };
 
@@ -13,21 +14,17 @@ export function getLocale(url: URL): string {
   return url.pathname.startsWith('/en/') || url.pathname === '/en' ? 'en' : 'es';
 }
 
-/** Generate localized URL path. ES has no prefix, EN uses /en/ */
+/**
+ * Localized URL for an internal link.
+ *
+ * `path` is always written in SPANISH — it is the canonical vocabulary of the
+ * codebase. This function translates the section segment and applies the /en/
+ * prefix, so `('/servicios/', 'en')` yields `/en/services/`, not
+ * `/en/servicios/`. Dynamic child slugs must already be in the target locale
+ * (they come from the data, e.g. `svc.slug[locale]`).
+ *
+ * The route map lives in src/lib/routes.ts.
+ */
 export function localizedUrl(path: string, locale: string): string {
-  const clean = path.startsWith('/') ? path : '/' + path;
-  if (locale === 'en') {
-    return '/en' + (clean === '/' ? '/' : clean);
-  }
-  return clean;
-}
-
-/** Get the alternate locale URL for hreflang */
-export function alternateUrl(currentPath: string, currentLocale: string): string {
-  if (currentLocale === 'es') {
-    return '/en' + (currentPath === '/' ? '/' : currentPath);
-  }
-  // Remove /en prefix
-  const stripped = currentPath.replace(/^\/en/, '') || '/';
-  return stripped;
+  return translateSegment(path, locale);
 }

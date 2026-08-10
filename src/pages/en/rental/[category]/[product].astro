@@ -31,8 +31,8 @@ const relatedProducts = category.products.filter((p) => p.slug !== product.slug)
 
 const breadcrumbItems = [
   { label: i18n.BREADCRUMBS.HOME, href: '/en/' },
-  { label: i18n.NAV.RENTAL, href: localizedUrl('/rental/', locale) },
-  { label: category.name.en, href: localizedUrl('/rental/' + categorySlug + '/', locale) },
+  { label: i18n.NAV.RENTAL, href: localizedUrl('/alquiler/', locale) },
+  { label: category.name.en, href: localizedUrl('/alquiler/' + categorySlug + '/', locale) },
   { label: product.name },
 ];
 
@@ -154,7 +154,7 @@ const schema = productSchema(product.name, product.image);
             name={rp.name}
             price={rp.price}
             image={rp.image}
-            href={localizedUrl('/rental/' + categorySlug + '/' + rp.slug + '/', locale)}
+            href={localizedUrl('/alquiler/' + categorySlug + '/' + rp.slug + '/', locale)}
             perDay={r.PER_DAY}
           />
         ))}
@@ -163,7 +163,7 @@ const schema = productSchema(product.name, product.image);
   )}
 
   <CTASection title={r.CTA_TITLE} background="white">
-    <Button variant="dark" href={localizedUrl('/contact/', locale)}>{r.CTA_BUTTON}</Button>
+    <Button variant="dark" href={localizedUrl('/contacto/', locale)}>{r.CTA_BUTTON}</Button>
   </CTASection>
 </BaseLayout>
 

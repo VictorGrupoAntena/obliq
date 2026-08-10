@@ -27,7 +27,7 @@ const categorySlug = category.slug.en;
 
 const breadcrumbItems = [
   { label: i18n.BREADCRUMBS.HOME, href: '/en/' },
-  { label: i18n.NAV.RENTAL, href: localizedUrl('/rental/', locale) },
+  { label: i18n.NAV.RENTAL, href: localizedUrl('/alquiler/', locale) },
   { label: category.name.en },
 ];
 ---
@@ -53,7 +53,7 @@ const breadcrumbItems = [
           name={product.name}
           price={product.price}
           image={product.image}
-          href={localizedUrl('/rental/' + categorySlug + '/' + product.slug + '/', locale)}
+          href={localizedUrl('/alquiler/' + categorySlug + '/' + product.slug + '/', locale)}
           slug={product.slug}
           categorySlug={categorySlug}
           specs={product.specs.en}
@@ -70,7 +70,7 @@ const breadcrumbItems = [
   </section>
 
   <CTASection title={r.CTA_TITLE} background="white">
-    <Button variant="dark" href={localizedUrl('/contact/', locale)}>{r.CTA_BUTTON}</Button>
+    <Button variant="dark" href={localizedUrl('/contacto/', locale)}>{r.CTA_BUTTON}</Button>
   </CTASection>
 </BaseLayout>
 

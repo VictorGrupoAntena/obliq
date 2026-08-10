@@ -50,6 +50,47 @@ const expected = [
   ['legal/', '/aviso-legal/'],
   ['videos/loewe/', '/en/portfolio/'],
   ['videos/director/juan-perez/', '/en/portfolio/'],
+
+  // --- Bug de i18n (28-jul → 10-ago-2026): /en/ + slug ESPAÑOL → slug EN ---
+  // Páginas sueltas
+  ['en/nosotros/', '/en/about/'],
+  ['en/contacto/', '/en/contact/'],
+  ['en/presupuesto/', '/en/quote/'],
+  // Servicios: raíz + los 8 slugs que cambian de idioma
+  ['en/servicios/', '/en/services/'],
+  ['en/servicios/consultoria/', '/en/services/consulting/'],
+  ['en/servicios/postproduccion/', '/en/services/post-production/'],
+  ['en/servicios/videoclips/', '/en/services/music-videos/'],
+  ['en/servicios/eventos/', '/en/services/events/'],
+  ['en/servicios/fotografia/', '/en/services/photography/'],
+  ['en/servicios/video-corporativo/', '/en/services/corporate-video/'],
+  ['en/servicios/spots-publicitarios/', '/en/services/advertising-spots/'],
+  ['en/servicios/contenido-redes-sociales/', '/en/services/social-media-content/'],
+  // Catch-all de servicios: hijo YA traducido bajo padre español (el segundo
+  // síntoma del bug) y "streaming", que comparte slug en ambos idiomas.
+  // Deben resolverse en UN salto sin encadenar con las 8 específicas.
+  ['en/servicios/consulting/', '/en/services/consulting/'],
+  ['en/servicios/post-production/', '/en/services/post-production/'],
+  ['en/servicios/music-videos/', '/en/services/music-videos/'],
+  ['en/servicios/streaming/', '/en/services/streaming/'],
+  // Alquiler: raíz, las 6 categorías y una ficha por categoría
+  ['en/alquiler/', '/en/rental/'],
+  ['en/alquiler/camaras/', '/en/rental/cameras/'],
+  ['en/alquiler/camaras/sony-fx6/', '/en/rental/cameras/sony-fx6/'],
+  ['en/alquiler/opticas/', '/en/rental/lenses/'],
+  ['en/alquiler/opticas/dzofilm-vespid-50mm-t21/', '/en/rental/lenses/dzofilm-vespid-50mm-t21/'],
+  ['en/alquiler/estabilizacion/', '/en/rental/stabilization/'],
+  ['en/alquiler/estabilizacion/zhiyun-crane-3s-pro/', '/en/rental/stabilization/zhiyun-crane-3s-pro/'],
+  ['en/alquiler/accesorios/', '/en/rental/accessories/'],
+  ['en/alquiler/accesorios/smallrig-magic-arm/', '/en/rental/accessories/smallrig-magic-arm/'],
+  ['en/alquiler/monitores/', '/en/rental/monitors/'],
+  ['en/alquiler/monitores/atomos-ninja-ultra/', '/en/rental/monitors/atomos-ninja-ultra/'],
+  ['en/alquiler/audio/', '/en/rental/audio/'],
+  ['en/alquiler/audio/rode-wireless-pro/', '/en/rental/audio/rode-wireless-pro/'],
+  // Legales: sin versión EN por decisión (ver MEMORY.md) → a la ES
+  ['en/aviso-legal/', '/aviso-legal/'],
+  ['en/politica-privacidad/', '/politica-privacidad/'],
+  ['en/politica-cookies/', '/politica-cookies/'],
 ];
 
 // Añade automáticamente la variante SIN barra final de cada caso con barra

@@ -6,7 +6,8 @@ import Footer from '@/components/organisms/Footer.astro';
 import TransitionMask from '@/components/organisms/TransitionMask.astro';
 import WhatsAppFAB from '@/components/organisms/WhatsAppFAB.astro';
 import CartBottomBar from '@/components/organisms/CartBottomBar.astro';
-import { getLocale, alternateUrl } from '@/lib/i18n';
+import { getLocale } from '@/lib/i18n';
+import { translatePath } from '@/lib/routes';
 import { localBusinessSchema } from '@/lib/schema';
 import { getSiteContactAsync } from '@/data/site';
 import { ClientRouter } from 'astro:transitions';
@@ -34,7 +35,9 @@ const {
 const locale = localeProp ?? getLocale(Astro.url);
 const contact = await getSiteContactAsync(locale);
 const altLocale = locale === 'es' ? 'en' : 'es';
-const altPath = alternateUrl(Astro.url.pathname, locale);
+// null = esta página no tiene equivalente en el otro idioma (legales ES-only).
+// En ese caso NO se emite alternate: es preferible el silencio a señalar un 404.
+const altPath = await translatePath(Astro.url.pathname, locale);
 const siteUrl = 'https://obliqproductions.com';
 const canonicalUrl = siteUrl + Astro.url.pathname;
 const fullTitle = title + ' | Obliq Productions';
@@ -54,9 +57,13 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
     {noindex && <meta name="robots" content="noindex, nofollow" />}
 
     <link rel="canonical" href={canonicalUrl} />
-    <link rel="alternate" hreflang={locale} href={canonicalUrl} />
-    <link rel="alternate" hreflang={altLocale} href={siteUrl + altPath} />
-    <link rel="alternate" hreflang="x-default" href={siteUrl + (locale === 'es' ? Astro.url.pathname : altPath)} />
+    {altPath && (
+      <>
+        <link rel="alternate" hreflang={locale} href={canonicalUrl} />
+        <link rel="alternate" hreflang={altLocale} href={siteUrl + altPath} />
+        <link rel="alternate" hreflang="x-default" href={siteUrl + (locale === 'es' ? Astro.url.pathname : altPath)} />
+      </>
+    )}
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -111,7 +118,7 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
     </a>
 
     <TransitionMask enterColor={pageColor} />
-    <Header pageColor={pageColor} locale={locale} />
+    <Header pageColor={pageColor} locale={locale} altPath={altPath} />
 
     <main id="main-content">
       <slot />

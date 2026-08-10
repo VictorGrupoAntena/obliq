@@ -1,6 +1,7 @@
 ---
 import { t, localizedUrl } from '@/lib/i18n';
 import { getSiteContactAsync } from '@/data/site';
+import { getServicesAsync } from '@/data/services';
 
 interface Props {
   locale?: string;
@@ -10,17 +11,13 @@ const { locale = 'es' } = Astro.props;
 const i18n = t(locale);
 const contact = await getSiteContactAsync(locale);
 
-const serviceLinks = [
-  { label: i18n.SERVICES.STREAMING.NAME, href: localizedUrl('/servicios/streaming/', locale) },
-  { label: i18n.SERVICES.SOCIAL_CONTENT.NAME, href: localizedUrl('/servicios/contenido-redes-sociales/', locale) },
-  { label: i18n.SERVICES.CORPORATE_VIDEO.NAME, href: localizedUrl('/servicios/video-corporativo/', locale) },
-  { label: i18n.SERVICES.SPOTS.NAME, href: localizedUrl('/servicios/spots-publicitarios/', locale) },
-  { label: i18n.SERVICES.MUSIC_VIDEOS.NAME, href: localizedUrl('/servicios/videoclips/', locale) },
-  { label: i18n.SERVICES.EVENTS.NAME, href: localizedUrl('/servicios/eventos/', locale) },
-  { label: i18n.SERVICES.PHOTOGRAPHY.NAME, href: localizedUrl('/servicios/fotografia/', locale) },
-  { label: i18n.SERVICES.POST_PRODUCTION.NAME, href: localizedUrl('/servicios/postproduccion/', locale) },
-  { label: i18n.SERVICES.CONSULTING.NAME, href: localizedUrl('/servicios/consultoria/', locale) },
-];
+// Derivado del dato, no de literales: los slugs por idioma salen de WordPress
+// y un servicio nuevo aparece aquí solo. Mismo patrón que servicios/index.astro.
+const services = await getServicesAsync();
+const serviceLinks = services.map((svc) => ({
+  label: i18n.SERVICES[svc.key as keyof typeof i18n.SERVICES].NAME,
+  href: localizedUrl(`/servicios/${svc.slug[locale as 'es' | 'en']}/`, locale),
+}));
 
 const companyLinks = [
   { label: i18n.FOOTER.ABOUT_LINK, href: localizedUrl('/nosotros/', locale) },

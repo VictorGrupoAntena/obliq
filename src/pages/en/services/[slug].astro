@@ -29,7 +29,7 @@ const sp = i18n.SERVICE_PAGE;
 
 const breadcrumbItems = [
   { label: i18n.BREADCRUMBS.HOME, href: '/en/' },
-  { label: i18n.NAV.SERVICES, href: localizedUrl('/services/', locale) },
+  { label: i18n.NAV.SERVICES, href: localizedUrl('/servicios/', locale) },
   { label: svcI18n.NAME },
 ];
 
@@ -57,7 +57,7 @@ const schema = serviceSchema(svcI18n.NAME, svcI18n.DESCRIPTION);
     backgroundImage={service.image}
     height="min-h-[60vh] md:min-h-[70vh]"
   >
-    <Button variant="primary" href={localizedUrl('/contact/', locale)}>
+    <Button variant="primary" href={localizedUrl('/contacto/', locale)}>
       {sp.CTA_BUTTON}
     </Button>
   </HeroSection>
@@ -93,7 +93,7 @@ const schema = serviceSchema(svcI18n.NAME, svcI18n.DESCRIPTION);
       title={sp.PRICING_TITLE}
       plans={service.pricing.en}
       ctaText={sp.PRICING_CTA}
-      ctaHref={localizedUrl('/contact/', locale)}
+      ctaHref={localizedUrl('/contacto/', locale)}
     />
   )}
 
@@ -121,7 +121,7 @@ const schema = serviceSchema(svcI18n.NAME, svcI18n.DESCRIPTION);
 
   <!-- CTA -->
   <CTASection title={sp.CTA_TITLE} background="dark">
-    <Button variant="primary" href={localizedUrl('/contact/', locale)}>
+    <Button variant="primary" href={localizedUrl('/contacto/', locale)}>
       {sp.CTA_BUTTON}
     </Button>
   </CTASection>

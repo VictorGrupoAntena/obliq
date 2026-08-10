@@ -1,13 +1,22 @@
 ---
-import { getLocale, alternateUrl } from '@/lib/i18n';
+interface Props {
+  locale: string;
+  /** Ruta equivalente en el otro idioma, o null si esta página no la tiene. */
+  altPath?: string | null;
+}
 
-const locale = getLocale(Astro.url);
+const { locale, altPath = null } = Astro.props;
 const altLocale = locale === 'es' ? 'en' : 'es';
-const altUrl = alternateUrl(Astro.url.pathname, locale);
+
+// Sin equivalente (páginas legales, solo en español) caemos a la home del otro
+// idioma en vez de ocultar el control: el usuario sigue pudiendo cambiar de
+// idioma y el header no cambia de forma entre páginas. Nunca se enlaza una
+// ruta inventada.
+const href = altPath ?? (altLocale === 'en' ? '/en/' : '/');
 ---
 
 <a
-  href={altUrl}
+  href={href}
   class="text-[12px] font-medium uppercase tracking-[3px] opacity-60 hover:opacity-100 transition-opacity"
   aria-label={locale === 'es' ? 'Switch to English' : 'Cambiar a Español'}
 >

@@ -8,6 +8,36 @@
 
 ---
 
+### 🔴→✅ INCIDENCIA — 1.014 enlaces internos rotos por i18n (28-Jul → 10-Ago-2026)
+
+**Síntoma reportado:** crawl de Screaming Frog con **131 enlaces internos rotos**. Toda ruta EN se construía prefijando `/en/` a la ruta **española** sin traducir el slug: `/en/contacto/` en vez de `/en/contact/`, `/en/servicios/consultoria/` en vez de `/en/services/consulting/`.
+
+**CAUSA RAÍZ — de diseño, no un olvido puntual.** `localizedUrl()` y `alternateUrl()` en `src/lib/i18n.ts` eran puramente sintácticas: concatenaban o recortaban el prefijo `/en`. **Ningún punto del código consultaba un mapa de rutas**, porque ese mapa no existía como dato: vivía implícito en los nombres de fichero de `src/pages/en/`. El build nunca falló porque `localizedUrl` siempre devuelve un string plausible.
+
+**Las páginas EN existían y eran correctas.** 38 URLs EN reales, todas 200, todas en el sitemap — y **ni una sola enlazada desde el sitio**. Para 119 de los 131 el fallo era de enlazado, no de rutas ausentes.
+
+**🔑 LO GRAVE ESTABA EN EL `<head>`, y el crawl solo vio un tercio.** Medido con el script nuevo sobre un build limpio: **1.014 referencias rotas, 109 de ellas en el `<head>`** (el crawl reportó 37). Las 36 páginas `/en/` que sí existen emitían `hreflang="es"` **y `x-default`** hacia rutas inexistentes en ES. Screaming Frog no llegó a ellas porque eran **inalcanzables desde el menú**: el crawler no puede reportar lo que no puede visitar. `x-default` es justo la señal que Google usa como fallback.
+
+**Reconciliación:** los 47 destinos rotos del subconjunto crawlable contienen los 45 del informe con recuento idéntico uno a uno. Los 2 extra: `/en/404/` (la 404 no está enlazada) y `/en/presupuesto/` (el crawl se lo dejó, y no es `noindex`).
+
+**ARREGLO — vocabulario canónico ES traducido en el borde.**
+- **`src/lib/routes.ts` (nuevo)** — fuente única de verdad del mapa ES↔EN. `SECTIONS`/`PAGES` para el segmento de sección; `translateSegment()` síncrono para los enlaces; `translatePath()` async que resuelve los slugs dinámicos **contra el dato** (`getServicesAsync`/`getCategoriesAsync`, es decir WordPress), no contra literales.
+- **Convenio:** el código escribe siempre las rutas en **español**; la traducción ocurre en `localizedUrl`. Los segmentos hijos ya vienen en el idioma destino porque salen de `slug: { es, en }`. Consecuencia deliberada: **`Header.astro` no necesitó ni un cambio**.
+- `translatePath` devuelve **`null`** cuando no hay contraparte → `BaseLayout` **omite** el `alternate` en lugar de inventarlo.
+- `Footer.astro` deriva ahora los 9 servicios del dato (antes: 9 literales ES). Elimina la deriva: un servicio nuevo en WP no aparecía en el footer.
+- Fachadas async memoizadas (cache de **promesa**, no de resultado). Efecto colateral medido: **build de 13,4 s → 7,2 s**.
+- `public/.htaccess` sección 3: 301 de lo ya indexado. **Resultado: 1.014 → 0 referencias rotas.**
+
+**⚠️ Trampa del `.htaccess` que casi se cuela:** la forma `^en/alquiler/camaras(/.*)?$ → /en/rental/cameras$1` deja el destino **sin barra final** cuando la entrada tampoco la trae, y Apache encadena entonces un segundo 301 hacia el directorio. Se parte en dos reglas por categoría (ficha + raíz) con la barra escrita en el destino. **Un solo salto.**
+
+**🔑 LECCIÓN: un enlace roto en el `<head>` no se ve navegando.** Ni el build ni el crawler externo lo detectan — el primero porque no valida, el segundo porque no llega. Por eso **`scripts/check-links.mjs` es infraestructura, no una herramienta de sesión**: corre en CI **entre el build y el rsync** y **bloquea el despliegue**. Valida `<a href>`, todos los `hreflang` **incluido `x-default`**, y el `canonical`, cada uno contra el propio `dist/`. Junto a `check:redirects`, que ya existía y verifica offline la invariante «ningún destino es origen de otra regla».
+
+**✅ RESUELTO — `tilta-ts-t20-b-v` despublicado A PROPÓSITO (10-Ago-2026).** El producto desapareció de la API de WP entre las 17:49 y las 20:55, y el build pasó de 78 a **76 páginas**. Se aisló con `git stash` de todos los cambios del sprint: el build con el **código original da también 76**, luego no era una regresión. **El cliente confirma que lo despublicó él. 76 es el recuento correcto.**
+
+> 🎉 **Primera evidencia de que el cliente usa el CMS de forma autónoma y de que el auto-deploy responde a sus ediciones.** El circuito WordPress → `repository_dispatch` → build → rsync funciona en manos del cliente, no solo en las nuestras. A partir de aquí, **una variación en el recuento de páginas entre builds es contenido, no necesariamente un bug** — pero se verifica antes de asumirlo, y el `--delete` del rsync hace que borrar en WP borre en producción.
+
+---
+
 ### 🔴→✅ INCIDENCIA — los formularios no entregaban correo a `info@` (28-Jul → 10-Ago-2026)
 
 **Síntoma:** ningún formulario llegaba a `info@obliqproductions.com`. El cliente reportó «me llegó UNO de prueba y a partir de ahí, ninguno más». Fallaban **los dos** endpoints (carrito y contacto).
@@ -398,6 +428,20 @@ Estas decisiones son **zona roja** — no se cambian sin consultar al responsabl
 - URLs en inglés: `/en/services/`, `/en/rental/`, `/en/contact/`, `/en/about/`, `/en/portfolio/`
 - Hreflang bidireccional ES↔EN en todas las páginas
 - Redirecciones 301 de todas las URLs antiguas (ver tabla completa en memoria técnica)
+- **El mapa de rutas ES↔EN vive en `src/lib/routes.ts`, y solo ahí.** No se escriben rutas EN a mano en ningún sitio: el código las escribe en español y `localizedUrl()` traduce. Un slug nuevo se añade al mapa, no a un literal. Esta regla existe porque su ausencia costó 1.014 enlaces rotos (ver incidencia de i18n arriba).
+
+#### Páginas legales: solo en español (decisión consciente, 10-Ago-2026)
+- `/aviso-legal/`, `/politica-privacidad/` y `/politica-cookies/` **no tienen versión inglesa**. Desde `/en/` se enlazan a la ES sin prefijo, y el `.htaccess` redirige `/en/aviso-legal/` → `/aviso-legal/`.
+- **Motivo:** no se publica traducción de texto jurídico (LSSI, RGPD, cookies) sin validación del cliente o su asesoría. Las tres son `noindex`, luego el impacto SEO es **nulo**. Coherente con lo que ya asumía el `.htaccess` desde la migración («No existe /en/legal/»).
+- **Consecuencia técnica:** esas tres rutas **no emiten `hreflang` alterno**. La ausencia es deliberada, no un hueco del mapa — está codificada en `ES_ONLY` de `src/lib/routes.ts`. No "arreglar" añadiéndoles hreflang.
+- **⏳ PENDIENTE — consultar a Jordi** si quiere las legales en inglés. Si dice que sí: 3 ficheros en `src/pages/en/`, claves `LEGAL_*` en `en.json`, y sacar los 3 slugs de `ES_ONLY`. El resto del mapa ya lo soporta.
+
+#### ⏳ DEUDA ABIERTA CON EL CLIENTE — spec §4.1 sin implementar
+La memoria técnica (`docs/specs/memoria-tecnica-v6.md` §4.1) promete dos cosas que **nunca se construyeron** y que siguen pendientes a 10-Ago-2026:
+- **Cookie de preferencia de idioma** («Sí, recuerda elección del usuario»).
+- **Autodetección de idioma en la primera visita a `/`** («Solo primera visita a /, con 301»).
+
+Hoy el `LangSwitcher` cambia de idioma pero **no recuerda la elección**, y un visitante anglófono que llega a `/` recibe la home en español. Está prometido en la memoria entregada al cliente: es deuda con él, no una mejora opcional. La nota del propio `.htaccess` sobre la raíz `/` **da por hecha** esa autodetección («se preserva vía hreflang + autodetección de idioma JS»), así que ese comentario describe un diseño incompleto.
 
 ### Arquitectura
 - **WordPress headless como CMS** — WordPress solo como backend (API), Astro como frontend

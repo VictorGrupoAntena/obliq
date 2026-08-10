@@ -36,7 +36,7 @@ const sp = i18n.SERVICES_PAGE;
             title={data.NAME}
             description={data.DESCRIPTION}
             image={svc.image}
-            href={localizedUrl('/services/' + svc.slug.en + '/', locale)}
+            href={localizedUrl('/servicios/' + svc.slug.en + '/', locale)}
             ctaText={i18n.SERVICE_PAGE.VIEW_SERVICE}
           />
         );
@@ -46,7 +46,7 @@ const sp = i18n.SERVICES_PAGE;
 
   <!-- CTA -->
   <CTASection title={sp.CTA_TITLE} background="dark">
-    <Button variant="primary" href={localizedUrl('/contact/', locale)}>
+    <Button variant="primary" href={localizedUrl('/contacto/', locale)}>
       {sp.CTA_BUTTON}
     </Button>
   </CTASection>

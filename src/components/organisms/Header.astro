@@ -6,9 +6,11 @@ import { t, localizedUrl } from '@/lib/i18n';
 interface Props {
   pageColor?: 'black' | 'white';
   locale?: string;
+  /** Ruta equivalente en el otro idioma, o null si esta página no la tiene. */
+  altPath?: string | null;
 }
 
-const { pageColor = 'black', locale = 'es' } = Astro.props;
+const { pageColor = 'black', locale = 'es', altPath = null } = Astro.props;
 const i18n = t(locale);
 
 const navItems = [
@@ -76,7 +78,7 @@ const isCurrentLink = (href: string) => {
         </a>
       ))}
       <CartHeaderButton locale={locale} />
-      <LangSwitcher />
+      <LangSwitcher locale={locale} altPath={altPath} />
     </nav>
 
     <!-- Mobile: Burger -->

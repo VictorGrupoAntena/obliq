@@ -43,6 +43,65 @@
     RewriteRule ^videos(/.*)?$            /en/portfolio/ [R=301,L]
 
     # -------------------------------------------------------------------------
+    # 3) INGLÉS con slug ESPAÑOL (bug de i18n, 28-jul → 10-ago-2026)
+    # -------------------------------------------------------------------------
+    # Durante el cutover las rutas EN se construyeron prefijando /en/ a la ruta
+    # española sin traducir el slug, generando 404 en masa: /en/contacto/ en vez
+    # de /en/contact/, /en/servicios/consultoria/ en vez de
+    # /en/services/consulting/. El bug afectó también al hreflang, así que
+    # Google consumió esas URLs durante dos semanas y puede tenerlas indexadas.
+    #
+    # ORDEN: las reglas específicas van ANTES del catch-all. La invariante del
+    # fichero se mantiene — ningún destino (^en/services/, ^en/rental/,
+    # ^en/about/, ^en/contact/, ^en/quote/, /aviso-legal/…) es origen de otra
+    # regla, luego no hay cadenas. Verificable con `pnpm check:redirects`.
+
+    # 3.1) Alquiler: categoría ES → EN, arrastrando el producto (slug invariante
+    #      de idioma). Dos reglas por categoría —ficha y raíz— en lugar de una
+    #      con (/.*)?$: esa forma deja el destino SIN barra final cuando la
+    #      entrada tampoco la trae, y entonces Apache encadena un segundo 301
+    #      hacia el directorio. Escribiendo la barra en el destino, un solo salto.
+    RewriteRule ^en/alquiler/camaras/(.+?)/?$        /en/rental/cameras/$1/        [R=301,L]
+    RewriteRule ^en/alquiler/camaras/?$              /en/rental/cameras/           [R=301,L]
+    RewriteRule ^en/alquiler/opticas/(.+?)/?$        /en/rental/lenses/$1/         [R=301,L]
+    RewriteRule ^en/alquiler/opticas/?$              /en/rental/lenses/            [R=301,L]
+    RewriteRule ^en/alquiler/estabilizacion/(.+?)/?$ /en/rental/stabilization/$1/  [R=301,L]
+    RewriteRule ^en/alquiler/estabilizacion/?$       /en/rental/stabilization/     [R=301,L]
+    RewriteRule ^en/alquiler/accesorios/(.+?)/?$     /en/rental/accessories/$1/    [R=301,L]
+    RewriteRule ^en/alquiler/accesorios/?$           /en/rental/accessories/       [R=301,L]
+    RewriteRule ^en/alquiler/monitores/(.+?)/?$      /en/rental/monitors/$1/       [R=301,L]
+    RewriteRule ^en/alquiler/monitores/?$            /en/rental/monitors/          [R=301,L]
+    RewriteRule ^en/alquiler/audio/(.+?)/?$          /en/rental/audio/$1/          [R=301,L]
+    RewriteRule ^en/alquiler/audio/?$                /en/rental/audio/             [R=301,L]
+    RewriteRule ^en/alquiler/?$                      /en/rental/                   [R=301,L]
+
+    # 3.2) Servicios: los 8 slugs que cambian de idioma.
+    RewriteRule ^en/servicios/consultoria/?$              /en/services/consulting/           [R=301,L]
+    RewriteRule ^en/servicios/postproduccion/?$           /en/services/post-production/      [R=301,L]
+    RewriteRule ^en/servicios/videoclips/?$               /en/services/music-videos/         [R=301,L]
+    RewriteRule ^en/servicios/eventos/?$                  /en/services/events/               [R=301,L]
+    RewriteRule ^en/servicios/fotografia/?$               /en/services/photography/          [R=301,L]
+    RewriteRule ^en/servicios/video-corporativo/?$        /en/services/corporate-video/      [R=301,L]
+    RewriteRule ^en/servicios/spots-publicitarios/?$      /en/services/advertising-spots/    [R=301,L]
+    RewriteRule ^en/servicios/contenido-redes-sociales/?$ /en/services/social-media-content/ [R=301,L]
+    # Catch-all: absorbe el segundo síntoma del bug —el hijo YA traducido bajo
+    # padre español (/en/servicios/consulting/)— y "streaming", que comparte
+    # slug en ambos idiomas. Va después: las 8 de arriba cortan con [L].
+    RewriteRule ^en/servicios/(.+?)/?$               /en/services/$1/            [R=301,L]
+    RewriteRule ^en/servicios/?$                     /en/services/               [R=301,L]
+
+    # 3.3) Páginas sueltas.
+    RewriteRule ^en/nosotros/?$          /en/about/   [R=301,L]
+    RewriteRule ^en/contacto/?$          /en/contact/ [R=301,L]
+    RewriteRule ^en/presupuesto/?$       /en/quote/   [R=301,L]
+
+    # 3.4) Legales: no existen en inglés por decisión (no se publica texto
+    #      jurídico traducido sin validación del cliente). Ver MEMORY.md.
+    RewriteRule ^en/aviso-legal/?$          /aviso-legal/          [R=301,L]
+    RewriteRule ^en/politica-privacidad/?$  /politica-privacidad/  [R=301,L]
+    RewriteRule ^en/politica-cookies/?$     /politica-cookies/     [R=301,L]
+
+    # -------------------------------------------------------------------------
     # NOTA sobre la raíz "/":
     # NO se redirige. Antes servía la home en INGLÉS; ahora sirve la home en
     # ESPAÑOL (idioma por defecto del rediseño) con 200. Un 301 de "/" a "/en/"

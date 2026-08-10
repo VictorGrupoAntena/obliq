@@ -432,8 +432,20 @@ export function getFeaturedProducts() {
 
 // ---------- Async facade (WP + mock fallback) ----------
 
+/**
+ * Promise cache: el catálogo se pide una vez por build, no una vez por página.
+ * Guardamos la PROMESA, no el resultado, para que las llamadas concurrentes de
+ * varias páginas compartan el mismo fetch en lugar de dispararlo en paralelo.
+ */
+let categoriesPromise: Promise<RentalCategory[]> | null = null;
+
 /** Fetch all rental categories with products — WordPress or mock fallback */
-export async function getCategoriesAsync(): Promise<RentalCategory[]> {
+export function getCategoriesAsync(): Promise<RentalCategory[]> {
+  categoriesPromise ??= fetchCategories();
+  return categoriesPromise;
+}
+
+async function fetchCategories(): Promise<RentalCategory[]> {
   if (!isWPEnabled()) return categories;
   try {
     const wpCats = await wpGetCategories();
