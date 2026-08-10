@@ -1,8 +1,71 @@
 # Obliq Productions — Project Memory
 
-## Fase actual: REDISEÑO — P1–P4 + CMS de páginas fijas + hero de vídeo CERRADOS (todo validado E2E en staging); pendiente solo cutover a producción (22-Jul-2026)
+## Fase actual: EN PRODUCCIÓN — cutover hecho el 28-Jul-2026; en revisión con cliente (10-Ago-2026)
 
-> Rama de trabajo `redesign` (limpia, pusheada). Producción sigue sirviendo `main` (SSR Node en `~/httpdocs`), intacta. Staging: **staging.obliqproductions.com** (Basic Auth user `obliq` + robots Disallow).
+> ⚠️ **CORREGIDO 10-Ago-2026:** este bloque decía que producción seguía sirviendo `main` (SSR Node). **Es falso desde el 28-Jul.** El cutover se hizo ese día (`DEPLOY_TARGET = httpdocs/`, run 30348922546) y **producción sirve el SSG de `redesign`**. La afirmación obsoleta hizo perder tiempo en el diagnóstico del correo; se deja el aviso para que nadie vuelva a fiarse de la versión vieja.
+>
+> Rama de trabajo `redesign` (limpia, pusheada). Producción: **obliqproductions.com** → `~/httpdocs` (SSG estático + 2 endpoints PHP en `api/`). Staging: **staging.obliqproductions.com** (Basic Auth user `obliq` + robots Disallow). WP headless compartido: `~/admin.obliqproductions.com`.
+
+---
+
+### 🔴→✅ INCIDENCIA — los formularios no entregaban correo a `info@` (28-Jul → 10-Ago-2026)
+
+**Síntoma:** ningún formulario llegaba a `info@obliqproductions.com`. El cliente reportó «me llegó UNO de prueba y a partir de ahí, ninguno más». Fallaban **los dos** endpoints (carrito y contacto).
+
+**CAUSA RAÍZ — no era el código, ni DNS, ni spam.** Postfix del servidor tenía `obliqproductions.com` dado de alta como **dominio de correo LOCAL** (`virtual_mailbox_domains`) **sin ningún buzón creado**, así que rechazaba en local con `550 5.1.1 User unknown in virtual mailbox table` y **nunca consultaba el MX de Google Workspace**. `mail()` devolvía `true` (sendmail encola y sale 0), el endpoint respondía **200 `success:true`**, y el mensaje moría en la entrega. Patrón **«200 pero no llega»**.
+
+**🔑 LECCIÓN TRANSVERSAL: el 200 de estos endpoints MIENTE.** `mail()` solo confirma que el binario aceptó el mensaje, no que se haya entregado. **Ningún envío se da por bueno con un HTTP 200** — se cierra con evidencia de entrega (Track Email Delivery de Plesk / maillog) y confirmación del buzón receptor.
+
+**Hipótesis descartadas por medición** (todas parecían plausibles y todas eran falsas):
+- ❌ `OBLIQ_MAIL_TO` ausente/revertida → **estaba**, correcta, en el pool de producción.
+- ❌ Fail-closed de `send-quote.php` → **0 ocurrencias** del mensaje de aborto en el error_log; todos los POST reales dieron **200**, ninguno 500.
+- ❌ `send-contact.php` con `info@` hardcodeado → apuntaba al buzón **correcto**; deuda real pero **ortogonal** a la avería.
+- ❌ Deliverability / DNS → MX, SPF, DKIM y DMARC correctos en zona. El correo **no salía del servidor**.
+- ❌ «Llegó uno y luego ninguno» → el dir `mailnames` no cambia desde 26-Feb-2026 (`links=2`, cero buzones): **`info@` nunca fue entregable desde este servidor**. El correo que sí llegó no viajó por esta ruta.
+
+**Leads perdidos (irrecuperables, el payload no se registra):** 31-Jul 12:48 (presupuesto), 04-Ago 14:47 y 07-Ago 11:02 (contacto). Los 4 POST desde el cutover fueron todo el tráfico de formularios.
+
+**ARREGLO (Opción A) — Plesk 18.0.79:**
+```
+Sitios web y dominios → obliqproductions.com → Correo → Configuración de correo
+  → «Mail service on this domain» = «Disabled for incoming mail»
+```
+Es la solución **documentada por Plesk** para este síntoma exacto (KB *«Emails sent to a domain with external mail service are delivered locally to the Plesk server»*). El estado deja el dominio **enviando por Sendmail** y **mantiene la firma DKIM** (verificado: el TXT `default._domainkey` quedó idéntico carácter por carácter). Estado introducido en Plesk 18.0.51.
+
+- ❌ **NO usar «Not configured»** — borra permanentemente los buzones del dominio.
+- ❌ **NO usar «Disabled»** — «Plesk will not provide any mail services», se llevaría por delante el envío.
+- ❌ **NO tocar «Redirect to an external mail server with the IP address»** — está bajo *mail para usuarios inexistentes*, suena a «MX externo» y **no lo es**: el dominio seguiría siendo local.
+- ✅ **«What to do for non-existent users» se deja en Reject.** Solo aplica al entrante y solo mientras el dominio sea local; **cambiarlo no arregla nada**.
+
+**VERIFICACIÓN (10-Ago-2026):**
+- Sondeo SMTP: `info@obliqproductions.com` → **`554 5.7.1 Relay access denied`** (destino remoto). Antes: `550 … virtual mailbox table`. **Sin 550 de *alias table*** — un dominio puede seguir siendo local por `virtual_alias_domains` aunque salga de la de buzones; se comprobó que no es el caso. Control: `zzz@andresylajo.es` (dominio local del mismo servidor) sigue dando 550 → el cambio está acotado a este dominio.
+- Tests reales 08:21:27 y 08:21:29 → **Track Email Delivery de Plesk: `Sent`**, `from=noreply@obliqproductions.com`, respuesta de Google `250 2.0.0 OK`. **Ya no pasan por `plesk_virtual`.**
+- Contraste que documenta la avería: los envíos del 09-Ago figuran como *«delivered via plesk_virtual service»* (entrega LOCAL) con `from=obliqproductions.com_zbt88qx0mpj@obliqproductions.com`.
+- 🔧 **Track Email Delivery del panel de Plesk es mejor que el `grep` al maillog y NO requiere root.** Usarlo por defecto para verificar entregas.
+
+**Cambio de código asociado — commit `9152c4d` (`redesign`), desplegado a `httpdocs/` (run 31335346687):**
+1. **Envelope sender explícito** en los DOS endpoints: `mail($to, $subject, $html, $headers, '-f noreply@obliqproductions.com')`. Verificado en el PHP 8.3 de Plesk (`mail.force_extra_parameters` vacío; el 5º parámetro llega a la línea de comandos de sendmail).
+   > ⚠️ **Registro honesto del porqué:** se introdujo temiendo que desactivar el correo tumbara el DKIM y que el sobre saliera como `…@servidor2.grupoantena.com` (sin alinear) → DMARC `p=quarantine` a spam. **Ambas premisas resultaron falsas**: el DKIM se mantiene, y el sobre real ya era `…@obliqproductions.com`, **que sí alineaba**. El `-f` se queda porque hace el remitente **determinista y legible** en vez de depender de cómo Plesk componga `myorigin` — pero es **refuerzo, no rescate**. No inventar una causa DMARC que no hubo.
+2. **`send-contact.php` unificado al patrón `OBLIQ_MAIL_TO`** (fail-closed), saldando la deuda nº9. El destino en producción no cambia (la variable del pool vale `info@obliqproductions.com`); cambia la fuente, de modo que **staging ya puede apuntar a un buzón de pruebas** en vez de escribir al buzón real del cliente. Regresión verificada en producción: POST real → 200 y **cero** líneas `[send-contact] OBLIQ_MAIL_TO no configurado`.
+
+**Estado de correo por entorno (PHP-FPM `env[]`, NO en el repo):**
+| Dominio | `OBLIQ_MAIL_TO` |
+|---|---|
+| `obliqproductions.com` (prod) | `info@obliqproductions.com` |
+| `staging.obliqproductions.com` | `victor@grupoantena.com` |
+
+**⏳ PENDIENTE DE CIERRE:** confirmación del cliente rellenando **los dos formularios desde la web** (cadena completa navegador → endpoint → Postfix → Google → bandeja) e indicando **Bandeja / Spam / Promociones**. Solo entonces se da por cerrado.
+- Si cae en **Spam**: pedir la cabecera completa (Gmail → *Mostrar original*) y leer los `Authentication-Results` de Google para ver si rompe `spf`, `dkim` o el alineamiento `dmarc`.
+
+---
+
+### ⛔️ ADVERTENCIAS PERMANENTES — DNS y correo del dominio
+
+- **⛔️ NADIE pulsa «Apply DNS Template» en Plesk.** Los NS del dominio (`ns1`/`ns2.obliqproductions.com`) resuelven a **82.165.150.120 — este mismo servidor**: Plesk **es el DNS autoritativo** y la zona que sirve es la **zona viva**. Aplicar la plantilla la reescribiría con el MX apuntando al servidor local → **corte total del correo del cliente en Google Workspace**, mucho peor que la avería original. La zona ya muestra el aviso *«The DNS zone was modified»*: es intencionado (MX de Google + registros de SES/Resend), no un error a «corregir».
+- **Smarthost: NO configurado y no se toca.** Medido: `relayhost` vacío, `smtp_sasl_auth_enable = no`, `default_transport = smtp` (salida directa por MX). El propio Plesk avisa de que activarlo obliga a actualizar SPF y otros registros DNS a mano.
+- **Zona DNS — MX de Google:** `aspmx.l.google.com` (pri 1) + `alt1/alt2` (5) + `alt3/alt4` (10). SPF `v=spf1 +a +mx +a:servidor2.grupoantena.com include:_spf.google.com include:amazonses.com ~all`. DKIM Plesk selector `default`. DMARC `p=quarantine; adkim=r; aspf=r`.
+
+---
 
 ### ⏭️ PENDIENTE PRÓXIMA SESIÓN — retomar aquí
 
@@ -13,7 +76,7 @@
 - Títulos/años/clientes **reales** de los 11 proyectos (hoy «Proyecto {cat} {n}»).
 - Diagnóstico **DNS/correo** del dominio (dónde están los DNS; MX está en **Google Workspace**).
 - **SPF/DKIM/DMARC** del servidor: `mail()` entrega, pero revisar que no caiga en spam (envío server→Google en nombre de obliqproductions.com).
-- **🔴 `OBLIQ_MAIL_TO` en producción (bloqueante).** `send-quote.php` lee el destinatario de la env `OBLIQ_MAIL_TO` (fail-closed: sin ella → 500). En el cutover hay que definir `OBLIQ_MAIL_TO=info@obliqproductions.com` en el PHP-FPM del dominio de **producción** (en staging = buzón de pruebas). `send-contact.php` **sigue** con `info@` hardcodeado (fuera del alcance de este sprint; revisar aparte si se quiere el mismo patrón).
+- **✅ `OBLIQ_MAIL_TO` en producción — RESUELTO.** Definida en el PHP-FPM del dominio de producción con `info@obliqproductions.com` (staging: `victor@grupoantena.com`). Desde el 10-Ago-2026 **los dos** endpoints la usan (`send-contact.php` dejó de tener `info@` hardcodeado). Ver «INCIDENCIA — los formularios no entregaban correo» arriba: **no era esta variable** la causa del fallo de entrega.
 - **✅ Tarifa de operador — condiciones CONFIRMADAS por el cliente (23-Jul-2026), bloqueante CERRADO.** El seed de `op_terms_es`/`op_terms_en` ya trae el texto definitivo (media jornada 4 h, jornada 8 h, brutos en 24 h, servicio en toda la Comunitat Valenciana; desplazamientos fuera → consultar). Sin marcador `[PENDIENTE…]` → el build en modo WP deja de avisar de estos campos. Como el seed v3 **nunca se subió**, el texto entra en la primera creación del singleton (sin bump de versión). ⚠️ El **mock de `src/data/operator.ts`** (fallback dev, WP-disabled) **aún conserva** el marcador → `WP_API_URL='' npm run build` seguiría avisando; irrelevante para los builds desplegados (deploy.yml usa WP real). Sincronizarlo es opción de una línea (pendiente de OK).
 - **🆕 NORMA DE NEGOCIO (cliente, 24-jul-2026): `n + m === días`.** El número de unidades de operador debe ser IGUAL al número de días de alquiler (el material no sale sin operador, luego no hay día sin operador asignado). **Implementación: campo ÚNICO** — se pregunta solo «¿cuántas de las N jornadas son de media jornada?» (`m`, acotado 0..N) y **`n = días − m` se deriva**, de modo que la norma no se puede violar (estado inválido inalcanzable, no validado a posteriori). Servidor: **deriva los días de `products[].days`, IGNORA cualquier `days` recibido** y devuelve **422** si `n+m ≠ días`. No es frontera de confianza (no hay carrito en servidor): es coherencia del payload para que el correo sea legible.
   - **Consecuencias:** desaparecen el estado `n+m=0`, el aviso «Indica las jornadas…», el submit deshabilitado por cero y la R2 «mínimo media jornada» (queda subsumida). Claves i18n retiradas: `OPERATOR_REQUIRED`, `OPERATOR_MIN_ERROR`, `OPERATOR_EACH`.
@@ -278,8 +341,14 @@
 6. Webhook auto-rebuild: WP publish → GitHub Actions → build → SFTP a Plesk
 7. Portfolio: URLs Vimeo reales + thumbnails (cliente proporciona)
 8. WhatsApp mensaje contextual según página
-9. **Deuda técnica — destinatario de correo inconsistente entre endpoints.** Desde el sprint «Alquiler con operador» (23-Jul-2026), `public/api/send-quote.php` lee el destinatario de la env **`OBLIQ_MAIL_TO`** (fail-closed, configurable por entorno), pero `public/api/send-contact.php` **mantiene `info@obliqproductions.com` hardcodeado**. Quedó **fuera del alcance** de ese sprint (el brief prohibía tocar `send-contact.php`). Pendiente: unificar `send-contact.php` al mismo patrón `OBLIQ_MAIL_TO` si se quiere consistencia y poder redirigir el contacto a un buzón de pruebas en staging.
+9. ~~**Deuda técnica — destinatario de correo inconsistente entre endpoints.**~~ **✅ SALDADA 10-Ago-2026** (commit `9152c4d`): `send-contact.php` usa el mismo patrón `OBLIQ_MAIL_TO` fail-closed que `send-quote.php`. Staging ya puede redirigir el contacto a un buzón de pruebas.
 10. **Deuda técnica — fuente de descuentos por tramos DUPLICADA front/back (26-Jul-2026).** Al eliminar la fila global «Descuento multidía» (mentía en carritos de días mixtos) y pasar la etiqueta `(-X%)` a **por línea**, el correo (`send-quote.php`) necesitó su propio cálculo de tramo: `obliq_discount_percent($days)` es **gemelo** de `getDiscountPercent()` en `src/lib/cart-store.ts` (tramos 1/3/5/7 = 0/10/15/20). La regla vive en **dos sitios**. ⚠️ **Si el cliente edita un tramo y solo se toca uno, la página y el correo divergen.** No se unificó a propósito (sería un refactor aparte). Ambos ficheros llevan comentario que apunta a su gemelo. Pendiente: fuente única (p. ej. exponer los tramos desde WP o un JSON compartido) si los descuentos dejan de ser fijos.
+11. **Deuda técnica — `send-contact.php` sin RFC 2047 en el asunto (detectada 09-Ago-2026).** Usa `headerSafe()`, que solo quita CR/LF; **no codifica la cabecera**. Cualquier acento, ñ o el propio guion largo llega mangled en el asunto (capturado: `Nuevo mensaje de contacto ? QA`). `send-quote.php` ya lo resolvió con `mb_encode_mimeheader()`. **Es una línea**: aplicar el mismo tratamiento. → **sprint de idioma/editabilidad**, junto al punto 12.
+12. **OPCIÓN B — enviar por Resend/SES en vez de `mail()` (evaluada 09-Ago-2026, NO implementada).** La infraestructura **ya está provisionada y verificada en la zona**: `send.obliqproductions.com` MX → `feedback-smtp.eu-west-1.amazonses.com`, TXT `v=spf1 include:amazonses.com ~all`, selector `resend._domainkey`, y el SPF principal ya trae `include:amazonses.com`. La web VIEJA usaba Resend.
+    - **A favor:** **logs de entrega** (delivered/bounced/spam) — que es la deuda real que destapó esta incidencia; DKIM propio alineado; mejor reputación que una IP compartida con 33 dominios bajo `p=quarantine`.
+    - **En contra:** requiere recuperar **acceso a la cuenta de Resend** (¿de quién es?) + API key en el pool; ~20 líneas por endpoint (POST por curl, sin dependencias nuevas) + manejo de errores; **no arregla el servidor** (WordPress y cualquier otro `mail()` hacia `@obliqproductions.com` seguirían dependiendo de la config de Plesk).
+    - **Criterio: complementaria, no alternativa.** La Opción A era el arreglo (un clic, cero código, arregla el dominio entero). B entra como sprint propio **por la observabilidad**, condicionada al acceso a Resend. Si se hace, el `-f` queda inerte pero inofensivo.
+13. **Limpieza DNS — restos de correo local (no urgente).** Con el correo ya en Google, los SRV `_imaps`/`_pop3s`/`_smtps` y los hosts `mail.`/`webmail.` siguen apuntando al Plesk → **autodiscover incorrecto** en clientes de correo. Retirar cuando se toque la zona. ⚠️ Hacerlo **a mano, registro a registro** — ver la advertencia de «Apply DNS Template».
 
 **PRIORIDAD BAJA:**
 9. Schema.org VideoObject en portfolio (cuando haya URLs Vimeo reales)
