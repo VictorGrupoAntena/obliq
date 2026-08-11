@@ -8,6 +8,17 @@
 
 ---
 
+## ⏭️ SIGUIENTE SPRINT (acordado 11-Ago-2026 — no arrancado)
+
+1. **Vídeo hero con autoplay.**
+2. **Editabilidad de la home desde WordPress** — H1, textos y tarjetas de servicio.
+3. **Banda de logos del footer.**
+4. **URLs huérfanas `/presupuesto/` y `/en/quote/`.** El CTA del carrito se emite como `href="#"` y lo rellena JavaScript en runtime (`getQuotePageUrl`, `cart-store.ts:211`), así que **ninguna página las enlaza estáticamente**: solo se descubren por sitemap y no reciben link equity interno. Es **la página de conversión del catálogo de alquiler y la peor enlazada del sitio**. Preexistente del sprint del carrito; detectado por el crawl BFS del sprint de i18n (73 de 75 URLs alcanzables, y las 2 ausentes son exactamente estas, en ambos idiomas).
+
+Pendientes menores arrastrados: RFC 2047 en `send-contact.php`; valorar envío por Resend/SES (ya provisionado en la zona); `pc_name_en` en los filtros EN de portfolio; **P5** (auditoría visual + imágenes reales + seguridad). Deuda con el cliente **abierta**: cookie de preferencia de idioma y autodetección (spec §4.1) — ver «Decisiones estratégicas → Idioma».
+
+---
+
 ### 🔴→✅ INCIDENCIA — 1.014 enlaces internos rotos por i18n (28-Jul → 10-Ago-2026)
 
 **Síntoma reportado:** crawl de Screaming Frog con **131 enlaces internos rotos**. Toda ruta EN se construía prefijando `/en/` a la ruta **española** sin traducir el slug: `/en/contacto/` en vez de `/en/contact/`, `/en/servicios/consultoria/` en vez de `/en/services/consulting/`.
@@ -29,6 +40,8 @@
 - `public/.htaccess` sección 3: 301 de lo ya indexado. **Resultado: 1.014 → 0 referencias rotas.**
 
 **⚠️ Trampa del `.htaccess` que casi se cuela:** la forma `^en/alquiler/camaras(/.*)?$ → /en/rental/cameras$1` deja el destino **sin barra final** cuando la entrada tampoco la trae, y Apache encadena entonces un segundo 301 hacia el directorio. Se parte en dos reglas por categoría (ficha + raíz) con la barra escrita en el destino. **Un solo salto.**
+
+**✅ EN PRODUCCIÓN (11-Ago-2026, run 31458865741).** Verificado en vivo sobre `obliqproductions.com`: **12 de 12** 301 de muestra correctas y en un salto (incluidos los dos casos del catch-all, una sin barra final y dos reglas antiguas de la migración); `robots.txt` es el real (`Allow: /` + sitemap, **no** el `Disallow` de staging) y `sitemap-index.xml` responde 200; hreflang correcto en la home y en las páginas de servicio. **Crawl BFS en vivo: 73 páginas alcanzadas, 0 enlaces rotos, 35 URLs EN alcanzables navegando.** Reindexación en Search Console la lanza Víctor.
 
 **✅ VERIFICADO EN STAGING (11-Ago-2026, run 31457609033).** El gate de CI corrió entre build y rsync (`Rotas: 0`, `91 OK`, `0 bucles`). Contra el **Apache real**: **75 casos de 301, 0 fallos**, todos en un salto, incluidas las variantes sin barra final y las 11 reglas antiguas de la migración. Crawl BFS desde `/` siguiendo solo `<a href>`: **73 páginas alcanzadas, 0 enlaces internos rotos, 35 URLs EN alcanzables navegando** (antes: 2). `robots.txt` de staging sigue en `Disallow: /` y el `.htpasswd` se preservó.
 
