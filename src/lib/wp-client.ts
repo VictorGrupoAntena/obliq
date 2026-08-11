@@ -107,21 +107,15 @@ function getTerms(wp: WPPost, index = 0): WPTerm[] {
   return wp._embedded?.['wp:term']?.[index] ?? [];
 }
 
-// ---------- Slug → i18n key mapping ----------
-// Maps WP slugs (ES) to i18n keys used in src/i18n/*.json
-const SERVICE_KEY_MAP: Record<string, string> = {
-  'streaming': 'STREAMING',
-  'contenido-redes-sociales': 'SOCIAL_CONTENT',
-  'video-corporativo': 'CORPORATE_VIDEO',
-  'spots-publicitarios': 'SPOTS',
-  'videoclips': 'MUSIC_VIDEOS',
-  'eventos': 'EVENTS',
-  'fotografia': 'PHOTOGRAPHY',
-  'postproduccion': 'POST_PRODUCTION',
-  'consultoria': 'CONSULTING',
-};
-
 // ---------- Transformer: Servicio ----------
+//
+// Aquí vivía SERVICE_KEY_MAP, un diccionario slug→clave de i18n que traducía
+// el slug de WordPress a la entrada de src/i18n donde estaban el nombre y la
+// descripción del servicio. Era una mina: un servicio creado en wp-admin con
+// un slug que no estuviera en la lista daba `undefined` al leer la clave y
+// REVENTABA EL BUILD con un TypeError. El cliente podía tumbar el despliegue
+// sin enterarse. Ahora el nombre y la descripción vienen de WordPress, así
+// que el diccionario sobra y crear servicios es seguro.
 
 function transformServiceFeatures(raw: unknown): ServiceFeature[] {
   return jetRepeater<{ title: string; description: string }>(raw).map((f) => ({
@@ -151,7 +145,16 @@ function transformService(wp: WPServicio): ServiceData {
   const hasCaseStudy = !!(wp.sv_case_study_title_es || wp.sv_case_study_title_en);
 
   return {
-    key: SERVICE_KEY_MAP[esSlug] || esSlug.toUpperCase().replace(/-/g, '_'),
+    // El nombre ES es el título de la entrada; el EN, su meta. Sin traducir
+    // se cae al ES antes que dejar una tarjeta en blanco.
+    name: {
+      es: wp.title.rendered,
+      en: wp.sv_name_en || wp.title.rendered,
+    },
+    shortDescription: {
+      es: wp.sv_short_description_es ?? '',
+      en: wp.sv_short_description_en || wp.sv_short_description_es || '',
+    },
     slug: { es: esSlug, en: enSlug },
     image,
     longDescription: {

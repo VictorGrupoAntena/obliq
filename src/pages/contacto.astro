@@ -4,13 +4,15 @@ import HeroSection from '@/components/sections/HeroSection.astro';
 import Heading from '@/components/atoms/Heading.astro';
 import { t, localizedUrl } from '@/lib/i18n';
 import { getSiteContactAsync } from '@/data/site';
+import { getServicesAsync } from '@/data/services';
 
 const locale = 'es';
 const i18n = t(locale);
 const c = i18n.CONTACT_PAGE;
 const info = await getSiteContactAsync(locale);
 
-const serviceOptions = Object.values(i18n.SERVICES).map((s) => s.NAME);
+// Derivado de WordPress: un servicio nuevo aparece solo en el desplegable.
+const serviceOptions = (await getServicesAsync()).map((s) => s.name.es);
 ---
 
 <BaseLayout title={c.TITLE} description={info.heroSubtitle} locale={locale}>

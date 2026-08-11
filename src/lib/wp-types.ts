@@ -53,6 +53,10 @@ export interface WPPortfolioCategoryTerm extends WPTerm {
 
 export interface WPServicio extends WPPost {
   sv_slug_en?: string;
+  /** Nombre EN. El ES es el `post_title` de la entrada. */
+  sv_name_en?: string;
+  sv_short_description_es?: string;
+  sv_short_description_en?: string;
   sv_long_description_es?: string;
   sv_long_description_en?: string;
   sv_marquee_text_es?: string;

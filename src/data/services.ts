@@ -18,7 +18,10 @@ export interface PricingPlan {
 }
 
 export interface ServiceData {
-  key: string;
+  /** Nombre del servicio. En WP: título de la entrada (ES) + sv_name_en. */
+  name: { es: string; en: string };
+  /** Descripción de la tarjeta de la portada y del listado. En WP: sv_short_description_*. */
+  shortDescription: { es: string; en: string };
   slug: { es: string; en: string };
   image: string;
   features: { es: ServiceFeature[]; en: ServiceFeature[] };
@@ -34,7 +37,11 @@ export interface ServiceData {
 
 export const services: ServiceData[] = [
   {
-    key: 'STREAMING',
+    name: { es: 'Streaming', en: 'Streaming' },
+    shortDescription: {
+      es: 'Retransmisión en directo profesional para eventos, conferencias y espectáculos.',
+      en: 'Professional live streaming for events, conferences and shows.',
+    },
     slug: { es: 'streaming', en: 'streaming' },
     image: '/hero.jpg',
     marqueeText: { es: 'STREAMING', en: 'STREAMING' },
@@ -108,7 +115,11 @@ export const services: ServiceData[] = [
     },
   },
   {
-    key: 'SOCIAL_CONTENT',
+    name: { es: 'Contenido Redes Sociales', en: 'Social Media Content' },
+    shortDescription: {
+      es: 'Creación de contenido audiovisual optimizado para plataformas digitales.',
+      en: 'Audiovisual content creation optimized for digital platforms.',
+    },
     slug: { es: 'contenido-redes-sociales', en: 'social-media-content' },
     image: '/hero.jpg',
     longDescription: {
@@ -173,7 +184,11 @@ export const services: ServiceData[] = [
     },
   },
   {
-    key: 'CORPORATE_VIDEO',
+    name: { es: 'Vídeo Corporativo', en: 'Corporate Video' },
+    shortDescription: {
+      es: 'Producción de vídeos corporativos que comunican la esencia de tu marca.',
+      en: 'Corporate video production that communicates the essence of your brand.',
+    },
     slug: { es: 'video-corporativo', en: 'corporate-video' },
     image: '/hero.jpg',
     longDescription: {
@@ -200,7 +215,11 @@ export const services: ServiceData[] = [
     },
   },
   {
-    key: 'SPOTS',
+    name: { es: 'Spots Publicitarios', en: 'Advertising Spots' },
+    shortDescription: {
+      es: 'Producción de anuncios publicitarios creativos y de alto impacto.',
+      en: 'Creative and high-impact advertising production.',
+    },
     slug: { es: 'spots-publicitarios', en: 'advertising-spots' },
     image: '/hero.jpg',
     longDescription: {
@@ -227,7 +246,11 @@ export const services: ServiceData[] = [
     },
   },
   {
-    key: 'MUSIC_VIDEOS',
+    name: { es: 'Videoclips', en: 'Music Videos' },
+    shortDescription: {
+      es: 'Dirección y producción de videoclips musicales con narrativa visual única.',
+      en: 'Direction and production of music videos with unique visual narrative.',
+    },
     slug: { es: 'videoclips', en: 'music-videos' },
     image: '/hero.jpg',
     longDescription: {
@@ -254,7 +277,11 @@ export const services: ServiceData[] = [
     },
   },
   {
-    key: 'EVENTS',
+    name: { es: 'Cobertura de Eventos', en: 'Event Coverage' },
+    shortDescription: {
+      es: 'Grabación y producción audiovisual de eventos corporativos y sociales.',
+      en: 'Audiovisual recording and production of corporate and social events.',
+    },
     slug: { es: 'eventos', en: 'events' },
     image: '/hero.jpg',
     longDescription: {
@@ -281,7 +308,11 @@ export const services: ServiceData[] = [
     },
   },
   {
-    key: 'PHOTOGRAPHY',
+    name: { es: 'Fotografía', en: 'Photography' },
+    shortDescription: {
+      es: 'Fotografía profesional para campañas, producto y eventos.',
+      en: 'Professional photography for campaigns, products and events.',
+    },
     slug: { es: 'fotografia', en: 'photography' },
     image: '/hero.jpg',
     longDescription: {
@@ -308,7 +339,11 @@ export const services: ServiceData[] = [
     },
   },
   {
-    key: 'POST_PRODUCTION',
+    name: { es: 'Postproducción', en: 'Post-production' },
+    shortDescription: {
+      es: 'Edición, corrección de color, VFX y acabado profesional.',
+      en: 'Editing, color grading, VFX and professional finishing.',
+    },
     slug: { es: 'postproduccion', en: 'post-production' },
     image: '/hero.jpg',
     longDescription: {
@@ -335,7 +370,11 @@ export const services: ServiceData[] = [
     },
   },
   {
-    key: 'CONSULTING',
+    name: { es: 'Consultoría Audiovisual', en: 'Audiovisual Consulting' },
+    shortDescription: {
+      es: 'Asesoramiento técnico y estratégico para proyectos audiovisuales.',
+      en: 'Technical and strategic advice for audiovisual projects.',
+    },
     slug: { es: 'consultoria', en: 'consulting' },
     image: '/hero.jpg',
     longDescription: {

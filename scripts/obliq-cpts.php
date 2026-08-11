@@ -204,6 +204,10 @@ function obliq_register_meta_fields() {
     // --- servicio ---
     $register( 'servicio', array(
         'sv_slug_en'              => 'string',
+        // El nombre ES es el TÍTULO de la entrada; aquí solo su traducción.
+        'sv_name_en'              => 'string',
+        'sv_short_description_es' => 'string',
+        'sv_short_description_en' => 'string',
         'sv_long_description_es'  => 'string',
         'sv_long_description_en'  => 'string',
         'sv_marquee_text_es'      => 'string',
@@ -281,7 +285,9 @@ function obliq_register_rest_fields() {
 
     // --- servicio: ALL fields ---
     $sv_fields = array(
-        'sv_slug_en', 'sv_long_description_es', 'sv_long_description_en',
+        'sv_slug_en', 'sv_name_en',
+        'sv_short_description_es', 'sv_short_description_en',
+        'sv_long_description_es', 'sv_long_description_en',
         'sv_marquee_text_es', 'sv_marquee_text_en',
         'sv_case_study_title_es', 'sv_case_study_title_en',
         'sv_case_study_desc_es', 'sv_case_study_desc_en',
@@ -437,6 +443,15 @@ JS;
 function obliq_servicio_meta_html( $post ) {
     wp_nonce_field( 'obliq_save_meta', 'obliq_meta_nonce' );
     $id = $post->ID;
+    echo '<p style="background:#f0f6fc;border-left:4px solid #2271b1;padding:10px 12px;max-width:760px">';
+    echo '<strong>El nombre del servicio en español es el título de arriba.</strong> ';
+    echo 'Lo que escribas aquí es lo que se ve en la portada, en el menú del pie, en la página de servicios ';
+    echo 'y en el desplegable del formulario de contacto. Cada idioma se escribe por separado.';
+    echo '</p>';
+    obliq_field( $id, 'sv_name_en', 'Nombre del servicio (EN)' );
+    obliq_field( $id, 'sv_short_description_es', 'Descripción corta — la de la tarjeta de la portada, 1 o 2 líneas (ES)', 'textarea' );
+    obliq_field( $id, 'sv_short_description_en', 'Descripción corta — la de la tarjeta de la portada, 1 o 2 líneas (EN)', 'textarea' );
+    echo '<hr>';
     obliq_field( $id, 'sv_slug_en', 'Slug EN' );
     obliq_field( $id, 'sv_long_description_es', 'Descripción larga ES', 'textarea' );
     obliq_field( $id, 'sv_long_description_en', 'Descripción larga EN', 'textarea' );
@@ -520,7 +535,9 @@ function obliq_save_meta_fields( $post_id, $post ) {
     // Lista de todos los meta keys por CPT
     $fields_map = array(
         'servicio' => array(
-            'sv_slug_en', 'sv_long_description_es', 'sv_long_description_en',
+            'sv_slug_en', 'sv_name_en',
+            'sv_short_description_es', 'sv_short_description_en',
+            'sv_long_description_es', 'sv_long_description_en',
             'sv_marquee_text_es', 'sv_marquee_text_en', 'sv_image',
             'sv_features_es', 'sv_features_en', 'sv_pricing_es', 'sv_pricing_en',
             'sv_case_study_title_es', 'sv_case_study_title_en',
@@ -1208,4 +1225,93 @@ function obliq_contenido_seed_alquiler() {
         'op_terms_es'      => 'Todos los alquileres se realizan con operador. Media jornada: 4 horas. Jornada completa: 8 horas. Entrega de brutos en 24 h desde la finalización del rodaje. Servicio disponible en toda la Comunitat Valenciana; para desplazamientos fuera de la comunidad, consúltanos.',
         'op_terms_en'      => 'All equipment rentals include an operator. Half day: 4 hours. Full day: 8 hours. Raw footage delivered within 24 hours of the end of the shoot. Available throughout the Valencian Community; for locations outside the region, get in touch.',
     );
+}
+
+// ------------------------------------------------------------
+// Auto-seed de los servicios (nombre EN + descripción corta ES/EN)
+//
+// Rellena los tres campos nuevos de los 9 servicios que ya existen en el WP
+// instalado, con los textos que hasta ahora vivían en src/i18n/*.json. Así el
+// cliente se encuentra el trabajo hecho y la web se reconstruye igual que antes.
+//
+// El diccionario slug→textos se usa UNA sola vez, aquí. NO es el SERVICE_KEY_MAP
+// que se acaba de eliminar: aquel se consultaba en cada build y un slug
+// desconocido reventaba el despliegue. Este solo siembra; un servicio cuyo slug
+// no esté en la lista simplemente no se siembra, y `pnpm check:services` avisa
+// de qué campos quedan por rellenar. Sin crasheos.
+//
+// - Guard por get_option() → una sola pasada.
+// - Solo rellena lo que esté VACÍO; nunca pisa lo que alguien haya escrito.
+// ------------------------------------------------------------
+
+if ( ! defined( 'OBLIQ_SERVICIO_SEED_VERSION' ) ) {
+    define( 'OBLIQ_SERVICIO_SEED_VERSION', '1' );
+}
+
+add_action( 'init', 'obliq_servicio_seed', 21 );
+
+function obliq_servicio_seed() {
+    if ( get_option( 'obliq_servicio_seeded' ) === OBLIQ_SERVICIO_SEED_VERSION ) return;
+
+    $defaults = array(
+        'streaming' => array(
+            'sv_name_en'              => 'Streaming',
+            'sv_short_description_es' => 'Retransmisión en directo profesional para eventos, conferencias y espectáculos.',
+            'sv_short_description_en' => 'Professional live streaming for events, conferences and shows.',
+        ),
+        'contenido-redes-sociales' => array(
+            'sv_name_en'              => 'Social Media Content',
+            'sv_short_description_es' => 'Creación de contenido audiovisual optimizado para plataformas digitales.',
+            'sv_short_description_en' => 'Audiovisual content creation optimized for digital platforms.',
+        ),
+        'video-corporativo' => array(
+            'sv_name_en'              => 'Corporate Video',
+            'sv_short_description_es' => 'Producción de vídeos corporativos que comunican la esencia de tu marca.',
+            'sv_short_description_en' => 'Corporate video production that communicates the essence of your brand.',
+        ),
+        'spots-publicitarios' => array(
+            'sv_name_en'              => 'Advertising Spots',
+            'sv_short_description_es' => 'Producción de anuncios publicitarios creativos y de alto impacto.',
+            'sv_short_description_en' => 'Creative and high-impact advertising production.',
+        ),
+        'videoclips' => array(
+            'sv_name_en'              => 'Music Videos',
+            'sv_short_description_es' => 'Dirección y producción de videoclips musicales con narrativa visual única.',
+            'sv_short_description_en' => 'Direction and production of music videos with unique visual narrative.',
+        ),
+        'eventos' => array(
+            'sv_name_en'              => 'Event Coverage',
+            'sv_short_description_es' => 'Grabación y producción audiovisual de eventos corporativos y sociales.',
+            'sv_short_description_en' => 'Audiovisual recording and production of corporate and social events.',
+        ),
+        'fotografia' => array(
+            'sv_name_en'              => 'Photography',
+            'sv_short_description_es' => 'Fotografía profesional para campañas, producto y eventos.',
+            'sv_short_description_en' => 'Professional photography for campaigns, products and events.',
+        ),
+        'postproduccion' => array(
+            'sv_name_en'              => 'Post-production',
+            'sv_short_description_es' => 'Edición, corrección de color, VFX y acabado profesional.',
+            'sv_short_description_en' => 'Editing, color grading, VFX and professional finishing.',
+        ),
+        'consultoria' => array(
+            'sv_name_en'              => 'Audiovisual Consulting',
+            'sv_short_description_es' => 'Asesoramiento técnico y estratégico para proyectos audiovisuales.',
+            'sv_short_description_en' => 'Technical and strategic advice for audiovisual projects.',
+        ),
+    );
+
+    foreach ( $defaults as $slug => $campos ) {
+        $post = get_page_by_path( $slug, OBJECT, 'servicio' );
+        if ( ! $post ) continue; // slug renombrado o servicio inexistente: lo dirá el gate
+
+        foreach ( $campos as $key => $valor ) {
+            $actual = get_post_meta( $post->ID, $key, true );
+            if ( '' === $actual || null === $actual || false === $actual ) {
+                update_post_meta( $post->ID, $key, $valor );
+            }
+        }
+    }
+
+    update_option( 'obliq_servicio_seeded', OBLIQ_SERVICIO_SEED_VERSION );
 }

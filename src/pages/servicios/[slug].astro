@@ -24,21 +24,22 @@ export async function getStaticPaths() {
 const locale = 'es';
 const i18n = t(locale);
 const { service } = Astro.props;
-const svcI18n = i18n.SERVICES[service.key as keyof typeof i18n.SERVICES];
+const svcName = service.name.es;
+const svcDescription = service.shortDescription.es;
 const sp = i18n.SERVICE_PAGE;
 
 const breadcrumbItems = [
   { label: i18n.BREADCRUMBS.HOME, href: '/' },
   { label: i18n.NAV.SERVICES, href: localizedUrl('/servicios/', locale) },
-  { label: svcI18n.NAME },
+  { label: svcName },
 ];
 
-const schema = serviceSchema(svcI18n.NAME, svcI18n.DESCRIPTION);
+const schema = serviceSchema(svcName, svcDescription);
 ---
 
 <BaseLayout
-  title={svcI18n.NAME + ' — ' + i18n.SERVICES_PAGE.TITLE}
-  description={svcI18n.DESCRIPTION}
+  title={svcName + ' — ' + i18n.SERVICES_PAGE.TITLE}
+  description={svcDescription}
   locale={locale}
   schema={schema}
 >
@@ -52,8 +53,8 @@ const schema = serviceSchema(svcI18n.NAME, svcI18n.DESCRIPTION);
   <!-- Hero -->
   <HeroSection
     tag={i18n.NAV.SERVICES}
-    title={svcI18n.NAME.toUpperCase()}
-    subtitle={svcI18n.DESCRIPTION}
+    title={svcName.toUpperCase()}
+    subtitle={svcDescription}
     backgroundImage={service.image}
     height="min-h-[60vh] md:min-h-[70vh]"
   >

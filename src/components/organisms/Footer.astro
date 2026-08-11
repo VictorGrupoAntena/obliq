@@ -15,7 +15,7 @@ const contact = await getSiteContactAsync(locale);
 // y un servicio nuevo aparece aquí solo. Mismo patrón que servicios/index.astro.
 const services = await getServicesAsync();
 const serviceLinks = services.map((svc) => ({
-  label: i18n.SERVICES[svc.key as keyof typeof i18n.SERVICES].NAME,
+  label: svc.name[locale as 'es' | 'en'],
   href: localizedUrl(`/servicios/${svc.slug[locale as 'es' | 'en']}/`, locale),
 }));
 

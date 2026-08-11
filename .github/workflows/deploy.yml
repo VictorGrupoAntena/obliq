@@ -54,6 +54,16 @@ jobs:
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
 
+      # Gate ANTES del build, no después: lo que este script previene reventaba
+      # DENTRO del build, así que un gate posterior no llegaría a ejecutarse.
+      # Comprueba que ningún servicio de WordPress se ha quedado sin nombre o
+      # sin descripción corta en alguno de los dos idiomas. Si WP no responde,
+      # avisa y deja pasar: los datos del repo cubren el build.
+      - name: Verificar contenido de los servicios
+        run: pnpm check:services
+        env:
+          WP_API_URL: ${{ vars.WP_API_URL }}
+
       - name: Build (datos reales de WordPress)
         run: pnpm build
         env:

@@ -54,44 +54,6 @@
     "CTA_TITLE": "¿TIENES UN PROYECTO?",
     "CTA_BUTTON": "HABLEMOS"
   },
-  "SERVICES": {
-    "STREAMING": {
-      "NAME": "Streaming",
-      "DESCRIPTION": "Retransmisión en directo profesional para eventos, conferencias y espectáculos."
-    },
-    "SOCIAL_CONTENT": {
-      "NAME": "Contenido Redes Sociales",
-      "DESCRIPTION": "Creación de contenido audiovisual optimizado para plataformas digitales."
-    },
-    "CORPORATE_VIDEO": {
-      "NAME": "Vídeo Corporativo",
-      "DESCRIPTION": "Producción de vídeos corporativos que comunican la esencia de tu marca."
-    },
-    "SPOTS": {
-      "NAME": "Spots Publicitarios",
-      "DESCRIPTION": "Producción de anuncios publicitarios creativos y de alto impacto."
-    },
-    "MUSIC_VIDEOS": {
-      "NAME": "Videoclips",
-      "DESCRIPTION": "Dirección y producción de videoclips musicales con narrativa visual única."
-    },
-    "EVENTS": {
-      "NAME": "Cobertura de Eventos",
-      "DESCRIPTION": "Grabación y producción audiovisual de eventos corporativos y sociales."
-    },
-    "PHOTOGRAPHY": {
-      "NAME": "Fotografía",
-      "DESCRIPTION": "Fotografía profesional para campañas, producto y eventos."
-    },
-    "POST_PRODUCTION": {
-      "NAME": "Postproducción",
-      "DESCRIPTION": "Edición, corrección de color, VFX y acabado profesional."
-    },
-    "CONSULTING": {
-      "NAME": "Consultoría Audiovisual",
-      "DESCRIPTION": "Asesoramiento técnico y estratégico para proyectos audiovisuales."
-    }
-  },
   "FOOTER": {
     "BRAND_TAGLINE": "Enfocamos tu contenido",
     "SERVICES_TITLE": "Servicios",

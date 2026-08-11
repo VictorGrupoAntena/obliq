@@ -10,7 +10,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "check:links": "node scripts/check-links.mjs",
-    "check:redirects": "node scripts/verify-redirects.mjs"
+    "check:redirects": "node scripts/verify-redirects.mjs",
+    "check:services": "node scripts/check-services.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.3.1",
