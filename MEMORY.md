@@ -10,8 +10,8 @@
 
 ## ⏭️ SIGUIENTE SPRINT (acordado 11-Ago-2026 — no arrancado)
 
-1. **Vídeo hero con autoplay.**
-2. **Editabilidad de la home desde WordPress** — H1, textos y tarjetas de servicio.
+1. ~~**Vídeo hero con autoplay.**~~ ✅ hecho 11-Ago (ver abajo).
+2. ~~**Editabilidad de la home desde WordPress** — H1, textos y tarjetas de servicio.~~ ✅ hecho 11-Ago (ver abajo).
 3. **Banda de logos del footer.**
 4. **URLs huérfanas `/presupuesto/` y `/en/quote/`.** El CTA del carrito se emite como `href="#"` y lo rellena JavaScript en runtime (`getQuotePageUrl`, `cart-store.ts:211`), así que **ninguna página las enlaza estáticamente**: solo se descubren por sitemap y no reciben link equity interno. Es **la página de conversión del catálogo de alquiler y la peor enlazada del sitio**. Preexistente del sprint del carrito; detectado por el crawl BFS del sprint de i18n (73 de 75 URLs alcanzables, y las 2 ausentes son exactamente estas, en ambos idiomas).
 
@@ -143,6 +143,43 @@ Es la solución **documentada por Plesk** para este síntoma exacto (KB *«Email
 - **Credencial staging** (Basic Auth nginx): user `obliq`, pass reseteada 17-Jul (guardada aparte, NO en repo).
 
 > ⚠️ **Todo lo listado en este MEMORY vive en la rama `redesign` y NO está en producción.** Producción sigue sirviendo `main` (SSR Node en `~/httpdocs`) y el auto-deploy apunta a staging (`DEPLOY_TARGET`). Esto incluye el CMS de páginas fijas (CPT `contenido`) y el hero de vídeo editable: **salen a producción en el cutover, no antes**. El mu-plugin `obliq-cpts.php` sí está ya activo en el WP compartido (`~/admin.obliqproductions.com`), que es único para staging y producción: los campos existen en wp-admin aunque la web pública todavía no los use.
+
+---
+
+### Sprint Vídeo hero + editabilidad de la home — ✅ CÓDIGO EN `redesign` (11-Ago-2026); pendiente subir mu-plugin
+
+Commits: `a37c655` (hero) · `7862a79` (borrado assets) · `c818920` (degradado) · `47e117e` (bloque A) · `b75495d` (bloque B).
+
+**🚨 ORDEN DE DESPLIEGUE — subir `scripts/obliq-cpts.php` a `mu-plugins` ANTES del próximo deploy.** Hasta que corra el seed, WP devuelve las descripciones de servicio vacías y `check:services` **bloquea el despliegue a propósito**. Dos bumps de versión en ese fichero: `OBLIQ_CONTENIDO_SEED_VERSION` → `'4'` y `OBLIQ_SERVICIO_SEED_VERSION` → `'1'` (nueva). Recordatorio del sprint del hero: subirlo con el hook `.OFF` para no disparar un deploy a medias.
+
+#### Parte 1 — Vídeo hero
+
+- **Decisión del cliente:** el vídeo se reproduce solo al cargar, asumiendo el coste en métricas. Se **invierten dos decisiones** del sprint de 22-Jul: el iframe ya **no se difiere** (fuera `requestIdleCallback` tras `load`; se monta en tiempo de parseo) y **sí se monta en móvil** (fuera la guarda `innerWidth < 768`). Siguen intactas las guardas de `prefers-reduced-motion` y `saveData`: verificado **0 peticiones a player.vimeo.com** en ambas.
+- **🔑 El fundido colgaba del evento equivocado.** Antes se destapaba en el `load` del iframe, que solo dice que el player cargó. Con el autoplay bloqueado (Bajo Consumo de iOS, ahorro de datos) eso destapaba **un player congelado**. Ahora se destapa con el evento **`play`** de Vimeo por `postMessage` (suscrito con `addEventListener` tras el `ready`, sin cargar el SDK) y hay un **timeout de 3s**: si no llega, se queda el póster y el botón pasa a estado «reproducir». Nunca un rectángulo negro.
+- **🐛 El botón de pausa llevaba tiempo siendo inalcanzable.** Estaba en `bottom:1rem;right:1rem;z-index:20` y el FAB de WhatsApp es `fixed bottom-6 right-6 z-[998]`: se solapaban y ganaba el FAB. Movido a la **esquina inferior izquierda**. Verificado por geometría: `SOLAPAN: false`.
+- **Legibilidad — el velo plano no daba.** Con el vídeo visible, sus tramos claros se comían el subtítulo. Se descartó subir a `bg-black/50` porque oscurece también la zona alta, que es donde el vídeo luce. **Degradado inferior en `style=`**, condicionado a `videoEmbedUrl` → radio de **2 páginas** (portadas ES/EN); las otras 22 con hero conservan `bg-black/40` byte a byte. Medido sobre 5 momentos del bucle: contraste del texto **10,6:1 peor caso** (plano: 7,9:1) y luminancia de la zona alta **hasta 166** (plano: 80). Gana en las dos mitades. `bg-black/50` **no existe en el proyecto**: crearla habría cambiado el CSS global de las 76 páginas.
+- **Encuadre en móvil:** a 390px solo se ve el **32% del ancho** del vídeo (iframe 1200px sobre hero de 390; se recortan 810px laterales). Aguanta porque el vídeo está rodado con sujetos centrados. **Capturas pasadas a Dirección; la decisión es del cliente.**
+- **Póster:** `fetchpriority="high"` + `decoding="async"`. **Sin `width`/`height` a propósito**: la imagen viene de WP y su tamaño intrínseco no se conoce en build; con `object-cover` sobre `absolute inset-0` no hay CLS que prevenir y una proporción inventada solo podría perjudicar.
+- **🔑 LECCIÓN — un borrado de asset se justifica con la lista de CONSUMIDORES vacía, no con la presencia del fichero.** `public/logo.gif` (813 KB) entró en la lista inicial de «peso muerto» y **es el logo del sitio**, en la cabecera de las 75 páginas. Buscar el fichero solo confirma que existe, que es justo lo que se espera de un asset en uso. Borrado **solo** `public/about.mp4` (20,8 MB, 4K, 5s a 33 Mbps), verificado contra **producción**: 0/75 páginas, 0/9 bundles de `_astro/`, 0 referencias en los 7 CPTs por REST.
+
+#### Parte 2 — Editabilidad (bloques A y B; **C queda fuera**, ver abajo)
+
+- **Bloque A — 36 textos de la portada.** Van a la entrada `contenido._obliq_key='home'` **que ya existía**: cero CPTs nuevos, así que `OBLIQ_DEPLOY_CPTS` **no necesita ni una línea** (era el gate del sprint y se resolvió por diseño). Cubre H1, etiquetas, subtítulos, párrafos y botones de las 7 secciones, en ES y EN. Incluye `VER SERVICIO`/`VIEW SERVICE`, que ni siquiera estaba en el JSON: era un literal suelto en cada `index.astro`. Patrón de `about.ts`: fallback campo a campo contra i18n. **Verificado: el HTML de las dos portadas sale idéntico** (normalizando hashes), porque WP aún no tiene los campos.
+- **Bloque B — 🔑 la premisa de partida era falsa a medias.** De WP salían ya *qué* servicios existen, su *orden* y su *slug*; el **nombre y la descripción eran literales** en `src/i18n/*.json`, unidos por `SERVICE_KEY_MAP` (diccionario slug→clave en `wp-client.ts`). Eso era **una mina activa**: un servicio creado en wp-admin con un slug fuera de la lista daba `undefined` y **reventaba el build** con un TypeError. El cliente ya opera el CMS, y el fallo salía en un runner de GitHub que él no ve. Diccionario y campo `key` **eliminados en el mismo commit** que el resto del bloque.
+- **3 metas nuevas en el CPT `servicio`** (`sv_name_en`, `sv_short_description_es/_en`) cableadas en **los cuatro sitios que exige el patrón**: `register_post_meta`, exposición REST (`$sv_fields`), metabox y `$fields_map` del guardado. Olvidar uno da un campo que se ve pero no se guarda, o que se guarda pero no llega a Astro.
+- **7 consumidores actualizados** + el desplegable de los formularios de contacto ES/EN, que era una lista fija de 9 y ahora sale de WP. El bloque `SERVICES` desaparece de los JSON: `services.ts` queda como fuente única de fallback offline.
+- **Gate nuevo: `pnpm check:services`** (`scripts/check-services.mjs`), **ANTES del build** en `deploy.yml`. Un gate posterior no serviría: lo que previene reventaba *dentro* del build. Falla nombrando servicio y campo. Si WP no responde, **avisa y deja pasar**. ⚠️ `WP_API_URL: ${{ vars.WP_API_URL }}` llega como **cadena vacía** si la variable no está definida en GitHub, así que el script hace `process.env.WP_API_URL || leerDotEnv(...)`: sin ese `||` el gate se saltaría en silencio justo donde más falta hace.
+- **Verificado con un WordPress simulado** (datos reales + un servicio de slug inventado): el build pasa —antes TypeError— y el servicio sale en portada, pie, `/servicios`, desplegable de contacto y sus dos páginas propias. Con la descripción ES en blanco, el gate corta señalando ese servicio y ese campo, sin ruido de los otros 9.
+
+#### Bloque C — SEO editable · PROPUESTA, sin código (Dirección, 11-Ago)
+
+**Decisión: fuera de este sprint.** Es el bloque con menos feedback visible y más capacidad de hacer daño en silencio — un `<title>` mal puesto cuesta posicionamiento y nadie se entera. Va a su propio sprint, y **antes de construir nada hay que acordar con el cliente quién escribe esos campos**.
+
+Diseño cerrado y medido, para no rehacer el análisis:
+
+- **Son 28 campos, no 150.** Solo hay **7 páginas fijas** con textos SEO constantes (home, servicios, portfolio, nosotros, contacto, alquiler, presupuesto) × título + descripción × 2 idiomas. Las ~53 páginas de CPT componen su `<title>` y su `description` a partir del propio contenido, así que **heredan la edición gratis** — y las de servicios ya lo hacen gracias al bloque B. Se excluyen los 3 legales y el 404.
+- **Dónde:** nueva entrada `contenido._obliq_key='seo'`, prefijo `seo_`, pantalla propia en wp-admin para no inflar la de «Inicio». Requiere añadir `'seo' => 'seo_'` al mapa de prefijos de `obliq_contenido_keys()` y subir `OBLIQ_CONTENIDO_SEED_VERSION` (el CPT bloquea la creación manual, la entrada la crea el seed). **Sigue sin tocar el deploy-hook.**
+- **Astro:** `src/data/seo.ts` con `getSeoAsync(page, locale)`, mismo patrón de fallback campo a campo. En nosotros y contacto, donde la `description` ya sale del `heroSubtitle` de WP, ese valor queda como fallback.
 
 ---
 
