@@ -67,7 +67,17 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
           style="transition-duration:700ms"
         />
       )}
-      <div class="absolute inset-0 bg-black/40" />
+      {/* Con vídeo, un velo plano no basta: los tramos claros del bucle (la
+          toma de la piscina) se comían el subtítulo. Y subirlo a bg-black/50
+          oscurecería también la zona alta, que es donde el vídeo luce. El
+          degradado carga la tinta abajo, donde está el texto, y deja limpio
+          arriba. En `style` a propósito: bg-black/50 no existe hoy en el
+          proyecto y crearla cambiaría el CSS global de las 76 páginas. */}
+      {videoEmbedUrl ? (
+        <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(0,0,0,.80) 0%,rgba(0,0,0,.62) 28%,rgba(0,0,0,.34) 52%,rgba(0,0,0,.12) 75%,rgba(0,0,0,0) 100%)" />
+      ) : (
+        <div class="absolute inset-0 bg-black/40" />
+      )}
     </div>
   )}{videoEmbedUrl && (
     <Fragment>
