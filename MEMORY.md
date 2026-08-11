@@ -146,6 +146,21 @@ Es la solución **documentada por Plesk** para este síntoma exacto (KB *«Email
 
 ---
 
+### 🔴 Deriva `main` ↔ `redesign` en deploy.yml — ✅ RESUELTA (12-Ago-2026)
+
+Commits: `767dca1` (main: sincronización + check) · `60010f9` (redesign: check).
+
+- **🔑 GitHub ejecuta `deploy.yml` desde la RAMA POR DEFECTO (`main`), no desde la que construye.** `main` se había quedado en `edd6170`, así que la versión que REALMENTE corría en cada despliegue **no tenía los gates**: `check:links` y `check:redirects` —añadidos justo tras el incidente de i18n de agosto, el de las 109 referencias del `<head>` a 404 durante dos semanas— **NUNCA se ejecutaron en un deploy real**. La red que dábamos por puesta no existía. Tampoco existía el input `target`, así que todo `repository_dispatch` (cada edición del cliente en WP) iba a `httpdocs/` sin alternativa y sin gate.
+- **El síntoma de esta deriva es que NO PASA NADA**: los deploys siguen en verde, solo que sin red. Por eso duró semanas.
+- **Automatización 1 — `check-workflow-sync.yml`**: falla si los dos `deploy.yml` divergen. Va en **las dos ramas** (en `push`, GitHub usa el fichero de la rama empujada; si solo estuviera en `main`, los push a `redesign` no lo ejecutarían). Se estrenó cazando la divergencia real: rojo en el push a `redesign` (aún divergían), verde en el de `main` (ya sincronizados).
+- **Dos cambios que vienen con la sincronización, aceptados por Dirección como decisión consciente:**
+  1. `concurrency.group` pasa de `deploy-${vars.DEPLOY_TARGET}` a `deploy-${inputs.target || 'produccion'}`. Antes **todos** los runs compartían grupo: un deploy a staging podía **cancelar uno de producción en vuelo**.
+  2. **`--exclude=robots.txt` deja de aplicarse en producción** (queda solo para staging). **A partir de ahora el robots.txt de producción se cambia EN EL REPO, no en el servidor**: versionado y revisable, no un fichero suelto editado a mano. Transición gratis, verificada byte a byte (79 bytes, mismo SHA-256 en repo y servidor).
+- **✅ Verificado con un `repository_dispatch` REAL** (run `31542095919`): edición en WP → dispatch → pasos **6 (`check:services`) y 8 (`check:links` + `check:redirects`) en verde ANTES del rsync (paso 11)**. Ya no hay despliegue automático sin gates.
+- **⚠️ Cómo se probó sin tocar producción:** se apuntó la variable `DEPLOY_TARGET` a staging durante la prueba y **se restauró a `httpdocs/` al terminar** (verificado). Se eligió frente a cancelar el run porque el fallo va hacia el lado seguro: si se olvida restaurar, producción se queda como está en vez de recibir algo indebido. **Efecto colateral a recordar si se repite:** con `DEPLOY_TARGET` en staging, el workflow toma la rama «producción» del `if` y **no** excluye `robots.txt` → le planta a staging el `Allow: /` del repo. Hay que respaldarlo antes y restaurar el `Disallow: /` después (se hizo).
+
+---
+
 ### Sprint Vídeo hero + editabilidad de la home — ✅ CÓDIGO EN `redesign` (11-Ago-2026); pendiente subir mu-plugin
 
 Commits: `a37c655` (hero) · `7862a79` (borrado assets) · `c818920` (degradado) · `47e117e` (bloque A) · `b75495d` (bloque B).
@@ -170,6 +185,13 @@ Commits: `a37c655` (hero) · `7862a79` (borrado assets) · `c818920` (degradado)
 - **7 consumidores actualizados** + el desplegable de los formularios de contacto ES/EN, que era una lista fija de 9 y ahora sale de WP. El bloque `SERVICES` desaparece de los JSON: `services.ts` queda como fuente única de fallback offline.
 - **Gate nuevo: `pnpm check:services`** (`scripts/check-services.mjs`), **ANTES del build** en `deploy.yml`. Un gate posterior no serviría: lo que previene reventaba *dentro* del build. Falla nombrando servicio y campo. Si WP no responde, **avisa y deja pasar**. ⚠️ `WP_API_URL: ${{ vars.WP_API_URL }}` llega como **cadena vacía** si la variable no está definida en GitHub, así que el script hace `process.env.WP_API_URL || leerDotEnv(...)`: sin ese `||` el gate se saltaría en silencio justo donde más falta hace.
 - **Verificado con un WordPress simulado** (datos reales + un servicio de slug inventado): el build pasa —antes TypeError— y el servicio sale en portada, pie, `/servicios`, desplegable de contacto y sus dos páginas propias. Con la descripción ES en blanco, el gate corta señalando ese servicio y ese campo, sin ruido de los otros 9.
+
+- **🔑 3 servicios cambian de nombre en ES al pasar WP a ser la fuente — y la divergencia era NUESTRA, no del cliente.** «Contenido Redes Sociales» → «Contenido **para** Redes Sociales», «**Cobertura de** Eventos» → «Eventos», «Consultoría **Audiovisual**» → «Consultoría».
+  - **No fue una edición de Jordi.** Es una **inconsistencia interna entre dos ficheros nuestros** —`scripts/obliq-seed.php` (que fijó los títulos en WP) y `src/i18n/es.json` (que era lo que se renderizaba)— presente **desde la carga inicial del 2-Mar-2026** y tapada durante cinco meses porque el JSON ganaba al pintar.
+  - **Prueba que lo zanja:** los 9 títulos en WP coinciden **exactamente** con los que fija `obliq-seed.php`. Si alguien hubiera renombrado uno, ese título ya no coincidiría con el script; ninguno se sale. (Los 8 `post_modified` del 21-Jul son una pasada en lote de metadatos en una ventana de 8 minutos, no ediciones de nombre; `videoclips`, el único nunca modificado, también coincide.)
+  - **Decisión de Dirección: se mantiene lo de WordPress.** WP es la fuente y el cliente decide cómo se llaman sus servicios. **No renombrar.**
+  - **Impacto SEO gestionado:** los **slugs son idénticos** (9 ES + 9 EN, `diff` producción↔staging sin diferencias) → **ni 301 ni pérdida de indexación**, y el sitemap no cambia. **Ningún enlace se construye con el nombre**: los 8 `href` a servicios salen todos de `svc.slug`. `check:links` verde. Lo que sí cambia: el `<title>` de 3 páginas de servicio (Google reindexa solo) y 3 opciones del desplegable de contacto, que viajan en el cuerpo del email.
+  - **Lección:** cuando dos ficheros del repo describen el mismo dato y solo uno se renderiza, el otro puede llevar meses equivocado sin que nada lo delate. Al mover la fuente de verdad, la divergencia aflora de golpe y parece un cambio del cliente.
 
 #### Bloque C — SEO editable · PROPUESTA, sin código (Dirección, 11-Ago)
 
