@@ -55,6 +55,8 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
         alt=""
         class="w-full h-full object-cover"
         aria-hidden="true"
+        fetchpriority="high"
+        decoding="async"
       />{/* Las expresiones van PEGADAS a la etiqueta anterior a propósito:
            separadas por un salto de línea añadirían un nodo de texto y, con
            él, un espacio extra en el HTML de las 16 páginas que usan este
@@ -69,6 +71,9 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
     </div>
   )}{videoEmbedUrl && (
     <Fragment>
+    {/* El botón va abajo a la IZQUIERDA a propósito: el FAB de WhatsApp es
+        `fixed bottom-6 right-6 z-[998]` y se comía este control en la esquina
+        derecha — con position:fixed y más z-index, ganaba siempre. */}
     <button
       type="button"
       data-hero-video-toggle
@@ -76,7 +81,7 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
       data-label-play={videoPlayLabel}
       aria-label={videoPauseLabel}
       class="w-11 h-11 flex items-center justify-center text-white border border-white/30 hover:border-white transition-colors cursor-pointer"
-      style="display:none;position:absolute;bottom:1rem;right:1rem;z-index:20"
+      style="display:none;position:absolute;bottom:1rem;left:1rem;z-index:20"
     >
       <svg data-icon="pause" width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
         <rect x="2" y="1" width="3.5" height="12" />
@@ -95,17 +100,23 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
      * nuevas de Tailwind (que entrarían en el CSS global de todo el sitio).
      */
     (function () {
+      var VIMEO_ORIGIN = 'https://player.vimeo.com';
+      // Margen para que el player confirme que reproduce. Si se agota, damos
+      // el autoplay por bloqueado y nos quedamos con el póster.
+      var PLAY_TIMEOUT = 3000;
+
       function mountHeroVideo() {
         var holder = document.querySelector('[data-hero-video]');
         var toggle = document.querySelector('[data-hero-video-toggle]');
         if (!holder || !toggle || holder.dataset.mounted) return;
 
-        // Motivos para NO montar el vídeo. En todos ellos el póster ya está
-        // pintado en el HTML, así que el hero se ve igual de bien.
+        // Motivos para NO montar el vídeo. En ambos el póster ya está pintado
+        // en el HTML, así que el hero se ve igual de bien. Decisión del cliente
+        // (ago-2026): el vídeo SÍ se monta en móvil — antes había aquí un
+        // `innerWidth < 768` que dejaba sin vídeo a la mayoría del tráfico.
         var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var isNarrow = window.innerWidth < 768;
         var saveData = !!(navigator.connection && navigator.connection.saveData);
-        if (reducedMotion || isNarrow || saveData) return;
+        if (reducedMotion || saveData) return;
 
         holder.dataset.mounted = '1';
 
@@ -121,45 +132,92 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
           'width:auto;height:auto;min-width:100%;min-height:100%;aspect-ratio:16/9;' +
           'border:0;pointer-events:none';
 
-        iframe.addEventListener('load', function () {
+        var playing = false;  // lo pone a true la confirmación de Vimeo, no nosotros
+        var revealed = false;
+
+        // API postMessage del player de Vimeo: no hace falta cargar su SDK.
+        function send(method, value) {
+          try {
+            var msg = value === undefined ? { method: method } : { method: method, value: value };
+            iframe.contentWindow.postMessage(JSON.stringify(msg), VIMEO_ORIGIN);
+          } catch (e) {
+            /* player aún no listo; quien llame volverá a intentarlo */
+          }
+        }
+
+        function paintToggle(isPlaying) {
+          toggle.setAttribute('aria-label', isPlaying ? toggle.dataset.labelPause : toggle.dataset.labelPlay);
+          toggle.querySelector('[data-icon="pause"]').style.display = isPlaying ? '' : 'none';
+          toggle.querySelector('[data-icon="play"]').style.display = isPlaying ? 'none' : '';
+        }
+
+        // Destapamos el vídeo SOLO cuando Vimeo confirma que está reproduciendo.
+        // Antes esto colgaba del evento `load` del iframe, que solo dice que el
+        // player ha cargado: con el autoplay bloqueado (ahorro de datos, modo
+        // Bajo Consumo de iOS) destapábamos un player congelado.
+        function reveal() {
+          if (revealed) return;
+          revealed = true;
+          playing = true;
           holder.style.opacity = '1'; // fundido sobre el póster
-          toggle.style.display = '';  // el botón de pausa solo si hay algo que pausar
+          toggle.style.display = '';
+          paintToggle(true);
+          window.removeEventListener('message', onVimeoMessage);
+        }
+
+        // Autoplay bloqueado: el póster se queda (opacity 0 en el holder) y
+        // ofrecemos el botón para arrancarlo a mano. Nunca un rectángulo negro.
+        function fallbackToPoster() {
+          if (revealed) return;
+          toggle.style.display = '';
+          paintToggle(false);
+        }
+
+        function onVimeoMessage(ev) {
+          if (ev.origin !== VIMEO_ORIGIN || ev.source !== iframe.contentWindow) return;
+          var data;
+          try {
+            data = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
+          } catch (e) {
+            return;
+          }
+          if (!data) return;
+          // El player avisa cuando está listo para recibir métodos.
+          if (data.event === 'ready') send('addEventListener', 'play');
+          if (data.event === 'play') reveal();
+        }
+
+        // Suscrito ANTES de insertar el iframe: si no, se pierde el `ready`.
+        window.addEventListener('message', onVimeoMessage);
+
+        iframe.addEventListener('load', function () {
+          send('addEventListener', 'play'); // por si el `ready` llegó antes de tiempo
+          setTimeout(fallbackToPoster, PLAY_TIMEOUT);
         });
 
         holder.appendChild(iframe);
 
-        var playing = true;
         toggle.addEventListener('click', function () {
           playing = !playing;
-          // API postMessage del player de Vimeo: no hace falta cargar su SDK.
-          try {
-            iframe.contentWindow.postMessage(
-              JSON.stringify({ method: playing ? 'play' : 'pause' }),
-              'https://player.vimeo.com'
-            );
-          } catch (e) {
-            /* player aún no listo; el siguiente clic vuelve a intentarlo */
-          }
-          toggle.setAttribute('aria-label', playing ? toggle.dataset.labelPause : toggle.dataset.labelPlay);
-          toggle.querySelector('[data-icon="pause"]').style.display = playing ? '' : 'none';
-          toggle.querySelector('[data-icon="play"]').style.display = playing ? 'none' : '';
+          send(playing ? 'play' : 'pause');
+          // Arranque manual tras un autoplay bloqueado: el `play` de Vimeo
+          // dispara reveal() y descubre el vídeo. Al pausar no lo volvemos a
+          // tapar: el usuario quiere ver el fotograma donde lo dejó.
+          paintToggle(playing);
         });
       }
 
-      // Fuera de la ruta crítica: el LCP es el póster, el iframe entra después.
-      function schedule() {
-        if ('requestIdleCallback' in window) requestIdleCallback(mountHeroVideo, { timeout: 2000 });
-        else setTimeout(mountHeroVideo, 300);
-      }
-
-      if (document.readyState === 'complete') schedule();
-      else window.addEventListener('load', schedule, { once: true });
+      // Sin diferir: el cliente quiere el vídeo desde el primer instante y
+      // asume el coste en métricas (decisión de ago-2026). El script es
+      // `is:inline` y va después del holder y del botón en el DOM, así que
+      // ambos existen ya durante el parseo.
+      mountHeroVideo();
 
       // View Transitions: al volver a la home el DOM es otro. El guard evita
       // acumular listeners cada vez que este script se reejecuta tras un swap.
       if (!window.__obliqHeroVideoBound) {
         window.__obliqHeroVideoBound = true;
-        document.addEventListener('astro:after-swap', schedule);
+        document.addEventListener('astro:after-swap', mountHeroVideo);
       }
     })();
   </script>
