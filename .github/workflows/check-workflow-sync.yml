@@ -1,0 +1,55 @@
+name: Workflows sincronizados (main ↔ redesign)
+
+# Por qué existe.
+#
+# GitHub ejecuta `deploy.yml` desde la RAMA POR DEFECTO (main), pero el código
+# se construye desde `redesign` (`checkout ref: redesign`). Esa asimetría hizo
+# que durante semanas main se quedara con una versión vieja del workflow: los
+# gates `check:links` y `check:redirects` —añadidos precisamente tras el
+# incidente de i18n de agosto de 2026— NUNCA llegaron a ejecutarse en un deploy
+# real, y el input `target` para desplegar a staging tampoco existía.
+#
+# El síntoma de esa deriva es que NO PASA NADA: los deploys siguen saliendo
+# verdes, solo que sin red. Este check la convierte en un fallo visible.
+#
+# Corre en `push`, que es el único evento que usa el fichero de la propia rama
+# empujada, así que funciona esté donde esté sin depender de main.
+
+on:
+  push:
+    branches: [main, redesign]
+    paths:
+      - '.github/workflows/**'
+  workflow_dispatch: {}
+
+jobs:
+  comparar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (historial completo, hacen falta las dos ramas)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Comparar deploy.yml entre main y redesign
+        run: |
+          git fetch origin main redesign --quiet
+
+          if git diff --quiet origin/main:.github/workflows/deploy.yml \
+                              origin/redesign:.github/workflows/deploy.yml; then
+            echo "✓ deploy.yml idéntico en main y redesign."
+            exit 0
+          fi
+
+          echo "✗ deploy.yml DIFIERE entre main y redesign."
+          echo ""
+          echo "  GitHub ejecuta el de **main**, así que cualquier paso que solo"
+          echo "  esté en redesign —gates de calidad incluidos— NO se ejecuta en"
+          echo "  los despliegues automáticos disparados por WordPress."
+          echo ""
+          echo "  Arreglo: llevar el fichero de redesign a main (solo ese fichero)."
+          echo ""
+          echo "──────── diferencias (main → redesign) ────────"
+          git diff origin/main:.github/workflows/deploy.yml \
+                   origin/redesign:.github/workflows/deploy.yml || true
+          exit 1
