@@ -5,18 +5,30 @@ name: Deploy (build + rsync a Plesk)
 # runner limpio y sincroniza dist/ al docroot de Plesk vía rsync sobre SSH.
 # Documentación completa: docs/guides/auto-rebuild.md
 #
-# TARGET actual = STAGING (variable DEPLOY_TARGET). En el cutover a producción
-# solo se cambia esa variable (y se quita robots.txt de los excludes).
+# DESTINO: producción por defecto. El lanzamiento manual permite elegir staging
+# con el input `target`; el auto-rebuild de WordPress siempre va a producción.
+# Antes esto se hacía cambiando la variable DEPLOY_TARGET a mano ida y vuelta,
+# con el riesgo de olvidar devolverla y publicar staging en producción (o al
+# revés). El input elimina ese estado global mutable.
 
 on:
   repository_dispatch:
     types: [wp-content-update]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Destino del despliegue'
+        type: choice
+        default: produccion
+        options:
+          - produccion
+          - staging
 
-# Un build a la vez por destino: si entra otro dispatch, cancela el en curso
-# y gana el último (doble red junto al debounce del lado WordPress).
+# Un build a la vez POR DESTINO: si entra otro dispatch al mismo destino,
+# cancela el en curso y gana el último (doble red junto al debounce del lado
+# WordPress). Staging y producción no se cancelan entre sí.
 concurrency:
-  group: deploy-${{ vars.DEPLOY_TARGET }}
+  group: deploy-${{ inputs.target || 'produccion' }}
   cancel-in-progress: true
 
 jobs:
@@ -42,12 +54,31 @@ jobs:
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
 
+      # Gate ANTES del build, no después: lo que este script previene reventaba
+      # DENTRO del build, así que un gate posterior no llegaría a ejecutarse.
+      # Comprueba que ningún servicio de WordPress se ha quedado sin nombre o
+      # sin descripción corta en alguno de los dos idiomas. Si WP no responde,
+      # avisa y deja pasar: los datos del repo cubren el build.
+      - name: Verificar contenido de los servicios
+        run: pnpm check:services
+        env:
+          WP_API_URL: ${{ vars.WP_API_URL }}
+
       - name: Build (datos reales de WordPress)
         run: pnpm build
         env:
           # Explícito por si se quiere sobreescribir; el .env versionado del
           # repo ya trae WP_API_URL como fallback.
           WP_API_URL: ${{ vars.WP_API_URL }}
+
+      # Gate de calidad entre el build y el rsync: si el build contiene enlaces
+      # internos rotos, NO se despliega. Añadido tras el bug de i18n de agosto
+      # de 2026, en el que 109 referencias del <head> (hreflang y x-default)
+      # apuntaron a 404 durante dos semanas sin que nada lo detectara.
+      - name: Verificar enlaces internos y 301
+        run: |
+          pnpm check:links
+          pnpm check:redirects
 
       - name: Configurar SSH del runner
         run: |
@@ -56,18 +87,38 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
+      # Resuelve destino y excludes en un solo sitio. `inputs.target` está vacío
+      # en repository_dispatch (auto-rebuild de WordPress), que por tanto cae
+      # siempre en producción.
+      - name: Resolver destino
+        id: destino
+        run: |
+          if [ "${{ inputs.target }}" = "staging" ]; then
+            echo "nombre=STAGING"                              >> "$GITHUB_OUTPUT"
+            echo "ruta=${{ vars.DEPLOY_TARGET_STAGING }}"      >> "$GITHUB_OUTPUT"
+            # Staging debe conservar SU robots.txt (Disallow: /). Sin este
+            # exclude el rsync le planta el del repo (Allow: /) y staging queda
+            # indexable — exactamente el accidente que el input viene a evitar.
+            echo "excludes=--exclude=robots.txt"               >> "$GITHUB_OUTPUT"
+          else
+            echo "nombre=PRODUCCIÓN"                           >> "$GITHUB_OUTPUT"
+            echo "ruta=${{ vars.DEPLOY_TARGET }}"              >> "$GITHUB_OUTPUT"
+            echo "excludes="                                   >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy (rsync --delete al docroot)
         run: |
+          echo "Desplegando a ${{ steps.destino.outputs.nombre }} → ${{ steps.destino.outputs.ruta }}"
           rsync -avz --delete \
             --exclude='.php-ini' \
             --exclude='.php-version' \
-            --exclude='robots.txt' \
             --exclude='.htpasswd' \
+            ${{ steps.destino.outputs.excludes }} \
             -e "ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=yes" \
-            dist/ "${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}:${{ vars.DEPLOY_TARGET }}"
-        # NOTAS sobre los excludes de STAGING (preservan ficheros del servidor
-        # que no están en el repo y que --delete borraría):
-        #  - robots.txt : Disallow manual de staging (en cutover a producción,
-        #    ELIMINAR este exclude para publicar el robots.txt real del repo).
-        #  - .htpasswd  : credenciales del Basic Auth de nginx del staging
-        #    (protección de acceso; ver docs/guides/auto-rebuild.md).
+            dist/ "${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}:${{ steps.destino.outputs.ruta }}"
+        # NOTAS sobre los excludes (preservan ficheros del servidor que no
+        # están en el repo y que --delete borraría):
+        #  - .htpasswd  : credenciales del Basic Auth de nginx (solo staging;
+        #    httpdocs/producción no tiene .htpasswd). Ver docs/guides/auto-rebuild.md.
+        #  - robots.txt : SOLO en staging, para preservar su Disallow: /.
+        #    Producción publica el robots.txt del repo (Allow: / + sitemap).
