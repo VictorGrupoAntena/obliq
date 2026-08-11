@@ -11,7 +11,7 @@ import { t, localizedUrl } from '@/lib/i18n';
 import { getServicesAsync } from '@/data/services';
 import { getFeaturedProjectsAsync } from '@/data/portfolio';
 import { getClientNamesAsync } from '@/data/clients';
-import { getHomeHeroAsync } from '@/data/home';
+import { getHomeContentAsync } from '@/data/home';
 
 const locale = 'en';
 const i18n = t(locale);
@@ -19,7 +19,7 @@ const i18n = t(locale);
 const services = await getServicesAsync();
 const portfolioProjects = await getFeaturedProjectsAsync();
 const clientNames = await getClientNamesAsync();
-const hero = await getHomeHeroAsync();
+const home = await getHomeContentAsync(locale);
 ---
 
 <BaseLayout
@@ -29,27 +29,27 @@ const hero = await getHomeHeroAsync();
 >
   <!-- 1. Hero -->
   <HeroSection
-    tag={i18n.HOME.HERO_TAG}
-    title={i18n.HOME.HERO_TITLE}
-    subtitle={i18n.HOME.HERO_SUBTITLE}
-    backgroundImage={hero.image}
-    backgroundVideoUrl={hero.vimeoUrl}
+    tag={home.heroTag}
+    title={home.heroTitle}
+    subtitle={home.heroSubtitle}
+    backgroundImage={home.image}
+    backgroundVideoUrl={home.vimeoUrl}
     videoPauseLabel={i18n.HOME.HERO_VIDEO_PAUSE}
     videoPlayLabel={i18n.HOME.HERO_VIDEO_PLAY}
   >
     <div class="flex gap-4 flex-wrap">
       <Button variant="primary" href={localizedUrl('/servicios/', locale)}>
-        {i18n.HOME.HERO_CTA_PRIMARY}
+        {home.heroCtaPrimary}
       </Button>
       <Button variant="outline" href={localizedUrl('/contacto/', locale)}>
-        {i18n.HOME.HERO_CTA_SECONDARY}
+        {home.heroCtaSecondary}
       </Button>
     </div>
   </HeroSection>
 
   <!-- 2. Services Grid -->
   <section class="bg-black py-section px-4 md:px-section">
-    <SectionHeader tag={i18n.HOME.SERVICES_TAG} title={i18n.HOME.SERVICES_TITLE} />
+    <SectionHeader tag={home.servicesTag} title={home.servicesTitle} />
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       {services.map((svc) => {
         const data = i18n.SERVICES[svc.key as keyof typeof i18n.SERVICES];
@@ -63,7 +63,7 @@ const hero = await getHomeHeroAsync();
               <p class="text-[13px] font-light text-secondary line-clamp-2">{data.DESCRIPTION}</p>
             </div>
             <span class="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[3px] mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              VIEW SERVICE
+              {home.serviceCardCta}
               <svg width="12" height="12" viewBox="0 0 18 18" fill="none" class="transition-transform group-hover:translate-x-1" aria-hidden="true">
                 <path d="M12.3461 0.839999L17.9061 9.04L12.3461 17.32H8.86609L14.1061 9.04L8.86609 0.839999H12.3461ZM14.9061 7.6V10.52H0.426094V7.6H14.9061Z" fill="currentColor" />
               </svg>
@@ -75,11 +75,12 @@ const hero = await getHomeHeroAsync();
   </section>
 
   <!-- 3. Marquee — Work -->
-  <Marquee items={i18n.HOME.MARQUEE_WORK} size="large" />
+  {/* El texto se escribe UNA vez en wp-admin; la repetición es cosa del diseño. */}
+  <Marquee items={Array(4).fill(home.marqueeWork)} size="large" />
 
   <!-- 4. Portfolio -->
   <section class="bg-black py-section px-4 md:px-section">
-    <SectionHeader tag={i18n.HOME.PORTFOLIO_TAG} title={i18n.HOME.PORTFOLIO_TITLE} />
+    <SectionHeader tag={home.portfolioTag} title={home.portfolioTitle} />
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
       {portfolioProjects.map((project) => (
         <a href={localizedUrl('/portfolio/', locale)} class="portfolio-card custom-cursor-target relative overflow-hidden group aspect-[4/3]">
@@ -98,7 +99,7 @@ const hero = await getHomeHeroAsync();
     </div>
     <div class="text-center">
       <Button variant="ghost" href={localizedUrl('/portfolio/', locale)}>
-        {i18n.HOME.PORTFOLIO_CTA}
+        {home.portfolioCta}
       </Button>
     </div>
   </section>
@@ -108,21 +109,21 @@ const hero = await getHomeHeroAsync();
 
   <!-- 6. About Teaser -->
   <section class="bg-surface-dark py-section px-4 md:px-section">
-    <SectionHeader tag={i18n.HOME.ABOUT_TAG} title={i18n.HOME.ABOUT_TITLE} />
+    <SectionHeader tag={home.aboutTag} title={home.aboutTitle} />
     <Paragraph class="text-secondary max-w-3xl mb-10">
-      {i18n.HOME.ABOUT_TEXT}
+      {home.aboutText}
     </Paragraph>
     <Button variant="outline" href={localizedUrl('/nosotros/', locale)}>
-      {i18n.HOME.ABOUT_CTA}
+      {home.aboutCta}
     </Button>
   </section>
 
   <CustomCursor />
 
   <!-- 7. CTA -->
-  <CTASection title={i18n.HOME.CTA_TITLE}>
+  <CTASection title={home.ctaTitle}>
     <Button variant="primary" href={localizedUrl('/contacto/', locale)}>
-      {i18n.HOME.CTA_BUTTON}
+      {home.ctaButton}
     </Button>
   </CTASection>
 </BaseLayout>

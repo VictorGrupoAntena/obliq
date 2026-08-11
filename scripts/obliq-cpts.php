@@ -593,8 +593,13 @@ function obliq_save_meta_fields( $post_id, $post ) {
 //   v3 — entrada «Alquiler · Tarifa de operador» (_obliq_key = 'alquiler').
 //        Mismo motivo: sin subir la versión, el singleton de la tarifa de
 //        operador no se crearía en el WP ya instalado.
+//   v4 — 36 campos de texto en la entrada «Inicio» (titular H1, subtítulos,
+//        botones y cabeceras de bloque). La entrada YA existe en el WP
+//        instalado, así que sin subir la versión el guard `obliq_contenido_seeded`
+//        cortaría antes de sembrarlos y el cliente encontraría 36 campos en
+//        blanco. El seed solo rellena lo vacío: lo ya escrito no se toca.
 if ( ! defined( 'OBLIQ_CONTENIDO_SEED_VERSION' ) ) {
-    define( 'OBLIQ_CONTENIDO_SEED_VERSION', '3' );
+    define( 'OBLIQ_CONTENIDO_SEED_VERSION', '4' );
 }
 
 /**
@@ -662,9 +667,53 @@ function obliq_contenido_field_defs() {
         'ct_address_postal'     => array( 'Dirección — código postal', 'text' ),
         'ct_address_city'       => array( 'Dirección — ciudad', 'text' ),
 
-        // ---------- Entrada "Inicio" (2 campos) ----------
+        // ---------- Entrada "Inicio" (2 de fondo + 36 de texto) ----------
+        // Los de fondo NO llevan sufijo de idioma: son el mismo vídeo y la
+        // misma imagen en las dos versiones del sitio, igual que ab_story_image.
         'hm_hero_vimeo_url'     => array( 'Hero — vídeo de Vimeo (URL). Si se deja vacío se muestra solo la imagen.', 'text' ),
-        'hm_hero_fallback_image' => array( 'Hero — imagen (se ve mientras carga el vídeo, en móvil y si no hay vídeo)', 'media' ),
+        'hm_hero_fallback_image' => array( 'Hero — imagen (se ve mientras carga el vídeo, con reduced-motion o ahorro de datos, y si no hay vídeo)', 'media' ),
+
+        'hm_hero_tag_es'        => array( 'Cabecera — etiqueta pequeña (ES)', 'text' ),
+        'hm_hero_tag_en'        => array( 'Cabecera — etiqueta pequeña (EN)', 'text' ),
+        'hm_hero_title_es'      => array( 'Cabecera — TITULAR PRINCIPAL / H1 (ES)', 'text' ),
+        'hm_hero_title_en'      => array( 'Cabecera — TITULAR PRINCIPAL / H1 (EN)', 'text' ),
+        'hm_hero_subtitle_es'   => array( 'Cabecera — subtítulo (ES)', 'textarea' ),
+        'hm_hero_subtitle_en'   => array( 'Cabecera — subtítulo (EN)', 'textarea' ),
+        'hm_hero_cta_primary_es'   => array( 'Cabecera — botón principal (ES)', 'text' ),
+        'hm_hero_cta_primary_en'   => array( 'Cabecera — botón principal (EN)', 'text' ),
+        'hm_hero_cta_secondary_es' => array( 'Cabecera — botón secundario (ES)', 'text' ),
+        'hm_hero_cta_secondary_en' => array( 'Cabecera — botón secundario (EN)', 'text' ),
+
+        'hm_services_tag_es'    => array( 'Servicios — etiqueta (ES)', 'text' ),
+        'hm_services_tag_en'    => array( 'Servicios — etiqueta (EN)', 'text' ),
+        'hm_services_title_es'  => array( 'Servicios — título (ES)', 'text' ),
+        'hm_services_title_en'  => array( 'Servicios — título (EN)', 'text' ),
+        'hm_service_card_cta_es' => array( 'Servicios — texto que aparece al pasar el ratón por una tarjeta (ES)', 'text' ),
+        'hm_service_card_cta_en' => array( 'Servicios — texto que aparece al pasar el ratón por una tarjeta (EN)', 'text' ),
+
+        'hm_marquee_work_es'    => array( 'Cinta deslizante — texto que se repite (ES)', 'text' ),
+        'hm_marquee_work_en'    => array( 'Cinta deslizante — texto que se repite (EN)', 'text' ),
+
+        'hm_portfolio_tag_es'   => array( 'Portfolio — etiqueta (ES)', 'text' ),
+        'hm_portfolio_tag_en'   => array( 'Portfolio — etiqueta (EN)', 'text' ),
+        'hm_portfolio_title_es' => array( 'Portfolio — título (ES)', 'text' ),
+        'hm_portfolio_title_en' => array( 'Portfolio — título (EN)', 'text' ),
+        'hm_portfolio_cta_es'   => array( 'Portfolio — botón (ES)', 'text' ),
+        'hm_portfolio_cta_en'   => array( 'Portfolio — botón (EN)', 'text' ),
+
+        'hm_about_tag_es'       => array( 'Nosotros — etiqueta (ES)', 'text' ),
+        'hm_about_tag_en'       => array( 'Nosotros — etiqueta (EN)', 'text' ),
+        'hm_about_title_es'     => array( 'Nosotros — título (ES)', 'text' ),
+        'hm_about_title_en'     => array( 'Nosotros — título (EN)', 'text' ),
+        'hm_about_text_es'      => array( 'Nosotros — párrafo (ES)', 'textarea' ),
+        'hm_about_text_en'      => array( 'Nosotros — párrafo (EN)', 'textarea' ),
+        'hm_about_cta_es'       => array( 'Nosotros — botón (ES)', 'text' ),
+        'hm_about_cta_en'       => array( 'Nosotros — botón (EN)', 'text' ),
+
+        'hm_cta_title_es'       => array( 'Llamada final — título (ES)', 'text' ),
+        'hm_cta_title_en'       => array( 'Llamada final — título (EN)', 'text' ),
+        'hm_cta_button_es'      => array( 'Llamada final — botón (ES)', 'text' ),
+        'hm_cta_button_en'      => array( 'Llamada final — botón (EN)', 'text' ),
 
         // ---------- Entrada "Alquiler · Tarifa de operador" (6 campos) ----------
         // El alquiler es SIEMPRE con operador. Precios SIN IVA (mismo criterio
@@ -856,9 +905,12 @@ function obliq_contenido_meta_html( $post ) {
     }
 
     if ( 'home' === $key ) {
-        echo '<p><em>Fondo de la cabecera de la <strong>portada</strong> (/ y /en/).<br>';
-        echo 'Los textos y los botones de la cabecera no se editan desde aquí.</em></p>';
-        echo '<hr><h4>Cabecera de la portada</h4>';
+        echo '<p><em>Textos y fondo de la <strong>portada</strong> (/ y /en/), en el mismo orden en que se ven en la página.<br>';
+        echo '<strong>Cada idioma se escribe por separado</strong>: no hay traducción automática. Si dejas un campo vacío, ';
+        echo 'se usa el texto que trae la web por defecto.<br>';
+        echo 'Los servicios, los proyectos del portfolio y los logos de marcas se editan en sus propias secciones.</em></p>';
+
+        echo '<hr><h4>1 · Cabecera — fondo</h4>';
         obliq_contenido_render_fields( $id, array( 'hm_hero_vimeo_url', 'hm_hero_fallback_image' ) );
         echo '<p style="background:#fff8e5;border-left:4px solid #dba617;padding:10px 12px;max-width:760px">';
         echo '<strong>Sobre el vídeo:</strong><br>';
@@ -866,10 +918,56 @@ function obliq_contenido_meta_html( $post ) {
         echo 'Si el vídeo es <em>no listado</em>, copia la dirección completa con el código que lleva detrás.<br>';
         echo '• En Vimeo, dentro de los ajustes del vídeo, en <em>Privacidad → Dónde se puede incrustar</em>, ';
         echo 'el dominio de la web tiene que estar autorizado.<br>';
-        echo '• El vídeo se reproduce sin sonido y en bucle. En móviles y con el ahorro de datos activado ';
-        echo 'se muestra solo la imagen, para no consumir datos del visitante.<br>';
-        echo '• <strong>Para volver a la cabecera con imagen, vacía este campo.</strong>';
+        echo '• El vídeo se reproduce <strong>sin sonido y en bucle, también en móvil</strong>. Se muestra solo la imagen ';
+        echo 'si el visitante tiene activado el ahorro de datos o ha pedido reducir las animaciones.<br>';
+        echo '• La imagen se ve además mientras el vídeo carga, así que conviene que sea <strong>oscura</strong>: ';
+        echo 'el texto del titular va encima en blanco.<br>';
+        echo '• <strong>Para volver a la cabecera con imagen, vacía el campo del vídeo.</strong>';
         echo '</p>';
+
+        echo '<hr><h4>2 · Cabecera — textos</h4>';
+        obliq_contenido_render_fields( $id, array(
+            'hm_hero_tag_es', 'hm_hero_tag_en',
+            'hm_hero_title_es', 'hm_hero_title_en',
+            'hm_hero_subtitle_es', 'hm_hero_subtitle_en',
+            'hm_hero_cta_primary_es', 'hm_hero_cta_primary_en',
+            'hm_hero_cta_secondary_es', 'hm_hero_cta_secondary_en',
+        ) );
+
+        echo '<hr><h4>3 · Bloque de servicios</h4>';
+        echo '<p><em>El nombre y la descripción de cada servicio se editan en <strong>Servicios</strong>, no aquí. ';
+        echo 'Aquí solo va la cabecera del bloque.</em></p>';
+        obliq_contenido_render_fields( $id, array(
+            'hm_services_tag_es', 'hm_services_tag_en',
+            'hm_services_title_es', 'hm_services_title_en',
+            'hm_service_card_cta_es', 'hm_service_card_cta_en',
+        ) );
+
+        echo '<hr><h4>4 · Cinta deslizante</h4>';
+        echo '<p><em>Se repite cuatro veces en bucle. Escribe el texto una sola vez.</em></p>';
+        obliq_contenido_render_fields( $id, array( 'hm_marquee_work_es', 'hm_marquee_work_en' ) );
+
+        echo '<hr><h4>5 · Bloque de portfolio</h4>';
+        echo '<p><em>Qué proyectos salen aquí se decide marcándolos como destacados en <strong>Portfolio</strong>.</em></p>';
+        obliq_contenido_render_fields( $id, array(
+            'hm_portfolio_tag_es', 'hm_portfolio_tag_en',
+            'hm_portfolio_title_es', 'hm_portfolio_title_en',
+            'hm_portfolio_cta_es', 'hm_portfolio_cta_en',
+        ) );
+
+        echo '<hr><h4>6 · Bloque «Nosotros»</h4>';
+        obliq_contenido_render_fields( $id, array(
+            'hm_about_tag_es', 'hm_about_tag_en',
+            'hm_about_title_es', 'hm_about_title_en',
+            'hm_about_text_es', 'hm_about_text_en',
+            'hm_about_cta_es', 'hm_about_cta_en',
+        ) );
+
+        echo '<hr><h4>7 · Llamada final</h4>';
+        obliq_contenido_render_fields( $id, array(
+            'hm_cta_title_es', 'hm_cta_title_en',
+            'hm_cta_button_es', 'hm_cta_button_en',
+        ) );
         return;
     }
 
@@ -1032,16 +1130,62 @@ function obliq_contenido_seed_contact() {
 }
 
 /**
- * Valores iniciales de "Inicio".
+ * Valores iniciales de "Inicio" — espejo de HOME en src/i18n/*.json.
  *
  * El campo de vídeo nace VACÍO a propósito: así, al instalar esta versión del
  * plugin, la portada se reconstruye exactamente igual que antes (cabecera con
  * imagen). El vídeo solo aparece cuando alguien pega una URL en wp-admin.
+ *
+ * Los textos, en cambio, nacen CON el contenido que hoy está en producción:
+ * el cliente no tiene que escribir nada el primer día, solo cambiar lo que
+ * quiera. Y el build sale byte a byte igual hasta que alguien edite algo.
  */
 function obliq_contenido_seed_home() {
     return array(
         'hm_hero_vimeo_url'      => '',
         'hm_hero_fallback_image' => '/hero.jpg', // la imagen que hoy vive en el repo
+
+        'hm_hero_tag_es'         => 'PRODUCTORA AUDIOVISUAL',
+        'hm_hero_tag_en'         => 'AUDIOVISUAL PRODUCTION',
+        'hm_hero_title_es'       => 'WHERE DREAMS LIVE',
+        'hm_hero_title_en'       => 'WHERE DREAMS LIVE',
+        'hm_hero_subtitle_es'    => 'Creamos historias que importan. Producción audiovisual profesional en Valencia.',
+        'hm_hero_subtitle_en'    => 'We create stories that matter. Professional audiovisual production in Valencia.',
+        'hm_hero_cta_primary_es'   => 'VER SERVICIOS',
+        'hm_hero_cta_primary_en'   => 'VIEW SERVICES',
+        'hm_hero_cta_secondary_es' => 'CONTACTAR',
+        'hm_hero_cta_secondary_en' => 'CONTACT US',
+
+        'hm_services_tag_es'     => 'SERVICIOS',
+        'hm_services_tag_en'     => 'SERVICES',
+        'hm_services_title_es'   => 'Soluciones audiovisuales integrales',
+        'hm_services_title_en'   => 'Comprehensive audiovisual solutions',
+        'hm_service_card_cta_es' => 'VER SERVICIO',
+        'hm_service_card_cta_en' => 'VIEW SERVICE',
+
+        'hm_marquee_work_es'     => 'NUESTRO TRABAJO',
+        'hm_marquee_work_en'     => 'OUR WORK',
+
+        'hm_portfolio_tag_es'    => 'PORTFOLIO',
+        'hm_portfolio_tag_en'    => 'PORTFOLIO',
+        'hm_portfolio_title_es'  => 'Proyectos que hablan por sí mismos',
+        'hm_portfolio_title_en'  => 'Projects that speak for themselves',
+        'hm_portfolio_cta_es'    => 'VER TODOS LOS PROYECTOS',
+        'hm_portfolio_cta_en'    => 'VIEW ALL PROJECTS',
+
+        'hm_about_tag_es'        => 'NOSOTROS',
+        'hm_about_tag_en'        => 'ABOUT US',
+        'hm_about_title_es'      => 'Creamos historias que importan',
+        'hm_about_title_en'      => 'We create stories that matter',
+        'hm_about_text_es'       => 'Somos una productora audiovisual formada por un equipo polivalente y experimentado. Entendemos la naturaleza de cada proyecto y nos adaptamos con eficacia a sus necesidades.',
+        'hm_about_text_en'       => 'We are an audiovisual production company formed by a versatile and experienced team. We understand the nature of each project and effectively adapt to its needs.',
+        'hm_about_cta_es'        => 'CONÓCENOS',
+        'hm_about_cta_en'        => 'ABOUT US',
+
+        'hm_cta_title_es'        => '¿TIENES UN PROYECTO?',
+        'hm_cta_title_en'        => 'GOT A PROJECT?',
+        'hm_cta_button_es'       => 'HABLEMOS',
+        'hm_cta_button_en'       => "LET'S TALK",
     );
 }
 

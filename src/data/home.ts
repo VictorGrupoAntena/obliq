@@ -1,54 +1,135 @@
 /**
- * Hero de la home — facade async con WordPress headless CMS y fallback estático.
+ * Textos y fondo de la portada — facade async con WordPress headless CMS
+ * y fallback a src/i18n.
  *
  * Fuente: CPT `contenido`, entrada con `_obliq_key = 'home'`.
  *
- * Solo cubre el FONDO del hero (vídeo de Vimeo + imagen). Los textos del hero
- * (etiqueta, título, subtítulo) y los botones siguen viniendo de src/i18n:
- * son los mismos en ambos idiomas por diseño y no se pidieron editables.
+ * NO cubre los servicios (CPT `servicio` → src/data/services.ts), los
+ * proyectos destacados (CPT `portfolio`) ni los logos de marcas (CPT
+ * `cliente`): esos ya se gestionaban desde WordPress y no se tocan.
  *
- * El campo de vídeo es único para ES y EN (sin sufijo `_es`/`_en`): es el mismo
- * vídeo en las dos versiones del sitio, igual que `ab_story_image` o `ct_email`.
+ * Los campos de fondo (vídeo e imagen) son únicos para ES y EN, sin sufijo
+ * `_es`/`_en`: es el mismo material en las dos versiones del sitio, igual que
+ * `ab_story_image` o `ct_email`. Los textos sí van por idioma.
  */
 import { isWPEnabled, getContenido, wpText } from '@/lib/wp-client';
+import { t } from '@/lib/i18n';
 
-export interface HomeHero {
+export interface HomeContent {
   /**
    * URL de Vimeo del vídeo de fondo. `undefined` = modo imagen (el hero de
    * siempre). Es el ÚNICO interruptor: no hay un campo "activar vídeo" que
    * pueda quedar incoherente con la URL.
    */
   vimeoUrl?: string;
-  /** Imagen de fondo; con vídeo activo hace de póster mientras carga. */
+  /** Imagen de fondo; con vídeo activo se ve mientras carga y en los casos en que el vídeo no se monta. */
   image: string;
+
+  heroTag: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  heroCtaPrimary: string;
+  heroCtaSecondary: string;
+
+  servicesTag: string;
+  servicesTitle: string;
+  /** Texto que asoma al pasar el ratón por una tarjeta de servicio */
+  serviceCardCta: string;
+
+  /** Texto de la cinta deslizante. Se repite en la propia página. */
+  marqueeWork: string;
+
+  portfolioTag: string;
+  portfolioTitle: string;
+  portfolioCta: string;
+
+  aboutTag: string;
+  aboutTitle: string;
+  aboutText: string;
+  aboutCta: string;
+
+  ctaTitle: string;
+  ctaButton: string;
 }
 
 /** Imagen del hero cuando WP no aporta una — la que hoy está en el repo. */
 const DEFAULT_HERO_IMAGE = '/hero.jpg';
 
-const FALLBACK_HOME_HERO: HomeHero = { image: DEFAULT_HERO_IMAGE };
+/** Contenido por defecto: exactamente lo que hoy vive en src/i18n/*.json */
+function fallbackHome(locale: string): HomeContent {
+  const h = t(locale).HOME;
+  return {
+    image: DEFAULT_HERO_IMAGE,
+    heroTag: h.HERO_TAG,
+    heroTitle: h.HERO_TITLE,
+    heroSubtitle: h.HERO_SUBTITLE,
+    heroCtaPrimary: h.HERO_CTA_PRIMARY,
+    heroCtaSecondary: h.HERO_CTA_SECONDARY,
+    servicesTag: h.SERVICES_TAG,
+    servicesTitle: h.SERVICES_TITLE,
+    serviceCardCta: h.SERVICE_CARD_CTA,
+    // MARQUEE_WORK es un array de 4 repeticiones del mismo texto; en WP el
+    // cliente escribe UNA vez y la página lo repite.
+    marqueeWork: h.MARQUEE_WORK[0],
+    portfolioTag: h.PORTFOLIO_TAG,
+    portfolioTitle: h.PORTFOLIO_TITLE,
+    portfolioCta: h.PORTFOLIO_CTA,
+    aboutTag: h.ABOUT_TAG,
+    aboutTitle: h.ABOUT_TITLE,
+    aboutText: h.ABOUT_TEXT,
+    aboutCta: h.ABOUT_CTA,
+    ctaTitle: h.CTA_TITLE,
+    ctaButton: h.CTA_BUTTON,
+  };
+}
 
 /**
- * Fondo del hero de la home — WordPress con fallback campo a campo.
+ * Portada — WordPress con fallback campo a campo a src/i18n.
  * Si WP_API_URL no está definido, WP no responde, la entrada `home` no existe
  * todavía (mu-plugin sin actualizar) o los campos están vacíos, devuelve el
- * hero estático de siempre y el build sigue adelante.
+ * contenido de i18n y el build sigue adelante.
  */
-export async function getHomeHeroAsync(): Promise<HomeHero> {
-  if (!isWPEnabled()) return FALLBACK_HOME_HERO;
+export async function getHomeContentAsync(locale: string): Promise<HomeContent> {
+  const fallback = fallbackHome(locale);
+  if (!isWPEnabled()) return fallback;
 
   try {
     const { home } = await getContenido();
-    if (!home) return FALLBACK_HOME_HERO;
+    if (!home) return fallback;
 
+    const f = (key: string) => wpText(home, `${key}_${locale}`);
     const vimeoUrl = wpText(home, 'hm_hero_vimeo_url');
 
     return {
       ...(vimeoUrl && { vimeoUrl }),
-      image: wpText(home, 'hm_hero_fallback_image') ?? FALLBACK_HOME_HERO.image,
+      image: wpText(home, 'hm_hero_fallback_image') ?? fallback.image,
+
+      heroTag: f('hm_hero_tag') ?? fallback.heroTag,
+      heroTitle: f('hm_hero_title') ?? fallback.heroTitle,
+      heroSubtitle: f('hm_hero_subtitle') ?? fallback.heroSubtitle,
+      heroCtaPrimary: f('hm_hero_cta_primary') ?? fallback.heroCtaPrimary,
+      heroCtaSecondary: f('hm_hero_cta_secondary') ?? fallback.heroCtaSecondary,
+
+      servicesTag: f('hm_services_tag') ?? fallback.servicesTag,
+      servicesTitle: f('hm_services_title') ?? fallback.servicesTitle,
+      serviceCardCta: f('hm_service_card_cta') ?? fallback.serviceCardCta,
+
+      marqueeWork: f('hm_marquee_work') ?? fallback.marqueeWork,
+
+      portfolioTag: f('hm_portfolio_tag') ?? fallback.portfolioTag,
+      portfolioTitle: f('hm_portfolio_title') ?? fallback.portfolioTitle,
+      portfolioCta: f('hm_portfolio_cta') ?? fallback.portfolioCta,
+
+      aboutTag: f('hm_about_tag') ?? fallback.aboutTag,
+      aboutTitle: f('hm_about_title') ?? fallback.aboutTitle,
+      aboutText: f('hm_about_text') ?? fallback.aboutText,
+      aboutCta: f('hm_about_cta') ?? fallback.aboutCta,
+
+      ctaTitle: f('hm_cta_title') ?? fallback.ctaTitle,
+      ctaButton: f('hm_cta_button') ?? fallback.ctaButton,
     };
   } catch (e) {
-    console.warn('[home] WP fetch failed, using static hero:', e);
-    return FALLBACK_HOME_HERO;
+    console.warn('[home] WP fetch failed, using i18n content:', e);
+    return fallback;
   }
 }
