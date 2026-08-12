@@ -49,14 +49,25 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
   ]}
 >
   {backgroundImage && (
-    <div class="absolute inset-0 z-0">
+    <div class:list={['absolute inset-0 z-0', videoEmbedUrl && 'bg-surface-dark']}>
+      {/* Con vídeo, la imagen NACE OCULTA: durante la espera no se enseña nada
+          más que el fondo del diseño y el texto encima (decisión del cliente,
+          ago-2026). Solo la destapa el script en los casos donde NO va a haber
+          vídeo —reduced-motion, ahorro de datos, autoplay bloqueado—, donde el
+          hueco sería permanente y no temporal.
+          `bg-surface-dark` (#111111) es el gris oscuro del diseño y ya se usa
+          en el proyecto: no añade una clase nueva al CSS global de las 76
+          páginas. Sin él, el fondo de la espera sería el negro accidental del
+          body. */}
       <img
         src={backgroundImage}
         alt=""
         class="w-full h-full object-cover"
         aria-hidden="true"
-        fetchpriority="high"
+        data-hero-poster
+        fetchpriority={videoEmbedUrl ? 'low' : 'high'}
         decoding="async"
+        style={videoEmbedUrl ? 'display:none' : undefined}
       />{/* Las expresiones van PEGADAS a la etiqueta anterior a propósito:
            separadas por un salto de línea añadirían un nodo de texto y, con
            él, un espacio extra en el HTML de las 16 páginas que usan este
@@ -115,18 +126,28 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
       // el autoplay por bloqueado y nos quedamos con el póster.
       var PLAY_TIMEOUT = 3000;
 
+      /** Destapa la imagen de fondo. Solo se llama cuando NO va a haber vídeo. */
+      function mostrarPoster() {
+        var poster = document.querySelector('[data-hero-poster]');
+        if (poster) poster.style.display = '';
+      }
+
       function mountHeroVideo() {
         var holder = document.querySelector('[data-hero-video]');
         var toggle = document.querySelector('[data-hero-video-toggle]');
         if (!holder || !toggle || holder.dataset.mounted) return;
 
-        // Motivos para NO montar el vídeo. En ambos el póster ya está pintado
-        // en el HTML, así que el hero se ve igual de bien. Decisión del cliente
-        // (ago-2026): el vídeo SÍ se monta en móvil — antes había aquí un
-        // `innerWidth < 768` que dejaba sin vídeo a la mayoría del tráfico.
+        // Motivos para NO montar el vídeo. Decisión del cliente (ago-2026): el
+        // vídeo SÍ se monta en móvil — antes había aquí un `innerWidth < 768`
+        // que dejaba sin vídeo a la mayoría del tráfico.
         var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         var saveData = !!(navigator.connection && navigator.connection.saveData);
-        if (reducedMotion || saveData) return;
+        if (reducedMotion || saveData) {
+          // Aquí NO hay vídeo que esperar: sin imagen el hueco sería para
+          // siempre. Es el caso opuesto a la espera, y se trata distinto.
+          mostrarPoster();
+          return;
+        }
 
         holder.dataset.mounted = '1';
 
@@ -175,10 +196,13 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
           window.removeEventListener('message', onVimeoMessage);
         }
 
-        // Autoplay bloqueado: el póster se queda (opacity 0 en el holder) y
-        // ofrecemos el botón para arrancarlo a mano. Nunca un rectángulo negro.
+        // Autoplay bloqueado (Bajo Consumo de iOS, políticas de media): el
+        // vídeo no va a arrancar solo, así que la espera dejaría de ser
+        // temporal. Se destapa la imagen y se ofrece el botón para arrancarlo
+        // a mano. Nunca un hueco permanente.
         function fallbackToPoster() {
           if (revealed) return;
+          mostrarPoster();
           toggle.style.display = '';
           paintToggle(false);
         }
