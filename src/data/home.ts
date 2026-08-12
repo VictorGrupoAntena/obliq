@@ -13,6 +13,7 @@
  * `ab_story_image` o `ct_email`. Los textos sí van por idioma.
  */
 import { isWPEnabled, getContenido, wpText } from '@/lib/wp-client';
+import { getVimeoHeroThumbnail } from '@/lib/vimeo';
 import { t } from '@/lib/i18n';
 
 export interface HomeContent {
@@ -22,7 +23,16 @@ export interface HomeContent {
    * pueda quedar incoherente con la URL.
    */
   vimeoUrl?: string;
-  /** Imagen de fondo; con vídeo activo se ve mientras carga y en los casos en que el vídeo no se monta. */
+  /**
+   * Capa previa del hero: lo que se ve antes de que el vídeo arranque, y lo
+   * que se queda cuando el vídeo no se monta (reduced-motion, ahorro de datos,
+   * autoplay bloqueado).
+   *
+   * Con vídeo configurado es el THUMBNAIL DEL PROPIO VÍDEO —su primer
+   * fotograma, vía oEmbed— para que la previsualización estática y el vídeo en
+   * marcha sean la misma imagen y el arranque no dé un salto. Si oEmbed falla
+   * o el vídeo es privado, cae a la imagen de WordPress y de ahí a /hero.jpg.
+   */
   image: string;
 
   heroTag: string;
@@ -100,9 +110,19 @@ export async function getHomeContentAsync(locale: string): Promise<HomeContent> 
     const f = (key: string) => wpText(home, `${key}_${locale}`);
     const vimeoUrl = wpText(home, 'hm_hero_vimeo_url');
 
+    // Red de seguridad, en orden: imagen de WordPress → /hero.jpg del repo.
+    const imagenDeRespaldo = wpText(home, 'hm_hero_fallback_image') ?? fallback.image;
+
+    // La capa previa es el propio vídeo detenido. Se resuelve AQUÍ, en build:
+    // el thumbnail viaja ya en el HTML y no hay petición en runtime.
+    // No se cachea el resultado por URL en este módulo porque getVimeoHeroThumbnail
+    // ya lo hace: si el cliente cambia la URL en WordPress, el siguiente build
+    // trae el thumbnail nuevo sin tocar código.
+    const thumbnail = vimeoUrl ? await getVimeoHeroThumbnail(vimeoUrl) : null;
+
     return {
       ...(vimeoUrl && { vimeoUrl }),
-      image: wpText(home, 'hm_hero_fallback_image') ?? fallback.image,
+      image: thumbnail ?? imagenDeRespaldo,
 
       heroTag: f('hm_hero_tag') ?? fallback.heroTag,
       heroTitle: f('hm_hero_title') ?? fallback.heroTitle,
