@@ -10,6 +10,21 @@
 
 ## 🍪 SPRINT BANNER DE COOKIES + BANDA KIT DIGITAL (13-Ago-2026)
 
+### ✅ EN PRODUCCIÓN — run 31748165298, `redesign` → `~/httpdocs`
+
+Staging (run 31675733162) → verificación → producción, con los tres gates en verde en ambos. Evidencia recogida **en producción**, perfil limpio:
+
+| | Sin decisión | Tras Aceptar | Tras revocar desde el pie |
+|---|---|---|---|
+| Peticiones a Google | **ninguna** | `gtag/js` + `collect` | — |
+| Cookies `_ga` | **ninguna** | `_ga`, `_ga_896V9YZVME` | **borradas del almacén** |
+
+`collect` con **`gcs=G101`** y `npa=1`: analítica concedida, publicidad denegada. Es la prueba de que el Consent Mode está cableado, no solo de que GA cargó.
+
+Recuento en `~/httpdocs`: **76 páginas, 76 con `consent default` (0 sin él), 76 con banner, 76 con banda, 76 con botón de revocación, 0 con carga estática de GA.** Las cuatro señales en `denied` en las 76. Banda visible sobre franja blanca en ES y EN, sin scroll horizontal.
+
+**El mu-plugin NO se subió con este deploy** (decisión del cliente, ver siguiente sprint).
+
 ### 🔒 REGLA BLINDADA — los tres botones del banner NO pueden tener pesos visuales distintos
 
 **Aceptar, Rechazar y Configurar comparten una única constante de clase** (`btn` en `src/components/organisms/CookieConsent.astro`). Misma altura, mismo ancho, mismo borde, mismo color, misma tipografía, misma opacidad. Verificado con Playwright a 390, 768 y 1440: las ocho propiedades idénticas en los tres.
