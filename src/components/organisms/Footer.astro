@@ -33,8 +33,12 @@ const socialLinks = [
 ];
 ---
 
-<footer class="bg-black text-white mt-auto py-section" role="contentinfo">
-  <div class="container mx-auto px-4 md:px-section">
+{/* El padding vertical vive en el contenedor interno, no en el <footer>. Así la
+    banda institucional del final puede sangrar hasta el borde inferior sin
+    arrastrar 80 px de negro por debajo. Para todo lo demás el resultado visual
+    es idéntico. */}
+<footer class="bg-black text-white mt-auto" role="contentinfo">
+  <div class="container mx-auto px-4 md:px-section py-section">
     <!-- Decorative slashes -->
     <div class="flex justify-end mb-8 overflow-hidden">
       <svg width="682" height="35" viewBox="0 0 682 35" fill="none" xmlns="http://www.w3.org/2000/svg" class="translate-x-4 md:translate-x-6" aria-hidden="true">
@@ -118,6 +122,24 @@ const socialLinks = [
           <li><a href={localizedUrl('/aviso-legal/', locale)} class="text-[14px] font-light text-secondary hover:text-white transition-colors">{i18n.FOOTER.LEGAL}</a></li>
           <li><a href={localizedUrl('/politica-privacidad/', locale)} class="text-[14px] font-light text-secondary hover:text-white transition-colors">{i18n.FOOTER.PRIVACY}</a></li>
           <li><a href={localizedUrl('/politica-cookies/', locale)} class="text-[14px] font-light text-secondary hover:text-white transition-colors">{i18n.FOOTER.COOKIES}</a></li>
+          <li>
+            {/* Reabre el panel de consentimiento. Requisito legal: la revocación
+                tiene que estar disponible de forma permanente, no solo la
+                primera vez.
+
+                BOTÓN, no <a href="#">. Dos motivos: no hay navegación, hay
+                apertura de un diálogo; y el script de BaseLayout engancha TODOS
+                los `a[href]` del mismo origen, hace preventDefault() y termina
+                en `window.location.href` — con un "#" eso sería un fundido a
+                negro de 400 ms seguido de una recarga de la propia página. */}
+            <button
+              type="button"
+              data-cookie-prefs
+              class="text-[14px] font-light text-secondary hover:text-white transition-colors text-left cursor-pointer"
+            >
+              {i18n.COOKIES.REVOKE}
+            </button>
+          </li>
         </ul>
       </div>
     </div>
@@ -128,5 +150,42 @@ const socialLinks = [
         {i18n.FOOTER.COPYRIGHT}
       </p>
     </div>
+  </div>
+
+  {/* ────────────────────────────────────────────────────────────────────────
+      Banda de publicidad del Kit Digital. Fuera del contenedor, para que la
+      franja sangre de borde a borde.
+
+      FONDO BLANCO OBLIGATORIO, no es una decisión estética. El archivo oficial
+      es transparente, pero los emblemas van en tinta #1D1D1B: sobre el negro
+      del footer desaparecen «red.es», «KIT DIGITAL», «NextGenerationEU» y el
+      texto de la Secretaría de Estado, y solo sobreviven el bloque amarillo del
+      Gobierno y el azul de la UE. Invertirlo no es opción: un emblema
+      institucional alterado deja de ser el emblema.
+
+      max-w-[1100px] es el techo de nitidez del archivo, no un capricho: mide
+      1200×73 px y no hay versión mayor. Por encima de 1200 sería upscale; a
+      1100 el microtexto de la Secretaría queda en ~6,4 px, que es lo máximo
+      legible que da. Por eso tampoco hay srcset: reescalarlo rompe la paleta
+      indexada y las variantes pesan MÁS que el original (700 px → 29,5 KB
+      frente a los 14,4 KB del nativo).
+
+      <picture> y no <Image> de astro:assets: el proyecto no lo usa en ningún
+      sitio, e introducirlo aquí arrastraría sharp al build por un único asset
+      que ya está óptimo. El WebP es lossless y pixel-idéntico al PNG.
+      ──────────────────────────────────────────────────────────────────────── */}
+  <div class="bg-white px-4 py-10">
+    <picture>
+      <source srcset="/images/kit-digital.webp" type="image/webp" />
+      <img
+        src="/images/kit-digital.png"
+        alt={i18n.FOOTER.KIT_DIGITAL_ALT}
+        width="1200"
+        height="73"
+        loading="lazy"
+        decoding="async"
+        class="w-full max-w-[1100px] mx-auto h-auto"
+      />
+    </picture>
   </div>
 </footer>
