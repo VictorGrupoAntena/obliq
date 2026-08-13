@@ -1,0 +1,213 @@
+---
+import { t, localizedUrl } from '@/lib/i18n';
+
+interface Props {
+  locale?: string;
+}
+
+const { locale = 'es' } = Astro.props;
+const c = t(locale).COOKIES;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOS TRES BOTONES COMPARTEN ESTA CONSTANTE. NO LA DESDOBLES.
+//
+// Aceptar, Rechazar y Configurar deben tener el mismo formato, el mismo tamaño,
+// el mismo contraste y la misma visibilidad. No es una preferencia estética: es
+// el punto concreto que sanciona la AEPD. Un "Aceptar" relleno en blanco sólido
+// junto a un "Rechazar" en borde —o peor, como enlace de texto— convierte el
+// banner en no conforme, por muy correcto que sea todo lo demás.
+//
+// Si alguien pide destacar "Aceptar", la respuesta es no. Decisión respaldada
+// por Víctor Medina (13-ago-2026). Ver MEMORY.md.
+// ─────────────────────────────────────────────────────────────────────────────
+// `w-full sm:w-auto` y NO `flex-1`: en móvil la fila es `flex-col`, y ahí
+// `flex-1` reparte la ALTURA, no el ancho — dejaba los tres botones en 20 px,
+// por debajo del mínimo táctil de 44 px del proyecto. `shrink-0` impide además
+// que el flex los comprima; `min-h` en lugar de `h` los deja crecer si una
+// traducción ocupa dos líneas.
+const btn =
+  'w-full sm:w-auto sm:basis-[170px] shrink-0 min-h-[52px] px-6 inline-flex items-center justify-center text-center border border-white bg-transparent text-white uppercase font-semibold tracking-[3px] text-[11px] cursor-pointer transition-colors hover:bg-white hover:text-black';
+---
+
+{/* NO es un cookie wall: barra inferior, sin overlay, sin inert sobre el resto
+    y sin bloquear el scroll. La página sigue legible y navegable con el banner
+    puesto. La contrapartida obligatoria es que el consentimiento NO se otorga
+    jamás por scroll, por navegar ni por tiempo — solo por clic en un botón.
+
+    Tampoco hay aspa de cierre: un aspa es una aceptación o un rechazo
+    encubiertos, y ninguna de las dos lecturas es defendible. */}
+<div
+  id="cookie-banner"
+  role="region"
+  aria-label={c.BANNER_ARIA}
+  class="fixed bottom-0 inset-x-0 z-[999] bg-surface-dark border-t border-border-emphasis"
+>
+  <div class="container mx-auto px-4 md:px-section py-6 flex flex-col lg:flex-row lg:items-center gap-6">
+    <div class="lg:flex-1">
+      <p class="text-white text-[11px] font-semibold uppercase tracking-[3px] mb-2">{c.BANNER_TITLE}</p>
+      <p class="text-secondary text-[14px] font-light leading-relaxed">
+        {c.BANNER_TEXT}{' '}
+        <a
+          href={localizedUrl('/politica-cookies/', locale)}
+          class="text-white underline underline-offset-4 hover:opacity-70 transition-opacity"
+        >{c.POLICY_LINK}</a>
+      </p>
+    </div>
+
+    {/* Rechazar primero y a la izquierda: no admite lectura de "opción
+        secundaria". Los tres usan la misma clase `btn`. */}
+    <div class="flex flex-col sm:flex-row gap-3 lg:shrink-0">
+      <button type="button" data-consent-action="reject" class={btn}>{c.REJECT}</button>
+      <button type="button" data-consent-action="settings" class={btn}>{c.SETTINGS}</button>
+      <button type="button" data-consent-action="accept" class={btn}>{c.ACCEPT}</button>
+    </div>
+  </div>
+</div>
+
+{/* <dialog> nativo con showModal(): trampa de foco correcta, cierre con Escape,
+    aria-modal implícito, inertización del resto del documento y devolución del
+    foco al elemento que lo abrió — todo sin escribir una línea. VideoLightbox
+    implementa este mismo patrón a mano; aquí se diverge a propósito, porque un
+    trap manual mal hecho es exactamente la trampa de teclado que hay que
+    evitar y la accesibilidad general va fuera de este sprint.
+
+    Escape cierra y NO persiste nada: cerrar no es ni aceptar ni rechazar. Sale
+    gratis, basta con no escuchar el evento `close`. */}
+<dialog
+  id="cookie-panel"
+  aria-labelledby="cookie-panel-title"
+  class="m-auto w-[calc(100%-2rem)] max-w-xl max-h-[calc(100dvh-4rem)] p-0 bg-surface-dark text-white border border-border-emphasis overflow-y-auto"
+>
+  <div class="p-6 md:p-8">
+    <div class="flex items-start justify-between gap-6 mb-6">
+      <h2 id="cookie-panel-title" class="text-[20px] font-bold uppercase tracking-[2px]">{c.PANEL_TITLE}</h2>
+      <button
+        type="button"
+        data-consent-action="close"
+        aria-label={c.PANEL_CLOSE}
+        class="w-11 h-11 shrink-0 flex items-center justify-center border border-border-emphasis hover:border-white transition-colors cursor-pointer"
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+
+    <p class="text-secondary text-[14px] font-light mb-8">{c.PANEL_INTRO}</p>
+
+    {/* "Necesarias" SIN checkbox. Uno marcado y deshabilitado es decoración con
+        estado ambiguo para un lector de pantalla: se anuncia como control, pero
+        no se puede accionar. El texto lo dice sin ambigüedad. */}
+    <div class="border border-border p-4 mb-4 flex items-start justify-between gap-4">
+      <div>
+        <p class="text-[14px] font-semibold mb-1">{c.ESSENTIAL_TITLE}</p>
+        <p class="text-dim text-[13px] font-light">{c.ESSENTIAL_TEXT}</p>
+      </div>
+      <span class="text-dim text-[11px] uppercase tracking-[2px] shrink-0">{c.ESSENTIAL_ALWAYS}</span>
+    </div>
+
+    {/* Añadir una categoría = duplicar este bloque + una clave en `categories`
+        + subir CONSENT_SCHEMA en src/data/analytics.ts (para que los
+        consentimientos ya dados, que nada dicen de la categoría nueva, se
+        vuelvan a pedir). */}
+    <div class="border border-border p-4 mb-8 flex items-start justify-between gap-4">
+      <div>
+        <label for="consent-analytics" class="text-[14px] font-semibold mb-1 block cursor-pointer">{c.ANALYTICS_TITLE}</label>
+        <p class="text-dim text-[13px] font-light">{c.ANALYTICS_TEXT}</p>
+      </div>
+      <input
+        id="consent-analytics"
+        type="checkbox"
+        style="accent-color:#fff"
+        class="w-6 h-6 shrink-0 cursor-pointer"
+      />
+    </div>
+
+    {/* Ancho completo también en desktop: es la única acción del panel, y la
+        constante `btn` trae `sm:w-auto` + `sm:basis-[170px]` pensados para los
+        tres botones en fila del banner. */}
+    <button type="button" data-consent-action="save" class={`${btn} sm:w-full sm:basis-auto`}>{c.SAVE}</button>
+  </div>
+</dialog>
+
+<style>
+  /* La visibilidad del banner la manda la clase que el bootstrap del <head> pone
+     en <html> antes de que exista el <body>: se pinta ya visible o ya oculto en
+     el primer frame, sin parpadeo. swapRootAttributes() de Astro reescribe todos
+     los atributos de <html> en cada swap y se la lleva por delante; la repone
+     initCookieConsent() en astro:after-swap. */
+  #cookie-banner { display: none; }
+  :global(html.obliq-consent-pending) #cookie-banner { display: block; }
+
+  /* Tailwind v4 no toca <dialog> en su preflight (verificado: 0 reglas `dialog`
+     en el CSS construido), así que los estilos del navegador siguen vivos. El
+     padding y el borde se anulan con clases; el ::backdrop no se puede, va aquí. */
+  #cookie-panel::backdrop { background-color: rgba(0, 0, 0, 0.85); }
+</style>
+
+<script>
+  function initCookieConsent() {
+    const api = window.__obliqConsent;
+    if (!api) return; // sin el bootstrap del <head> no hay CMP que gestionar
+
+    const banner = document.getElementById('cookie-banner');
+    const panel = document.getElementById('cookie-panel') as HTMLDialogElement | null;
+    const analytics = document.getElementById('consent-analytics') as HTMLInputElement | null;
+    if (!banner || !panel || !analytics) return;
+
+    // Repone la clase que el swap de View Transitions borra de <html>. La
+    // visibilidad se deriva SIEMPRE de api.read(), nunca de una variable en
+    // memoria: por eso el banner no puede reaparecer tras una decisión, ni en
+    // swap, ni en recarga dura, ni en atrás/adelante.
+    document.documentElement.classList.toggle('obliq-consent-pending', api.read() === null);
+
+    const decide = (
+      categories: { analytics: boolean },
+      action: 'accept' | 'reject' | 'custom',
+    ) => {
+      api.save(categories, action); // persiste + consent update + oculta el banner
+      if (panel.open) panel.close();
+    };
+
+    const openPanel = () => {
+      analytics.checked = !!api.read()?.categories.analytics;
+      panel.showModal();
+    };
+
+    for (const el of [banner, panel]) {
+      el.querySelectorAll<HTMLButtonElement>('[data-consent-action]').forEach((button) => {
+        button.addEventListener('click', () => {
+          switch (button.dataset.consentAction) {
+            case 'accept':
+              return decide({ analytics: true }, 'accept');
+            case 'reject':
+              return decide({ analytics: false }, 'reject');
+            case 'save':
+              return decide({ analytics: analytics.checked }, 'custom');
+            case 'settings':
+              return openPanel();
+            case 'close':
+              return panel.close();
+          }
+        });
+      });
+    }
+
+    // Revocación. El contrato es el atributo, no un import: sirve para el botón
+    // del pie y para cualquier otro que se quiera poner después.
+    document
+      .querySelectorAll<HTMLElement>('[data-cookie-prefs]')
+      .forEach((el) => el.addEventListener('click', openPanel));
+  }
+
+  initCookieConsent();
+
+  // Mismo patrón que HeroSection: los listeners cuelgan de elementos que el swap
+  // destruye y recrea, así que no se acumulan; el guard cubre que el módulo
+  // llegue a evaluarse dos veces. after-swap y no page-load porque corre antes
+  // del repintado: la decisión de visibilidad se aplica sin parpadeo.
+  if (!window.__obliqCmpBound) {
+    window.__obliqCmpBound = true;
+    document.addEventListener('astro:after-swap', initCookieConsent);
+  }
+</script>

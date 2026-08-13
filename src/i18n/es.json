@@ -66,12 +66,32 @@
     "COOKIES": "Política de cookies",
     "LEGAL": "Aviso legal",
     "COPYRIGHT": "© 2026 Obliq Productions. Todos los derechos reservados.",
+    "KIT_DIGITAL_ALT": "Gobierno de España. Vicepresidencia Primera del Gobierno. Ministerio de Asuntos Económicos y Transformación Digital. Secretaría de Estado de Digitalización e Inteligencia Artificial. red.es. Kit Digital. Plan de Recuperación, Transformación y Resiliencia. Financiado por la Unión Europea, NextGenerationEU.",
     "SOCIAL": {
       "INSTAGRAM": "Instagram",
       "TIKTOK": "TikTok",
       "VIMEO": "Vimeo",
       "LINKEDIN": "LinkedIn"
     }
+  },
+  "COOKIES": {
+    "BANNER_ARIA": "Aviso de cookies",
+    "BANNER_TITLE": "Cookies",
+    "BANNER_TEXT": "Usamos cookies analíticas para saber cómo se usa la web. No se activan hasta que las aceptas y puedes cambiar tu decisión cuando quieras.",
+    "POLICY_LINK": "Ver política de cookies",
+    "ACCEPT": "Aceptar",
+    "REJECT": "Rechazar",
+    "SETTINGS": "Configurar",
+    "PANEL_TITLE": "Preferencias de cookies",
+    "PANEL_INTRO": "Elige qué cookies permites. Las necesarias no se pueden desactivar: sin ellas la web no funciona.",
+    "PANEL_CLOSE": "Cerrar",
+    "SAVE": "Guardar preferencias",
+    "ESSENTIAL_TITLE": "Necesarias",
+    "ESSENTIAL_TEXT": "Guardan tu decisión sobre las cookies y el contenido de tu presupuesto. Se quedan en tu navegador y no se envían a nadie.",
+    "ESSENTIAL_ALWAYS": "Siempre activas",
+    "ANALYTICS_TITLE": "Analíticas",
+    "ANALYTICS_TEXT": "Google Analytics. Mide de forma agregada qué páginas se visitan y desde dónde. Cookies de Google con una duración de 24 meses.",
+    "REVOKE": "Preferencias de cookies"
   },
   "CTA": {
     "WHATSAPP": "¿Necesitas ayuda?",

@@ -6,6 +6,14 @@ import Footer from '@/components/organisms/Footer.astro';
 import TransitionMask from '@/components/organisms/TransitionMask.astro';
 import WhatsAppFAB from '@/components/organisms/WhatsAppFAB.astro';
 import CartBottomBar from '@/components/organisms/CartBottomBar.astro';
+import CookieConsent from '@/components/organisms/CookieConsent.astro';
+import {
+  GA_MEASUREMENT_ID,
+  GA_COOKIE_NAMES,
+  CONSENT_KEY,
+  CONSENT_SCHEMA,
+  CONSENT_MAX_AGE_MS,
+} from '@/data/analytics';
 import { getLocale } from '@/lib/i18n';
 import { translatePath } from '@/lib/routes';
 import { localBusinessSchema } from '@/lib/schema';
@@ -80,13 +88,128 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
     {description && <meta name="twitter:description" content={description} />}
     <meta name="twitter:image" content={ogImageUrl} />
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-896V9YZVME" is:inline></script>
-    <script is:inline>
+    <!-- ──────────────────────────────────────────────────────────────────
+         Consent Mode v2 + Google Analytics.
+
+         EL ORDEN DE ESTE BLOQUE ES EL REQUISITO, no un detalle de estilo:
+           1. dataLayer + gtag()
+           2. consent 'default' = denied — las CUATRO señales de la v2
+           3. lectura SÍNCRONA de la decisión guardada
+           4. solo si hay consentimiento vigente: consent 'update' + carga de
+              gtag.js, inyectada desde aquí y no como etiqueta async estática.
+
+         Antes la etiqueta async de gtag.js iba PRIMERO, delante de todo esto.
+         Con Consent Mode eso es una carrera real: un script async puede
+         ejecutarse en cuanto termina de descargar —desde caché, antes incluso
+         de que el parser llegue al inline siguiente—, y entonces mediría antes
+         del `consent default`. Por eso la librería ya no está en el marcado.
+
+         (Y por eso este comentario no escribe ninguna etiqueta de script
+         literal: dentro de un comentario HTML es inofensiva para el navegador,
+         pero confunde a cualquier herramienta que analice el HTML por patrones
+         —incluido scripts/check-consent.mjs, que busca justamente eso.)
+
+         MODO BÁSICO: sin decisión NO sale una sola petición a Google. Para
+         pasar a modo avanzado (pings cookieless, gcs=G100) bastaría con sacar
+         loadGa() del if de apply(); el resto no cambia.
+
+         NO METER AQUÍ NADA DEPENDIENTE DE LA PÁGINA —ni `locale`, ni la ruta—.
+         Astro deduplica los scripts is:inline del <head> por su textContent y
+         NO los reejecuta tras un swap de View Transitions. Si el contenido
+         variara entre páginas, un swap ES→EN lo reejecutaría y empujaría un
+         SEGUNDO `consent default` al dataLayer.
+         ────────────────────────────────────────────────────────────────── -->
+    <script
+      is:inline
+      define:vars={{
+        GA_ID: GA_MEASUREMENT_ID,
+        GA_COOKIES: GA_COOKIE_NAMES,
+        KEY: CONSENT_KEY,
+        SCHEMA: CONSENT_SCHEMA,
+        MAX_AGE: CONSENT_MAX_AGE_MS,
+      }}
+    >
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-896V9YZVME');
+      function gtag() { dataLayer.push(arguments); }
+      window.gtag = gtag;
+
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+      });
+
+      window.__obliqConsent = (function () {
+        function read() {
+          try {
+            var raw = localStorage.getItem(KEY);
+            if (!raw) return null;
+            var d = JSON.parse(raw);
+            if (!d || d.v !== SCHEMA || typeof d.ts !== 'number' || !d.categories) return null;
+            if (Date.now() - d.ts > MAX_AGE) { localStorage.removeItem(KEY); return null; }
+            return d;
+          } catch (e) { return null; }
+        }
+
+        function loadGa() {
+          if (window.__obliqGaLoaded) return;
+          window.__obliqGaLoaded = true;
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+          document.head.appendChild(s);
+          gtag('js', new Date());
+          gtag('config', GA_ID);
+        }
+
+        // Revocar NO se resuelve con `consent update: denied`: eso impide que
+        // gtag USE las cookies, pero no las borra. Una auditoría mira el
+        // almacén de cookies del navegador, no el dataLayer. Se barren en cada
+        // carga sin consentimiento y al revocar.
+        function clearGaCookies() {
+          var host = location.hostname;
+          var parts = host.split('.');
+          var domains = ['', host, '.' + host];
+          if (parts.length > 2) domains.push('.' + parts.slice(-2).join('.'));
+          for (var i = 0; i < GA_COOKIES.length; i++) {
+            for (var j = 0; j < domains.length; j++) {
+              document.cookie = GA_COOKIES[i] + '=; Max-Age=0; path=/'
+                + (domains[j] ? '; domain=' + domains[j] : '');
+            }
+          }
+        }
+
+        function apply(d) {
+          var granted = !!(d && d.categories && d.categories.analytics);
+          gtag('consent', 'update', { analytics_storage: granted ? 'granted' : 'denied' });
+          if (granted) loadGa(); else clearGaCookies();
+        }
+
+        function save(categories, action) {
+          var d = { v: SCHEMA, ts: Date.now(), action: action, categories: categories };
+          try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
+          apply(d);
+          document.documentElement.classList.remove('obliq-consent-pending');
+          return d;
+        }
+
+        function clear() { try { localStorage.removeItem(KEY); } catch (e) {} }
+
+        var stored = read();
+        if (stored) {
+          apply(stored);
+        } else {
+          // La marca se pone en <html> ANTES de que exista el <body>: el banner
+          // se pinta ya visible o ya oculto en el primer frame. Sin parpadeo en
+          // ninguna de las dos direcciones y sin depender de cuándo corra el
+          // bundle del componente.
+          document.documentElement.classList.add('obliq-consent-pending');
+          clearGaCookies();
+        }
+
+        return { read: read, save: save, clear: clear };
+      })();
     </script>
 
     <!-- Google Site Verification -->
@@ -116,6 +239,13 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[1000] focus:bg-white focus:text-black focus:px-4 focus:py-2">
       {locale === 'es' ? 'Ir al contenido principal' : 'Skip to main content'}
     </a>
+
+    {/* Va aquí, justo tras el skip-link, a propósito: es `fixed`, así que el
+        orden del DOM no cambia nada visualmente, pero coloca los tres botones
+        como segunda parada del tabulador. Un aviso que hay que poder accionar
+        no puede estar detrás de veinte enlaces de navegación. El apilado lo
+        resuelve su z-[999], por encima del FAB de WhatsApp (z-[998]). */}
+    <CookieConsent locale={locale} />
 
     <TransitionMask enterColor={pageColor} />
     <Header pageColor={pageColor} locale={locale} altPath={altPath} />

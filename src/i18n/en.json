@@ -66,12 +66,32 @@
     "COOKIES": "Cookie policy",
     "LEGAL": "Legal notice",
     "COPYRIGHT": "© 2026 Obliq Productions. All rights reserved.",
+    "KIT_DIGITAL_ALT": "Gobierno de España. Vicepresidencia Primera del Gobierno. Ministerio de Asuntos Económicos y Transformación Digital. Secretaría de Estado de Digitalización e Inteligencia Artificial. red.es. Kit Digital. Plan de Recuperación, Transformación y Resiliencia. Funded by the European Union, NextGenerationEU.",
     "SOCIAL": {
       "INSTAGRAM": "Instagram",
       "TIKTOK": "TikTok",
       "VIMEO": "Vimeo",
       "LINKEDIN": "LinkedIn"
     }
+  },
+  "COOKIES": {
+    "BANNER_ARIA": "Cookie notice",
+    "BANNER_TITLE": "Cookies",
+    "BANNER_TEXT": "We use analytics cookies to understand how the site is used. They stay off until you accept, and you can change your choice at any time.",
+    "POLICY_LINK": "See cookie policy",
+    "ACCEPT": "Accept",
+    "REJECT": "Reject",
+    "SETTINGS": "Settings",
+    "PANEL_TITLE": "Cookie preferences",
+    "PANEL_INTRO": "Choose which cookies you allow. Essential ones cannot be turned off: without them the site does not work.",
+    "PANEL_CLOSE": "Close",
+    "SAVE": "Save preferences",
+    "ESSENTIAL_TITLE": "Essential",
+    "ESSENTIAL_TEXT": "They store your cookie choice and your quote basket. They stay in your browser and are not sent anywhere.",
+    "ESSENTIAL_ALWAYS": "Always on",
+    "ANALYTICS_TITLE": "Analytics",
+    "ANALYTICS_TEXT": "Google Analytics. Measures in aggregate which pages are visited and from where. Google cookies lasting 24 months.",
+    "REVOKE": "Cookie preferences"
   },
   "CTA": {
     "WHATSAPP": "Need help?",
