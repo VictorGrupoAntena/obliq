@@ -36,9 +36,20 @@ Corolarios del mismo requisito, igual de intocables:
 - **El panel es `<dialog>` nativo + `showModal()`**, no un trap manual como `VideoLightbox`. Trampa de foco, Escape, `aria-modal`, inertización y retorno de foco salen gratis y sin superficie de bug.
 - **Vimeo queda FUERA del CMP** (decisión del cliente): ya usa `dnt=1` y el vídeo es contenido editorial, no medición.
 
-### Dos bugs encontrados en la verificación (y por qué)
+### 🔑 LECCIÓN — la igualdad de peso visual NO sustituye a la comprobación de usabilidad
 
-1. **Botones a 20 px de alto en móvil.** La fila es `flex-col` por debajo de `sm`, y ahí **`flex-1` reparte la ALTURA, no el ancho**; sin `shrink-0` además se comprimían. Quedaban por debajo del mínimo táctil de 44 px del propio proyecto. Arreglado con `w-full sm:w-auto shrink-0 min-h-[52px]`. Cumplían la igualdad… siendo los tres igual de inusables.
+El bug de los botones a 20 px lo dice todo: **los tres eran perfectamente iguales entre sí y perfectamente inusables**. Una verificación de «¿son iguales?» —que es la que pide el requisito de la AEPD— habría dado **verde**, porque la igualdad se cumplía. Lo que fallaba era otra cosa: el tamaño absoluto.
+
+Son dos comprobaciones distintas y **hay que hacer las dos**:
+
+1. **Igualdad relativa** — las ocho propiedades idénticas entre los tres botones (conformidad AEPD).
+2. **Usabilidad absoluta** — cada botón ≥ 44 px de alto en todos los anchos (pilar UI del proyecto).
+
+Un conjunto de controles puede pasar la primera y suspender la segunda sin que la primera se entere. Vale para cualquier requisito expresado como «que A y B sean iguales»: comprobar la relación no dice nada del valor. Anotado a petición de Víctor, 13-Ago-2026.
+
+### Tres bugs encontrados en la verificación (y por qué)
+
+1. **Botones a 20 px de alto en móvil.** La fila es `flex-col` por debajo de `sm`, y ahí **`flex-1` reparte la ALTURA, no el ancho**; sin `shrink-0` además se comprimían. Quedaban por debajo del mínimo táctil de 44 px del propio proyecto. Arreglado con `w-full sm:w-auto shrink-0 min-h-[52px]`. Ver la lección de arriba.
 2. **El `<dialog>` salía pegado arriba a la izquierda.** El Preflight de Tailwind v4 aplica `margin: 0` a todo y **anula el `margin: auto` que el navegador da a los dialogs modales**. Arreglado con `m-auto`. (Tailwind no toca `dialog` en preflight: 0 reglas `dialog` en el CSS construido. Los estilos UA siguen vivos y hay que anularlos a mano.)
 
 ### `gcs=G101` — verificado con el dato real
@@ -82,7 +93,10 @@ Ver **`docs/audits/legal-pendiente-revision.md`**. Dos bloques: la **razón soci
 1. ~~**Vídeo hero con autoplay.**~~ ✅ hecho 11-Ago (ver abajo).
 2. ~~**Editabilidad de la home desde WordPress** — H1, textos y tarjetas de servicio.~~ ✅ hecho 11-Ago (ver abajo).
 3. ~~**Banda de logos del footer.**~~ ✅ hecho 13-Ago (ver arriba).
-4. **URLs huérfanas `/presupuesto/` y `/en/quote/`.** El CTA del carrito se emite como `href="#"` y lo rellena JavaScript en runtime (`getQuotePageUrl`, `cart-store.ts:211`), así que **ninguna página las enlaza estáticamente**: solo se descubren por sitemap y no reciben link equity interno. Es **la página de conversión del catálogo de alquiler y la peor enlazada del sitio**. Preexistente del sprint del carrito; detectado por el crawl BFS del sprint de i18n (73 de 75 URLs alcanzables, y las 2 ausentes son exactamente estas, en ambos idiomas).
+4. **🔌 Cablear `check:consent` en `deploy.yml`** — primera tarea. El script existe y pasa; falta el paso en CI, que obliga a tocar `deploy.yml` en las **dos ramas** por el check de paridad. Mientras no esté, la comprobación depende de que alguien se acuerde.
+5. **⚠️ Subir el mu-plugin `obliq-cpts.php` al WordPress** (campo `hm_hero_wait_image`). Deliberadamente **NO se hizo con el sprint de cookies**: el cliente no quiere el deploy del mu-plugin encadenado al del CMP. Se hace en un movimiento aparte, **con producción ya estable con el banner**, siguiendo el **procedimiento del Gate 1 completo** (`docs/guides/gate1-mu-plugin.md`: hook-off → subir → verificar en REST → hook-on). Hasta entonces el campo no aparece en wp-admin y el hero se comporta por defecto —hueco oscuro—, que es justo lo que el cliente quiere y lo que está verificado. **No bloquea nada.**
+6. **404 de `/i.png` en la home.** Preexistente, detectado durante el sprint de cookies (13-Ago) y **no tocado a propósito**: es ajeno al banner. Aparece dos veces en la consola de la portada. Probablemente un `src` vacío o una URL de imagen mal resuelta desde WordPress; hay que localizar de qué dato sale antes de arreglarlo.
+7. **URLs huérfanas `/presupuesto/` y `/en/quote/`.** El CTA del carrito se emite como `href="#"` y lo rellena JavaScript en runtime (`getQuotePageUrl`, `cart-store.ts:211`), así que **ninguna página las enlaza estáticamente**: solo se descubren por sitemap y no reciben link equity interno. Es **la página de conversión del catálogo de alquiler y la peor enlazada del sitio**. Preexistente del sprint del carrito; detectado por el crawl BFS del sprint de i18n (73 de 75 URLs alcanzables, y las 2 ausentes son exactamente estas, en ambos idiomas).
 
 Pendientes menores arrastrados: RFC 2047 en `send-contact.php`; valorar envío por Resend/SES (ya provisionado en la zona); `pc_name_en` en los filtros EN de portfolio; **P5** (auditoría visual + imágenes reales + seguridad). Deuda con el cliente **abierta**: cookie de preferencia de idioma y autodetección (spec §4.1) — ver «Decisiones estratégicas → Idioma».
 
