@@ -16,6 +16,17 @@ interface Props {
    * `backgroundImage` sigue siendo obligatoria en modo vídeo: hace de póster.
    */
   backgroundVideoUrl?: string;
+  /**
+   * Imagen que se ve DURANTE LA ESPERA del vídeo. Sin ella el hero espera con
+   * el hueco oscuro, que es el comportamiento por defecto y la decisión del
+   * cliente (ago-2026). Editable desde WordPress: `hm_hero_wait_image`.
+   *
+   * No confundir con `backgroundImage`, que es la que SUSTITUYE al vídeo cuando
+   * no va a haberlo. Son dos trabajos distintos: esta se ve segundo y medio y
+   * compite con el player por ancho de banda; aquella se queda para siempre.
+   * Pueden ser la misma URL — entonces es un solo <img> y una sola descarga.
+   */
+  waitImage?: string;
   /** aria-label del botón de pausa (i18n). Requerido si hay vídeo. */
   videoPauseLabel?: string;
   /** aria-label del mismo botón cuando el vídeo está pausado (i18n). */
@@ -30,6 +41,7 @@ const {
   subtitle,
   backgroundImage,
   backgroundVideoUrl,
+  waitImage,
   videoPauseLabel,
   videoPlayLabel,
   height = 'min-h-[80vh] md:min-h-[900px]',
@@ -39,6 +51,14 @@ const {
 // null si no hay URL o si lo pegado en wp-admin no es una URL de Vimeo
 // reconocible → el hero se queda en modo imagen. Nunca a medio romper.
 const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideoUrl) : null;
+
+// Si la imagen de espera es la MISMA que la de respaldo, no hay dos elementos:
+// basta con no ocultar el que ya existe. Una sola etiqueta, una sola descarga.
+const esperaConLaMismaImagen = !!waitImage && waitImage === backgroundImage;
+// Solo se oculta el póster si hay vídeo Y no se ha pedido enseñarlo en la espera.
+const posterOcultoEnEspera = !!videoEmbedUrl && !esperaConLaMismaImagen;
+// Segundo <img> únicamente cuando la de espera existe y es distinta.
+const imagenDeEsperaAparte = !!waitImage && !esperaConLaMismaImagen && !!videoEmbedUrl;
 ---
 
 <section
@@ -50,11 +70,16 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
 >
   {backgroundImage && (
     <div class:list={['absolute inset-0 z-0', videoEmbedUrl && 'bg-surface-dark']}>
-      {/* Con vídeo, la imagen NACE OCULTA: durante la espera no se enseña nada
-          más que el fondo del diseño y el texto encima (decisión del cliente,
-          ago-2026). Solo la destapa el script en los casos donde NO va a haber
-          vídeo —reduced-motion, ahorro de datos, autoplay bloqueado—, donde el
-          hueco sería permanente y no temporal.
+      {/* Con vídeo, la imagen NACE OCULTA por defecto: durante la espera no se
+          enseña nada más que el fondo del diseño y el texto encima (decisión
+          del cliente, ago-2026). Solo la destapa el script en los casos donde
+          NO va a haber vídeo —reduced-motion, ahorro de datos, autoplay
+          bloqueado—, donde el hueco sería permanente y no temporal.
+
+          La excepción es `waitImage`: si desde WordPress se ha subido una
+          imagen de espera Y resulta ser esta misma, no se oculta nada — se
+          reutiliza esta etiqueta en lugar de añadir una segunda.
+
           `bg-surface-dark` (#111111) es el gris oscuro del diseño y ya se usa
           en el proyecto: no añade una clase nueva al CSS global de las 76
           páginas. Sin él, el fondo de la espera sería el negro accidental del
@@ -65,10 +90,24 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
         class="w-full h-full object-cover"
         aria-hidden="true"
         data-hero-poster
-        fetchpriority={videoEmbedUrl ? 'low' : 'high'}
+        fetchpriority={posterOcultoEnEspera ? 'low' : 'high'}
         decoding="async"
-        style={videoEmbedUrl ? 'display:none' : undefined}
-      />{/* Las expresiones van PEGADAS a la etiqueta anterior a propósito:
+        style={posterOcultoEnEspera ? 'display:none' : undefined}
+      />{imagenDeEsperaAparte && (
+        /* Imagen de espera distinta de la de respaldo. Va encima del póster y
+           el script la retira en cuanto se decide el destino final: al arrancar
+           el vídeo o al destapar la de respaldo. `high` porque, si el cliente
+           ha pedido que se vea, es el LCP real de la portada. */
+        <img
+          src={waitImage}
+          alt=""
+          class="absolute inset-0 w-full h-full object-cover"
+          aria-hidden="true"
+          data-hero-wait
+          fetchpriority="high"
+          decoding="async"
+        />
+      )}{/* Las expresiones van PEGADAS a la etiqueta anterior a propósito:
            separadas por un salto de línea añadirían un nodo de texto y, con
            él, un espacio extra en el HTML de las 16 páginas que usan este
            componente aunque no tengan vídeo. */}{videoEmbedUrl && (
@@ -126,10 +165,27 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
       // el autoplay por bloqueado y nos quedamos con el póster.
       var PLAY_TIMEOUT = 3000;
 
+      // Debe coincidir con la transición del holder del vídeo
+      // (`style="transition-duration:700ms"` unas líneas más arriba).
+      var VIDEO_FADE_MS = 700;
+
+      /**
+       * Retira la imagen de espera, si la hay. Se llama en cuanto se conoce el
+       * destino final del hero —arranca el vídeo, o se destapa el póster—,
+       * porque a partir de ahí ya no hay ninguna espera que cubrir.
+       */
+      function quitarImagenDeEspera() {
+        var espera = document.querySelector('[data-hero-wait]');
+        if (espera) espera.style.display = 'none';
+      }
+
       /** Destapa la imagen de fondo. Solo se llama cuando NO va a haber vídeo. */
       function mostrarPoster() {
         var poster = document.querySelector('[data-hero-poster]');
         if (poster) poster.style.display = '';
+        // El póster es el destino definitivo: la de espera sobra y, al estar
+        // encima, lo taparía.
+        quitarImagenDeEspera();
       }
 
       function mountHeroVideo() {
@@ -193,6 +249,13 @@ const videoEmbedUrl = backgroundVideoUrl ? getVimeoBackgroundUrl(backgroundVideo
           holder.style.opacity = '1'; // fundido sobre el póster
           toggle.style.display = '';
           paintToggle(true);
+          // La imagen de espera se retira cuando el fundido HA TERMINADO, no
+          // cuando empieza: el holder tarda 700 ms en llegar a opacidad 1 y
+          // quitarla antes deja ver el fondo oscuro por debajo durante medio
+          // segundo — un parpadeo justo en el momento que esto venía a evitar.
+          // Al ir el vídeo por encima en el DOM, al final del fundido ya la
+          // tapa por completo y retirarla no se nota.
+          setTimeout(quitarImagenDeEspera, VIDEO_FADE_MS);
           window.removeEventListener('message', onVimeoMessage);
         }
 

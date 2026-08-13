@@ -22,8 +22,18 @@ export interface HomeContent {
    * pueda quedar incoherente con la URL.
    */
   vimeoUrl?: string;
-  /** Imagen de fondo; con vídeo activo se ve mientras carga y en los casos en que el vídeo no se monta. */
+  /** Imagen de fondo. Con vídeo activo se reserva para los casos en que el vídeo NO se monta. */
   image: string;
+  /**
+   * Imagen que se muestra durante la espera del vídeo. `undefined` = no se
+   * enseña nada: el hueco oscuro, que es la decisión del cliente de ago-2026 y
+   * el comportamiento por defecto.
+   *
+   * Es un campo propio y no un interruptor sobre `image` a propósito: `image`
+   * ya viene con un valor sembrado, así que cualquier condición del tipo «¿hay
+   * imagen?» encendería la espera sola. Aquí el vacío ES la decisión.
+   */
+  waitImage?: string;
 
   heroTag: string;
   heroTitle: string;
@@ -99,10 +109,15 @@ export async function getHomeContentAsync(locale: string): Promise<HomeContent> 
 
     const f = (key: string) => wpText(home, `${key}_${locale}`);
     const vimeoUrl = wpText(home, 'hm_hero_vimeo_url');
+    const waitImage = wpText(home, 'hm_hero_wait_image');
 
     return {
       ...(vimeoUrl && { vimeoUrl }),
       image: wpText(home, 'hm_hero_fallback_image') ?? fallback.image,
+      // Sin `?? fallback`: aquí `undefined` no significa «falta el dato», sino
+      // «no se enseña imagen durante la espera». Darle un valor por defecto
+      // invertiría la decisión del cliente.
+      ...(waitImage && { waitImage }),
 
       heroTag: f('hm_hero_tag') ?? fallback.heroTag,
       heroTitle: f('hm_hero_title') ?? fallback.heroTitle,

@@ -684,11 +684,19 @@ function obliq_contenido_field_defs() {
         'ct_address_postal'     => array( 'Dirección — código postal', 'text' ),
         'ct_address_city'       => array( 'Dirección — ciudad', 'text' ),
 
-        // ---------- Entrada "Inicio" (2 de fondo + 36 de texto) ----------
+        // ---------- Entrada "Inicio" (3 de fondo + 36 de texto) ----------
         // Los de fondo NO llevan sufijo de idioma: son el mismo vídeo y la
         // misma imagen en las dos versiones del sitio, igual que ab_story_image.
         'hm_hero_vimeo_url'     => array( 'Hero — vídeo de Vimeo (URL). Si se deja vacío se muestra solo la imagen.', 'text' ),
-        'hm_hero_fallback_image' => array( 'Hero — imagen (se ve mientras carga el vídeo, con reduced-motion o ahorro de datos, y si no hay vídeo)', 'media' ),
+        'hm_hero_fallback_image' => array( 'Hero — imagen (se ve con reduced-motion o ahorro de datos, y si no hay vídeo)', 'media' ),
+        // Campo de imagen y no un interruptor a propósito. Con un checkbox
+        // habría un estado imposible —marcado y sin imagen que enseñar—, y
+        // sobre todo: `hm_hero_fallback_image` YA viene sembrado con /hero.jpg,
+        // así que un interruptor que dependiera de «¿hay imagen?» habría
+        // devuelto el póster el primer día, justo lo contrario de lo que se
+        // decidió en agosto. Un campo nuevo nace vacío: el hueco por defecto no
+        // depende de acertar con el valor inicial de nada.
+        'hm_hero_wait_image'    => array( 'Hero — imagen de espera (OPCIONAL; vacío = sin imagen mientras carga el vídeo)', 'media' ),
 
         'hm_hero_tag_es'        => array( 'Cabecera — etiqueta pequeña (ES)', 'text' ),
         'hm_hero_tag_en'        => array( 'Cabecera — etiqueta pequeña (EN)', 'text' ),
@@ -928,18 +936,25 @@ function obliq_contenido_meta_html( $post ) {
         echo 'Los servicios, los proyectos del portfolio y los logos de marcas se editan en sus propias secciones.</em></p>';
 
         echo '<hr><h4>1 · Cabecera — fondo</h4>';
-        obliq_contenido_render_fields( $id, array( 'hm_hero_vimeo_url', 'hm_hero_fallback_image' ) );
+        obliq_contenido_render_fields( $id, array( 'hm_hero_vimeo_url', 'hm_hero_fallback_image', 'hm_hero_wait_image' ) );
         echo '<p style="background:#fff8e5;border-left:4px solid #dba617;padding:10px 12px;max-width:760px">';
         echo '<strong>Sobre el vídeo:</strong><br>';
         echo '• Pega la dirección del vídeo tal cual la da Vimeo (por ejemplo <code>https://vimeo.com/123456789</code>). ';
         echo 'Si el vídeo es <em>no listado</em>, copia la dirección completa con el código que lleva detrás.<br>';
         echo '• En Vimeo, dentro de los ajustes del vídeo, en <em>Privacidad → Dónde se puede incrustar</em>, ';
         echo 'el dominio de la web tiene que estar autorizado.<br>';
-        echo '• El vídeo se reproduce <strong>sin sonido y en bucle, también en móvil</strong>. Se muestra solo la imagen ';
-        echo 'si el visitante tiene activado el ahorro de datos o ha pedido reducir las animaciones.<br>';
-        echo '• La imagen se ve además mientras el vídeo carga, así que conviene que sea <strong>oscura</strong>: ';
-        echo 'el texto del titular va encima en blanco.<br>';
+        echo '• El vídeo se reproduce <strong>sin sonido y en bucle, también en móvil</strong>.<br>';
         echo '• <strong>Para volver a la cabecera con imagen, vacía el campo del vídeo.</strong>';
+        echo '</p>';
+        echo '<p style="background:#f0f6fc;border-left:4px solid #2271b1;padding:10px 12px;max-width:760px">';
+        echo '<strong>Las dos imágenes hacen cosas distintas:</strong><br>';
+        echo '• <strong>Hero — imagen</strong>: es la que sustituye al vídeo cuando no va a haber vídeo ';
+        echo '(el visitante tiene el ahorro de datos activado, ha pedido reducir las animaciones, o el navegador ';
+        echo 'no deja arrancar el vídeo solo). Conviene que sea <strong>oscura</strong>: el titular va encima en blanco.<br>';
+        echo '• <strong>Hero — imagen de espera</strong>: solo se ve durante el segundo y pico que tarda el vídeo en ';
+        echo 'arrancar. <strong>Si la dejas vacía no se ve nada durante ese rato</strong>, solo el fondo oscuro y el ';
+        echo 'titular — que es como está ahora y como se decidió. Rellénala únicamente si prefieres que ahí se vea una imagen.<br>';
+        echo '• Puedes poner la misma imagen en las dos: no se descarga dos veces.';
         echo '</p>';
 
         echo '<hr><h4>2 · Cabecera — textos</h4>';
