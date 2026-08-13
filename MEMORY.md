@@ -8,11 +8,80 @@
 
 ---
 
+## 🍪 SPRINT BANNER DE COOKIES + BANDA KIT DIGITAL (13-Ago-2026)
+
+### 🔒 REGLA BLINDADA — los tres botones del banner NO pueden tener pesos visuales distintos
+
+**Aceptar, Rechazar y Configurar comparten una única constante de clase** (`btn` en `src/components/organisms/CookieConsent.astro`). Misma altura, mismo ancho, mismo borde, mismo color, misma tipografía, misma opacidad. Verificado con Playwright a 390, 768 y 1440: las ocho propiedades idénticas en los tres.
+
+**No es una preferencia estética. Es el punto concreto que sanciona la AEPD.** Un «Aceptar» relleno en blanco sólido junto a un «Rechazar» en borde —o peor, como enlace de texto— convierte el banner en no conforme, por muy correcto que sea todo lo demás. Lo mismo vale para esconder «Rechazar» detrás de «Configurar».
+
+**Si alguien —cliente, diseñador, o tú dentro de seis meses— pide destacar «Aceptar», la respuesta es no.** Decisión respaldada expresamente por Víctor Medina el 13-Ago-2026. Está escrito así porque este es exactamente el tipo de cosa que se «mejora» sin saber por qué estaba puesta.
+
+Corolarios del mismo requisito, igual de intocables:
+
+- **No hay aspa de cierre en el banner.** Un aspa es una aceptación o un rechazo encubiertos; ninguna lectura es defendible.
+- **No es un cookie wall:** sin overlay, sin `inert`, sin bloqueo de scroll. Y por tanto el consentimiento **no se otorga jamás por scroll, por navegar ni por tiempo** — solo por clic.
+- **Escape cierra el panel y no persiste nada.** Cerrar no es aceptar ni rechazar.
+
+### Arquitectura
+
+- **Consent Mode v2 en MODO BÁSICO.** Sin consentimiento **no sale ni una petición** a dominios de Google — no es que gtag cargue y no ponga cookies: es que no carga. Se eligió frente al modo avanzado porque la evidencia es binaria en la pestaña Network, que es lo que mira una inspección. Coste: se pierde el modelado de conversiones de Google, que el cliente no usa. **Volver a avanzado es sacar `loadGa()` del `if` de `apply()`**, 2 líneas.
+- **El orden del bloque del `<head>` ES el requisito.** `dataLayer` → `consent default` (4 señales denied) → lectura síncrona de localStorage → solo entonces `update` + inyección de `gtag.js`. Antes la etiqueta `async` de gtag.js iba **delante**: con Consent Mode eso es una carrera real (un `async` desde caché se ejecuta antes de que el parser llegue al inline siguiente). Por eso **la librería ya no está en el marcado**.
+- **⚠️ NO metas nada dependiente de la página en ese script.** Astro deduplica los `is:inline` del `<head>` por su `textContent` y no los reejecuta tras un swap. Si le pasaras `locale`, un swap ES→EN lo reejecutaría y empujaría un **segundo `consent default`**. Verificado: tras atrás/adelante sigue habiendo exactamente 1.
+- **`define:vars` sobre `is:inline` funciona, pero envuelve el script en un IIFE.** Por eso `window.gtag = gtag` y `window.__obliqConsent = …` son asignaciones explícitas: sin ellas nada sería global y gtag.js no encontraría la función.
+- **Estado en `localStorage`, no en cookie** (`obliq-consent`). El sitio es SSG puro: ningún servidor lee la cookie, así que lo único que aportaría es viajar en todas las peticiones del origen. El `ts` se guarda igual: el RGPD exige poder evidenciar **cuándo** se consintió, cosa que el `expires` de una cookie no registra. Formato `{v, ts, action, categories}`; `v` es la versión del esquema — **subirla invalida todo y vuelve a preguntar**, que es el mecanismo para cuando se añada una categoría.
+- **`clearGaCookies()` no es opcional.** `consent update: denied` impide que gtag *use* las cookies, pero **no las borra**. Una auditoría mira el almacén de cookies, no el `dataLayer`. Se barre en cada carga sin consentimiento y al revocar.
+- **Revocación: `<button data-cookie-prefs>` en el pie, NO `<a href="#">`.** El script de `BaseLayout` engancha todos los `a[href]` del mismo origen, hace `preventDefault()` y termina en `window.location.href`: un `"#"` sería un fundido a negro de 400 ms seguido de una recarga. (De paso: por eso las navegaciones internas del sitio son **recargas completas**, no View Transitions — `TransitionMask` mata al `ClientRouter`.)
+- **El panel es `<dialog>` nativo + `showModal()`**, no un trap manual como `VideoLightbox`. Trampa de foco, Escape, `aria-modal`, inertización y retorno de foco salen gratis y sin superficie de bug.
+- **Vimeo queda FUERA del CMP** (decisión del cliente): ya usa `dnt=1` y el vídeo es contenido editorial, no medición.
+
+### Dos bugs encontrados en la verificación (y por qué)
+
+1. **Botones a 20 px de alto en móvil.** La fila es `flex-col` por debajo de `sm`, y ahí **`flex-1` reparte la ALTURA, no el ancho**; sin `shrink-0` además se comprimían. Quedaban por debajo del mínimo táctil de 44 px del propio proyecto. Arreglado con `w-full sm:w-auto shrink-0 min-h-[52px]`. Cumplían la igualdad… siendo los tres igual de inusables.
+2. **El `<dialog>` salía pegado arriba a la izquierda.** El Preflight de Tailwind v4 aplica `margin: 0` a todo y **anula el `margin: auto` que el navegador da a los dialogs modales**. Arreglado con `m-auto`. (Tailwind no toca `dialog` en preflight: 0 reglas `dialog` en el CSS construido. Los estilos UA siguen vivos y hay que anularlos a mano.)
+
+### `gcs=G101` — verificado con el dato real
+
+Con solo `analytics_storage` concedido, el `collect` sale con **`gcs=G101`** y `npa=1`. Es la prueba de que el Consent Mode está realmente cableado y no solo de que «GA cargó». `G100` sería denegado; `G111` implicaría `ad_storage` también concedido.
+
+### ⏳ PENDIENTE — `check:consent` no está en CI
+
+`scripts/check-consent.mjs` existe y pasa en local (`pnpm check:consent`): comprueba sobre `dist/` que ninguna página carga GA estáticamente, que las 4 señales están en `denied` y que el banner está en todas.
+
+**No está cableado en `deploy.yml`** porque ese fichero tiene el check de paridad `main`↔`redesign` y sería un cambio coordinado en dos ramas; se dejó fuera de este sprint.
+
+**Mientras no esté en CI depende de que alguien se acuerde** — que es exactamente el fallo que dejó `check:links` sin correr durante semanas: *el síntoma de esa deriva es que NO PASA NADA*. Los deploys siguen verdes, solo que sin red. Cablearlo es la primera tarea del próximo sprint.
+
+### Imagen de espera del hero — `hm_hero_wait_image`
+
+Campo `media` nuevo, **vacío por defecto = hueco oscuro** (la decisión del cliente de ago-2026 se mantiene). Con imagen, esa imagen se ve durante la espera del vídeo.
+
+**Por qué un campo de imagen y no un `hm_hero_show_poster` booleano** (se evaluaron los dos): un interruptor admite el estado imposible «marcado y sin imagen»; y sobre todo, **`hm_hero_fallback_image` ya viene sembrado con `/hero.jpg`**, así que cualquier condición del tipo «¿hay imagen?» habría devuelto el póster el primer día. Un campo nuevo nace vacío: el hueco por defecto no depende de acertar con el valor inicial de nada. Además el mu-plugin solo conoce `text | textarea | media`; un booleano obligaba a añadir un cuarto tipo al render, al guardado y al REST.
+
+**No se tocó `OBLIQ_CONTENIDO_SEED_VERSION` y no se siembra**: el registro de meta, el `register_rest_field` y el metabox se derivan de `field_defs`. Riesgo cero sobre los 38 campos que el cliente ya editó.
+
+Si la imagen de espera coincide con la de respaldo, es **un solo `<img>`** (se reutiliza el existente sin ocultarlo). Si difiere, un segundo `<img data-hero-wait>` encima que el script retira **al terminar** el fundido de 700 ms del vídeo, no al empezarlo: quitarlo antes dejaba ver el fondo oscuro medio segundo, justo el parpadeo que la imagen venía a evitar.
+
+### Banda Kit Digital
+
+- **Franja blanca full-bleed al pie del footer, obligatoria.** El archivo oficial es transparente pero los emblemas van en tinta `#1D1D1B`: sobre el negro del footer **desaparecen red.es, KIT DIGITAL, NextGenerationEU y el texto de la Secretaría de Estado**. Invertirlo no es opción — un emblema institucional alterado deja de ser el emblema.
+- El `py-section` pasó del `<footer>` al contenedor interno para que la franja sangre hasta el borde inferior.
+- **1200×73 px es todo lo que hay.** `max-w-[1100px]`: por encima de 1200 sería upscale; a 1100 el microtexto de la Secretaría queda en ~6,4 px, el máximo legible. A 600 px (que sería el 2× limpio) baja a ~3,5 px, ilegible. **En móvil (~358 px) el microtexto no se lee: es limitación del archivo, no del maquetado.**
+- **Sin `srcset`, a propósito:** reescalar rompe la paleta indexada y las variantes pesan MÁS que el original (700 px → 29,5 KB frente a 14,4 KB del nativo). Un solo fichero y escalado por CSS es más ligero *y* más nítido.
+- WebP *lossless*, **pixel-idéntico al PNG** (`compare -metric AE` → 0). `<picture>` con fallback PNG y no `<Image>` de `astro:assets`: el proyecto no lo usa en ningún sitio e introducirlo arrastraría `sharp` al build por un asset ya óptimo.
+
+### Textos legales — NO tocados
+
+Ver **`docs/audits/legal-pendiente-revision.md`**. Dos bloques: la **razón social** del aviso legal (dice «Obliq Audiovisual SL»; el sitio anterior decía «ACMG AGENCY S.L.» **con el mismo CIF B19377019** — art. 10 LSSI, urgente e independiente de las cookies) y las diez correcciones de la política de cookies y privacidad. Decisión del 13-Ago: **no bloquea el despliegue**, el texto se corrige después.
+
+---
+
 ## ⏭️ SIGUIENTE SPRINT (acordado 11-Ago-2026 — no arrancado)
 
 1. ~~**Vídeo hero con autoplay.**~~ ✅ hecho 11-Ago (ver abajo).
 2. ~~**Editabilidad de la home desde WordPress** — H1, textos y tarjetas de servicio.~~ ✅ hecho 11-Ago (ver abajo).
-3. **Banda de logos del footer.**
+3. ~~**Banda de logos del footer.**~~ ✅ hecho 13-Ago (ver arriba).
 4. **URLs huérfanas `/presupuesto/` y `/en/quote/`.** El CTA del carrito se emite como `href="#"` y lo rellena JavaScript en runtime (`getQuotePageUrl`, `cart-store.ts:211`), así que **ninguna página las enlaza estáticamente**: solo se descubren por sitemap y no reciben link equity interno. Es **la página de conversión del catálogo de alquiler y la peor enlazada del sitio**. Preexistente del sprint del carrito; detectado por el crawl BFS del sprint de i18n (73 de 75 URLs alcanzables, y las 2 ausentes son exactamente estas, en ambos idiomas).
 
 Pendientes menores arrastrados: RFC 2047 en `send-contact.php`; valorar envío por Resend/SES (ya provisionado en la zona); `pc_name_en` en los filtros EN de portfolio; **P5** (auditoría visual + imágenes reales + seguridad). Deuda con el cliente **abierta**: cookie de preferencia de idioma y autodetección (spec §4.1) — ver «Decisiones estratégicas → Idioma».
@@ -234,9 +303,11 @@ Diseño cerrado y medido, para no rehacer el análisis:
   - `hm_hero_fallback_image` (media) — póster mientras carga, fondo en móvil y fallback sin vídeo. Default `/hero.jpg`.
 - **🔑 `OBLIQ_CONTENIDO_SEED_VERSION` → `'2'` (clave, no olvidar al añadir campos):** el guard `get_option('obliq_contenido_seeded')` ya valía `'1'` en el WP instalado. Sin subir la versión, la entrada «Inicio» **nunca se habría creado** y el campo no aparecería jamás en wp-admin. El seed nace con la URL **vacía** a propósito → instalar la versión nueva no cambia ni un byte del HTML.
 - **Modo fondo ≠ lightbox:** `getVimeoBackgroundUrl()` es función NUEVA en `src/lib/vimeo.ts` sobre el `parseVimeoUrl` ya existente (conserva el hash de privacidad como `h=`). NO reutiliza `getVimeoEmbedUrl`, cuyos parámetros son los del lightbox del portfolio (con sonido y controles). Params: `background=1 autoplay=1 loop=1 muted=1 autopause=0 controls=0 title=0 byline=0 portrait=0 dnt=1`.
-- **Rendimiento — el iframe NO entra en la ruta crítica:** el póster se pinta siempre en el HTML y es el elemento LCP; el iframe lo inyecta JS tras `load` + `requestIdleCallback`, con fundido. **`loading="lazy"` no sirve** para un iframe above-the-fold: el navegador lo considera visible y no lo difiere.
+- **Rendimiento — el iframe NO entra en la ruta crítica:** el iframe lo inyecta JS tras `load` + `requestIdleCallback`, con fundido. **`loading="lazy"` no sirve** para un iframe above-the-fold: el navegador lo considera visible y no lo difiere.
+  > ⚠️ **CORREGIDO 13-Ago-2026:** este punto decía que «el póster se pinta siempre en el HTML y es el elemento LCP». **Es falso desde `71454e9` (12-Ago).** Con vídeo, el póster nace `display:none` y solo lo destapa el script en los tres casos sin vídeo. Durante la espera no hay imagen: el hueco `#111111` es la decisión del cliente. Ver «Imagen de espera del hero» más abajo.
 - **A11y:** botón de pausa/play (WCAG 2.2.2 «Pausar, detener u ocultar» — un bucle automático >5s sin control lo incumple), con `aria-label` i18n que cambia de estado y foco visible por el `:focus-visible` global. `prefers-reduced-motion: reduce` → el iframe no se monta. El iframe va `aria-hidden` + `tabindex="-1"` (decorativo).
-- **Móvil:** por debajo de **768px** o con `navigator.connection.saveData` tampoco se monta (solo póster). El autoplay muted inline sí funcionaría en iOS/Android; se descarta por consumo de datos, no por incompatibilidad.
+- **Móvil:** con `navigator.connection.saveData` no se monta (solo póster).
+  > ⚠️ **CORREGIDO 13-Ago-2026:** decía «por debajo de **768px**… tampoco se monta». **Es falso desde `a37c655`.** El guard `innerWidth < 768` se eliminó por decisión del cliente: dejaba sin vídeo a la mayoría del tráfico. El vídeo **sí se monta en móvil**.
 - **⚠️ Tres decisiones de implementación que NO hay que «corregir»** (rompen la no-regresión si se tocan):
   1. El `<script>` va con **`is:inline`**. Uno normal lo empaqueta Astro y acaba inyectado en las **16 páginas** que usan `HeroSection`, tengan vídeo o no.
   2. La geometría va en atributos **`style`**, no en clases Tailwind nuevas: Tailwind 4 escanea el código fuente, así que una clase nueva entra en el CSS global y **cambia el hash del bundle de las 78 páginas** aunque el vídeo esté apagado. Solo se usan clases ya presentes en `src/`.

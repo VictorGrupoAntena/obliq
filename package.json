@@ -9,6 +9,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "check:consent": "node scripts/check-consent.mjs",
     "check:links": "node scripts/check-links.mjs",
     "check:redirects": "node scripts/verify-redirects.mjs",
     "check:services": "node scripts/check-services.mjs"
