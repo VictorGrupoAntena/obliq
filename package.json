@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "astro dev",
     "dev:host": "astro dev --host",
-    "build": "astro build",
+    "build": "node scripts/check-duplicates.mjs && astro build",
     "preview": "astro preview",
     "astro": "astro",
     "check:consent": "node scripts/check-consent.mjs",
+    "check:duplicates": "node scripts/check-duplicates.mjs",
     "check:links": "node scripts/check-links.mjs",
     "check:redirects": "node scripts/verify-redirects.mjs",
     "check:services": "node scripts/check-services.mjs"

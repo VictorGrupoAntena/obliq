@@ -113,15 +113,53 @@ Investigado aparte a petición de Víctor (14-Ago-2026), porque la preocupación
 - `check:consent` **tampoco**: la página llevaría el banner y el consent default como cualquier otra, y pasaría.
 - **`@astrojs/sitemap` sí la incluiría** (hoy 75 URLs). Es decir: una página basura indexable, publicada, y en verde en los tres gates.
 
-**Recomendación, PENDIENTE DE DECIDIR (no implementada):** un gate barato que falle ante el patrón de duplicado, corriendo sobre **`src/` y `public/` ANTES del build** —que es donde está el vector real— y sobre `dist/` después. Excluir `dist/` y `node_modules/` de la sincronización de iCloud reduce el ruido local, pero **no protege el repositorio**: es complementario, no sustituto. El vector que importa entra por git, no por `dist/`.
+**✅ RESUELTO — `scripts/check-duplicates.mjs` (14-Ago-2026).** Aprobado por Víctor y ya en marcha sobre `src/` y `public/`, que es donde está el vector.
 
-### ⏳ Pendientes de este sprint
+**Los 7 duplicados históricos NO hubo que borrarlos: ya no existían.** Se eliminaron el mismo 26-mar-2026 en `b68741d` («chore: remove legacy files, duplicates, and disabled pages»). Verificado en el árbol de trabajo y en **todas** las ramas, locales y remotas: cero. No se hizo un commit de limpieza vacío.
 
-1. **Autorización de Víctor para producción.** El commit `83a4a48` ya está en `redesign` y el hook está activo: **una edición de contenido del cliente en WordPress publicaría el mapa en producción** sin intervención. Es inherente a la arquitectura (`repository_dispatch` → `checkout ref: redesign` → producción), no un fallo, pero conviene no dejar la ventana abierta mucho tiempo.
-2. `check:consent` **sigue sin estar en CI** — no se tocó, sigue bloqueado por el check de paridad `main`↔`redesign`. Sigue siendo la tarea nº 4 del siguiente sprint.
-3. El texto de `politica-cookies.astro` **no se ha tocado**: la categoría nueva está documentada en `docs/audits/legal-pendiente-revision.md` (punto 11) para que la corrija la asesoría junto con lo demás.
-4. **Decidir el gate anti-duplicados** de la investigación de iCloud (ver más abajo). No implementado a propósito.
-5. Al desplegar a producción, **avisar al cliente de que el banner reaparecerá una vez** a todo el mundo (esquema `v1` → `v2`).
+**🔌 Cómo entró en CI sin tocar `deploy.yml`.** Encadenado al script `build` de `package.json`:
+
+```json
+"build": "node scripts/check-duplicates.mjs && astro build",
+```
+
+CI ejecuta `pnpm build`, así que el gate corre en el runner **sin añadir un paso al workflow** — y por tanto **sin cruzar el check de paridad `main`↔`redesign`**, que es exactamente lo que lleva un sprint bloqueando a `check:consent`. Vale la pena recordarlo cuando toque cablear ese: encadenar al `build` es una vía que no exige el commit coordinado en dos ramas. También disponible suelto como `pnpm check:duplicates`.
+
+**Precisión — no bloquea nombres legítimos con números.** Solo mira «espacio + 1-2 dígitos + extensión» al final, y clasifica en tres:
+
+| | Ejemplo | Veredicto |
+|---|---|---|
+| duplicado | `logo.png` + `logo 2.png` | ❌ falla (patrón exacto de iCloud) |
+| huérfano | `huerfano 2.webp` sin original ni hermanos | ❌ falla |
+| secuencia | `slide 1.png`, `slide 2.png`, `slide 3.png` | ✅ pasa |
+
+Cubre **directorios** además de ficheros (`src/pages/blog 2/` generaría una ruta entera).
+
+Probado en los dos sentidos: caza `contacto 2.astro` en ruta activa, duplicados, huérfanos y directorios; y **deja pasar** `slide 1..3.png`, `video 2024.mp4`, `spec 2026.md`, `logo2.png`, `hero-2.jpg`, `logo 2x.png`. Verificado que **corta el build de verdad**: con un duplicado presente, exit 1 y `dist/` ni siquiera se crea.
+
+Excluir `dist/` y `node_modules/` de iCloud reduciría el ruido local, pero **no protege el repositorio** y no se ha hecho: el vector que importa entra por git.
+
+### ✅ EN PRODUCCIÓN — run 31781106088 (14-Ago-2026), `redesign` → `~/httpdocs`
+
+Autorizado por Víctor tras la verificación en staging. Recuento en el docroot real:
+
+**76 páginas · 76 con `consent default` · 76 con banner · 76 con botón de revocación · 76 con esquema v2 · 0 con carga estática de GA · 0 con carga estática de Maps · 2 con el bloque del mapa (ES y EN) · 0 duplicados · 0 restos del placeholder gris.** Las cuatro señales en `denied` en las 76.
+
+Verificación en el navegador contra la URL pública, perfil limpio: idéntica a la de staging, incluidas las **0 cookies de `google.com`** tras cargar el mapa e interactuar con él, y `gcs=G101` con analítica sola.
+
+### ⏳ Pendientes
+
+1. `check:consent` **sigue sin estar en CI** — no se tocó. Pero ver abajo: el gate de duplicados encontró una vía para entrar en CI **sin tocar `deploy.yml`** (encadenarse al script `build`), y esa misma vía sirve para `check:consent`. Cambia la tarea de «commit coordinado en dos ramas» a «una línea en `package.json`».
+2. El texto de `politica-cookies.astro` **no se ha tocado**: la categoría nueva está documentada en `docs/audits/legal-pendiente-revision.md` (punto 11) para que la corrija la asesoría junto con lo demás.
+3. **Avisar al cliente de que el banner reaparece una vez** a todo el mundo (esquema `v1` → `v2`). Ya está en producción, así que está ocurriendo.
+
+### 🚫 Retirado de la lista de automatizaciones: la constante `OBLIQ_DEPLOY_DISABLED`
+
+Se propuso hace días para sustituir la danza del `.OFF` por una línea en `wp-config.php`. **Descartada el 14-Ago-2026, con el criterio cambiado a mitad de camino y aceptado por Víctor.**
+
+El riesgo que venía a eliminar —dejarse el `.OFF` puesto— no es el que muerde. Un `.OFF` olvidado **se nota**: el auto-rebuild deja de funcionar y el cliente edita WordPress sin que la web cambie. Una constante olvidada tiene el mismo síntoma pero **es invisible**: `ls` en mu-plugins no la muestra y `wp-config.php` no lo abre nadie. Cambiaría un residuo visible por uno oculto. Además `wp-config.php` **no está versionado** y el hook sí: acoplaría dos ficheros con ciclos de vida distintos.
+
+**Lo que sí queda como práctica obligatoria** es lo que se hizo en este sprint: **verificar el hook-on con una edición real**, nunca dar por bueno el renombrado. Eso caza el `.OFF` olvidado y cualquier otra causa. Procedimiento verificado: restaurar → `function_exists` → editar un post de `contenido` de verdad → comprobar que `obliq_deploy_dispatch` queda programado → **cancelarlo con `wp cron event delete` antes de que expire el debounce de 90 s** si el deploy no está autorizado todavía.
 
 ---
 
