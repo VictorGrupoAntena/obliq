@@ -10,7 +10,9 @@
 
 ## 🗺️ SPRINT MAPA DE GOOGLE EN /CONTACTO/ (14-Ago-2026)
 
-### Estado: verificado en local sobre build real; **pendiente de staging y de autorización para producción**
+### ✅ VERIFICADO EN STAGING — run 31779174471. **Pendiente solo de autorización para producción**
+
+Hook-off → push → `workflow_dispatch target: staging` → V1–V6 sobre HTTPS real → hook-on verificado con edición real. **Producción intacta durante todo el proceso** (comprobado al cierre: sigue con el placeholder gris y `SCHEMA = 1`).
 
 Sustituye el rectángulo gris `bg-[#E8E8E8] h-[400px]` con el texto «Google Maps — Valencia» que estaba en `contacto.astro` y `en/contact.astro` desde el rediseño y que **nunca se conectó**.
 
@@ -46,6 +48,20 @@ Sustituye el rectángulo gris `bg-[#E8E8E8] h-[400px]` con el texto «Google Map
 
 2. **El gate cazó el `<a href>` legítimo, y la respuesta correcta NO era silenciarlo.** El bloque sin consentimiento incluye a propósito un enlace a Maps —que no descarga nada hasta que se pulsa—, y el check prohibía `href` para todos los dominios. Se afinó: los dominios de Maps se comprueban solo en `src`, y los `href` que **sí** cargan (los de `<link rel=preconnect|preload>`) se cubren con una comprobación aparte sobre la etiqueta `<link>`. Prohibir `href` a secas habría convertido en fallo justo la pieza que resuelve el problema.
 
+### 🔑 CRITERIO — cuando un gate falla sobre código correcto, se afina el gate, no se relaja
+
+Generalizado a petición de Víctor (14-Ago-2026) a partir del caso de arriba.
+
+Un gate que falla tiene **tres** salidas posibles, y solo dos son legítimas:
+
+1. **El código está mal** → se arregla el código.
+2. **El gate es impreciso** → se afina el gate para que distinguya el caso correcto del incorrecto, **manteniendo o ampliando lo que detecta**.
+3. ~~El gate molesta~~ → se relaja, se añade una excepción, o se borra la comprobación. **Esto no es una salida.**
+
+La diferencia entre (2) y (3) es concreta y comprobable: **afinar deja el gate cazando lo mismo que antes o más; relajar lo deja cazando menos.** En el caso de Maps, prohibir `href` a secas era impreciso —confundía «enlace en el que hay que hacer clic» con «recurso que se descarga»—; la versión afinada distingue `src` de `href`, y además **añade** una comprobación de `<link rel=preconnect|preload>` que antes no existía. El gate salió más fuerte del incidente, no más débil.
+
+Importa porque la tentación siempre es (3), y porque **un gate relajado sigue pasando en verde**: el síntoma de haberlo debilitado es que no pasa nada — el mismo modo de fallo que dejó `check:links` sin correr durante semanas.
+
 ### Sin guard `__obliqMapsLoaded` — el antipatrón que NO se copió
 
 `__obliqGaLoaded` nunca se resetea, y para un script que solo se carga una vez está bien. Para un iframe sería un bug: tras **revocar y volver a aceptar en la misma pestaña**, el mapa no volvería a montarse nunca. La idempotencia se comprueba mirando el DOM (`section.querySelector('iframe')`). Y al revocar el iframe se **elimina**, no se oculta: un iframe oculto sigue siendo un contexto de Google vivo dentro de la página.
@@ -67,26 +83,45 @@ Con perfil limpio y build real, el embed **no escribió ni una cookie**: ni al c
 - El botón de preferencias del bloque va **en el HTML servido**: `initCookieConsent()` hace su `querySelectorAll('[data-cookie-prefs]')` una sola vez, así que uno inyectado por JS no quedaría enganchado.
 - `hasMap` añadido al `LocalBusiness`, con el **mismo** `mapsLinkUrl()` que el botón.
 
-### Evidencia (local, build real, Chromium perfil limpio)
+### Evidencia (STAGING, HTTPS real, contexto seguro, Chromium perfil limpio)
 
 | | Sin decisión | Solo «Mapas» | Solo «Analíticas» | Revocar «Mapas» |
 |---|---|---|---|---|
-| Peticiones a Google | **ninguna** | mapa | `gtag/js` | **cesan** |
+| Peticiones a Google | **ninguna** (0 externas de 17 totales) | 56 del mapa | `gtag/js` | **cesan** |
 | iframe en la sección | 0 | 1 | **0** | **0** |
-| GA cargado | no | **no** | sí | **sí** (intacto) |
+| GA cargado | no | **no** | sí (`gcs=G101`) | **sí** (intacto) |
 | Cookies `google.com` | 0 | **0** | 0 | **0** |
+| Cookies `_ga` | 0 | **0** | 2 | 2 (intactas) |
 
-Independencia comprobada **en las dos direcciones**. Además: banner reaparece con un registro `v1` (prueba de que el esquema subió), **1 solo `consent default`** tras atrás/adelante, los tres botones del banner siguen a 52 px iguales a 390 px, sin scroll horizontal, y los tres gates en verde sobre 76 páginas.
+Independencia comprobada **en las dos direcciones**. Además: banner reaparece con un registro `v1`, **1 solo `consent default`** tras atrás/adelante, los tres botones del banner a 52×358 px idénticos a 390 px, sin scroll horizontal, sección a 400 px, EN con `hl=en`. Los tres gates en verde sobre 76 páginas.
 
-### 🧹 Aviso de entorno — duplicados de iCloud en `dist/`
+> 🔧 **Cómo se verificó staging sin la contraseña del Basic Auth.** nginx devuelve 401 a todo y la credencial está fuera del repo. En vez de pedirla, se atacó el **backend Apache por un túnel SSH** (`ssh -L 17081:127.0.0.1:7081`) con Chromium lanzado con `--host-resolver-rules=MAP staging.obliqproductions.com 127.0.0.1:17081`. Clave: **se comprobó primero que ese backend presenta el Let's Encrypt válido del dominio** (`CN=staging.obliqproductions.com`, `ssl_verify_result: 0`). Sin cert válido no habría servido: un origen con error de certificado altera el tratamiento de cookies de terceros, que era justo lo que había que medir. Verificado en el navegador: `origen: https://staging.obliqproductions.com`, `isSecureContext: true`.
 
-Durante la verificación, `check:consent` informó de **83 páginas** en vez de 76. No era un fallo del gate: iCloud había creado 60 ficheros `«… 2.html» / «… 2.png»` dentro de `dist/` (el proyecto vive en `~/Documents`, sincronizado). El gate hizo bien en contarlos —**todo lo que está en `dist/` es lo que sube el rsync**—, pero enturbian la evidencia. Se resolvió con `rm -rf dist && pnpm build`. **Si un recuento no cuadra, mira esto antes de sospechar del código.** No afecta a producción: los despliegues construyen en un runner limpio de GitHub.
+### 🧹 INVESTIGACIÓN — duplicados de iCloud (« 2.html») y su alcance real
+
+Durante la verificación, `check:consent` informó de **83 páginas** en vez de 76. No era un fallo del gate: iCloud había creado **60 ficheros con el sufijo de duplicado** (`index 2.html`, `hero 2.png`…) **dentro de `dist/`** (el proyecto vive en `~/Documents`, sincronizado). Se resolvió con `rm -rf dist && pnpm build`. **Si un recuento no cuadra, mira esto antes de sospechar del código.**
+
+Investigado aparte a petición de Víctor (14-Ago-2026), porque la preocupación era que un fichero basura acabara en producción. **Hay dos vías, y no son iguales:**
+
+**Vía A — `dist/` local → producción: NO EXISTE.** Los despliegues construyen en un **runner limpio de GitHub** y el `rsync` corre allí, contra un `dist/` recién generado. El `dist/` de esta máquina no se sube nunca. `dist/` está además en `.gitignore`. Por esta vía la preocupación no se materializa.
+
+**Vía B — el repositorio → producción: SÍ ES REAL, Y YA OCURRIÓ.** Hay **7 duplicados del tipo `contact 2.astro` commiteados** en `af06cd7` (26-mar-2026). Se salvaron por casualidad: cayeron en `src/pages/_es.disabled/` y `_videos.disabled/`, que Astro **ignora por el guion bajo**. Ninguno sigue en HEAD, y `public/` no ha tenido duplicados nunca.
+
+**El escenario que hay que evitar** es un `contact 2.astro` en un directorio **activo** de `src/pages/` (o un asset duplicado en `public/`): Astro construiría `contact 2/index.html`, el fichero entraría en `dist/` en el runner y se desplegaría. Y no lo cazaría nada:
+
+- `check:links` **no**: la página basura no está enlazada desde ninguna parte, así que no es un enlace roto.
+- `check:consent` **tampoco**: la página llevaría el banner y el consent default como cualquier otra, y pasaría.
+- **`@astrojs/sitemap` sí la incluiría** (hoy 75 URLs). Es decir: una página basura indexable, publicada, y en verde en los tres gates.
+
+**Recomendación, PENDIENTE DE DECIDIR (no implementada):** un gate barato que falle ante el patrón de duplicado, corriendo sobre **`src/` y `public/` ANTES del build** —que es donde está el vector real— y sobre `dist/` después. Excluir `dist/` y `node_modules/` de la sincronización de iCloud reduce el ruido local, pero **no protege el repositorio**: es complementario, no sustituto. El vector que importa entra por git, no por `dist/`.
 
 ### ⏳ Pendientes de este sprint
 
-1. Verificación en **staging** y autorización de Víctor para producción.
+1. **Autorización de Víctor para producción.** El commit `83a4a48` ya está en `redesign` y el hook está activo: **una edición de contenido del cliente en WordPress publicaría el mapa en producción** sin intervención. Es inherente a la arquitectura (`repository_dispatch` → `checkout ref: redesign` → producción), no un fallo, pero conviene no dejar la ventana abierta mucho tiempo.
 2. `check:consent` **sigue sin estar en CI** — no se tocó, sigue bloqueado por el check de paridad `main`↔`redesign`. Sigue siendo la tarea nº 4 del siguiente sprint.
 3. El texto de `politica-cookies.astro` **no se ha tocado**: la categoría nueva está documentada en `docs/audits/legal-pendiente-revision.md` (punto 11) para que la corrija la asesoría junto con lo demás.
+4. **Decidir el gate anti-duplicados** de la investigación de iCloud (ver más abajo). No implementado a propósito.
+5. Al desplegar a producción, **avisar al cliente de que el banner reaparecerá una vez** a todo el mundo (esquema `v1` → `v2`).
 
 ---
 
