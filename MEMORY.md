@@ -150,8 +150,24 @@ Verificación en el navegador contra la URL pública, perfil limpio: idéntica a
 ### ⏳ Pendientes
 
 1. `check:consent` **sigue sin estar en CI** — no se tocó. Pero ver abajo: el gate de duplicados encontró una vía para entrar en CI **sin tocar `deploy.yml`** (encadenarse al script `build`), y esa misma vía sirve para `check:consent`. Cambia la tarea de «commit coordinado en dos ramas» a «una línea en `package.json`».
-2. El texto de `politica-cookies.astro` **no se ha tocado**: la categoría nueva está documentada en `docs/audits/legal-pendiente-revision.md` (punto 11) para que la corrija la asesoría junto con lo demás.
+2. ~~El texto de `politica-cookies.astro` no se ha tocado.~~ ✅ **Reescrito y en producción** (run 31833212746) — ver abajo.
 3. **Avisar al cliente de que el banner reaparece una vez** a todo el mundo (esquema `v1` → `v2`). Ya está en producción, así que está ocurriendo.
+
+### 📄 TEXTOS LEGALES — cookies y privacidad reescritas (14-Ago-2026, run 31833212746)
+
+**La política de cookies no estaba incompleta: era FALSA.** Declaraba `_gid` —que este sitio no instala, es de Universal Analytics—, omitía `_ga_896V9YZVME` —que sí—, no mencionaba el mapa, y ofrecía como único mecanismo «configure su navegador», que la AEPD **rechaza expresamente** y que además era falso desde que existe el banner. Verificado en producción: **0 menciones a `_gid`** en las 76 páginas.
+
+Ironía que conviene recordar: el sitio anterior **prometía** un banner que nunca se implementó. La política resolvió la contradicción **borrando la mención** en vez de construir el banner. Ahora existe de verdad y el texto por fin lo dice.
+
+Todo lo declarado está **medido en producción con perfil limpio**, no supuesto: los dos nombres reales de cookie con su duración, las tres categorías, los 24 meses, el `localStorage` (incluido el carrito), Vimeo con `dnt=1` y Google Ireland Limited con las transferencias. **Aviso en el código:** si `GA_COOKIE_NAMES` cambia en `src/data/analytics.ts`, este texto hay que moverlo con él — es justo la desincronización que causó lo de `_gid`.
+
+En privacidad se completaron los huecos: el **tratamiento analítico**, que ocurría en las 76 páginas sin estar declarado ni tener base jurídica asignada; el mapa; destinatarios; transferencias; y el derecho a reclamar ante la AEPD.
+
+**⚠️ El matiz del mapa que NO hay que «mejorar».** El texto dice que si Google instalara cookies desde su dominio, al revocar **no podemos borrarlas** y habría que hacerlo desde el navegador. Es exacto: `_ga` es de primera parte y sí se barre; lo que ponga `google.com` desde dentro del iframe es de otro dominio y nuestro JS no lo alcanza. En las mediciones el mapa no instaló ninguna, pero eso es comportamiento observado. **Lo que sí cumplimos es el consentimiento previo, que es lo que exige el art. 22.2.** Sustituirlo por una promesa de borrado retroactivo sería afirmar algo insostenible. Advertido también en el documento de auditoría.
+
+**No se inventó ningún dato.** El plazo de conservación usa la formulación estándar por prescripción legal, no un número. **El aviso legal NO se tocó**: sigue bloqueado por la razón social.
+
+**Texto redactado por el equipo técnico para que dejara de ser falso, que era lo urgente. PENDIENTE DE VALIDACIÓN POR LA ASESORÍA.** `docs/audits/legal-pendiente-revision.md` lleva ahora una tabla de estado y la lista cerrada de los 5 puntos abiertos: denominación registral (bloqueante), tomo/folio/hoja, plazo de conservación, encargado de alojamiento y retención configurada en GA4.
 
 ### 🚫 Retirado de la lista de automatizaciones: la constante `OBLIQ_DEPLOY_DISABLED`
 
