@@ -1,8 +1,21 @@
 # Textos legales — pendientes de revisión
 
 > Auditoría del 13-ago-2026, durante el sprint del banner de cookies.
-> **Los textos legales no se han tocado**: se revisan y se corrigen aparte.
 > Documento pensado para reenviar al cliente y a su asesoría.
+
+---
+
+## 🔄 ESTADO A 14-AGO-2026 — leer esto primero
+
+| Página | Estado |
+|---|---|
+| **Política de cookies** | ✍️ **REESCRITA.** Puntos 1, 2, 3, 4, 5, 6, 7, 8, 9 y 11 resueltos. **Pendiente de validación por la asesoría.** |
+| **Política de privacidad** | ✍️ **COMPLETADA.** Puntos 5, 6, 9 y 10 resueltos. **Pendiente de validación por la asesoría.** Arrastra la identidad del Bloque 1. |
+| **Aviso legal** | 🔴 **SIN TOCAR.** Bloqueado por el Bloque 1: hace falta la denominación registral vigente. |
+
+**Lo que se reescribió está basado en datos verificados en producción**, no en supuestos: nombres y duraciones reales de cookie, categorías reales del panel, comportamiento medido del mapa. Lo que exigía un dato externo **no se ha inventado** (ver «Qué sigue abierto» al final).
+
+Redactado por el equipo técnico para que el texto **deje de ser falso**, que era lo urgente. No sustituye a la revisión jurídica: **la asesoría debe validarlo antes de darlo por bueno.**
 
 ---
 
@@ -129,4 +142,46 @@ Queda constancia de que durante esa ventana la política describe un mecanismo d
 
 ## Fuera de alcance, señalado
 
-Las tres páginas legales existen **solo en español**, por decisión documentada (`src/lib/routes.ts:41`): no se publica texto jurídico traducido sin validación del cliente. Un usuario en `/en/` que pulse «Cookie policy» aterriza en castellano. El banner sí es bilingüe, así que la asimetría se hace más visible. Pendiente de consultar con el cliente si quiere las legales en inglés.
+Las tres páginas legales existen **solo en español**, por decisión documentada (`src/lib/routes.ts:41`): no se publica texto jurídico traducido sin validación del cliente. Un usuario en `/en/` que pulse «Cookie policy» aterriza en castellano. El banner sí es bilingüe —y desde el 14-ago con la categoría «Maps» también en inglés—, así que la asimetría se hace más visible. **Decisión de Víctor (14-ago-2026): se mantiene así de momento**; pendiente de consultar con el cliente.
+
+---
+
+## ✅ QUÉ SIGUE ABIERTO — lista para la asesoría
+
+Tras la reescritura del 14-ago-2026, esto es **todo** lo que queda. Tres cosas necesitan un dato que el equipo técnico no puede obtener, y una es una decisión de negocio.
+
+### 🔴 1. Denominación social registral — BLOQUEANTE, y el más urgente
+
+El aviso legal y la política de privacidad identifican al titular como **«Obliq Audiovisual SL»**. El sitio anterior decía **«ACMG AGENCY S.L.»**, con el **mismo CIF B19377019**. Solo una puede ser la vigente en el Registro Mercantil, y el art. 10 LSSI exige la denominación **exacta**.
+
+**Hace falta:** nota simple del Registro Mercantil, o la escritura de cambio de denominación si lo hubo. Con ese dato se corrige en un commit.
+
+Es independiente de las cookies y sigue **sin resolver**. El aviso legal no se ha tocado por este motivo.
+
+### 🔴 2. Datos de inscripción registral
+
+Tomo, folio y hoja. También exigidos por el art. 10 LSSI y también ausentes del aviso legal.
+
+### 🟡 3. Plazo de conservación de los datos de formulario — decisión de negocio
+
+La política de privacidad usa la formulación estándar («mientras se mantenga la relación comercial y, después, durante los plazos de prescripción legalmente aplicables»). **No se ha inventado ningún número.**
+
+Un plazo concreto sería mejor y más defendible. Es una decisión de Obliq: ¿1 año desde el último contacto? ¿3? ¿Mientras dure la relación?
+
+### 🟡 4. Identificar al encargado de alojamiento y correo
+
+La política de privacidad menciona genéricamente «el proveedor de alojamiento y de correo electrónico». Nombrarlo es lo correcto, pero depende del contrato de encargo de tratamiento (art. 28 RGPD) firmado, que el equipo técnico no puede dar por supuesto.
+
+### 🟡 5. Retención configurada en Google Analytics
+
+La política dice que los datos analíticos se conservan «según el plazo de retención configurado en Google Analytics». Conviene mirar el valor real en la propiedad `G-896V9YZVME` y escribirlo (2 meses o 14 meses, que son las opciones de GA4).
+
+---
+
+## ⚠️ Un matiz que la asesoría debe conservar al revisar
+
+La política de cookies dice, sobre el mapa, que si Google instalara cookies desde su propio dominio **nosotros no podemos eliminarlas** al revocar, y que habría que borrarlas desde el navegador.
+
+**Eso no es una debilidad del texto: es exacto, y hay que dejarlo.** Las cookies `_ga` son de primera parte y sí se barren al revocar —verificado—. Las que pusiera `google.com` desde dentro del iframe son de otro dominio y el JavaScript del sitio no las alcanza. En las mediciones el mapa no instaló ninguna, pero eso es comportamiento observado, no una garantía que podamos dar.
+
+**La obligación legal que sí cumplimos, y que es la que exige el art. 22.2 LSSI, es la de consentimiento previo:** sin aceptar, no se carga nada. Si al revisar el texto se sustituye ese matiz por una promesa de borrado retroactivo, estaríamos afirmando algo que no podemos sostener.

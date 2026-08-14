@@ -1,13 +1,36 @@
 ---
+/**
+ * Política de privacidad.
+ *
+ * ⚠️ TEXTO JURÍDICO — PENDIENTE DE VALIDACIÓN POR LA ASESORÍA (14-ago-2026).
+ *
+ * Se han completado los huecos detectados en la auditoría: el tratamiento
+ * analítico (que ocurre en las 76 páginas cuando hay consentimiento y no estaba
+ * declarado ni tenía base jurídica asignada), los destinatarios, las
+ * transferencias internacionales y el derecho a reclamar ante la AEPD.
+ *
+ * ⚠️ La identidad del responsable arrastra el problema del AVISO LEGAL, que NO
+ * se ha tocado: aquí dice «Obliq Audiovisual SL» y el sitio anterior decía
+ * «ACMG AGENCY S.L.» con el MISMO CIF. Solo una es la registral vigente y hace
+ * falta una nota simple para saber cuál. Ver el Bloque 1 de
+ * docs/audits/legal-pendiente-revision.md.
+ *
+ * ⚠️ El plazo de conservación usa la formulación estándar por prescripción
+ * legal, no un número concreto: no se ha inventado ninguno. Fijar un plazo
+ * explícito sería mejor y es decisión de negocio.
+ */
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Heading from '@/components/atoms/Heading.astro';
 
 const locale = 'es';
+const ACTUALIZADA = '14 de agosto de 2026';
 ---
 
 <BaseLayout title="Política de Privacidad" locale={locale} noindex={true} pageColor="white">
   <section class="bg-white py-section px-4 md:px-section max-w-3xl mx-auto">
-    <Heading level={1} italic={false} class="text-black mb-8">Política de Privacidad</Heading>
+    <Heading level={1} italic={false} class="text-black mb-4">Política de Privacidad</Heading>
+    <p class="text-muted text-[14px] mb-8">Última actualización: {ACTUALIZADA}</p>
+
     <div class="prose prose-lg text-muted space-y-6 text-[16px] font-light leading-relaxed">
       <h2 class="text-[24px] font-bold text-black">Responsable del tratamiento</h2>
       <ul class="list-disc pl-6 space-y-2">
@@ -16,14 +39,50 @@ const locale = 'es';
         <li><strong class="text-black">Dirección:</strong> C/ Pintor Navarro Llorens bajo 3, 46008 Valencia</li>
         <li><strong class="text-black">Email:</strong> info@obliqproductions.com</li>
       </ul>
-      <h2 class="text-[24px] font-bold text-black mt-8">Finalidad del tratamiento</h2>
-      <p>Los datos personales recabados a través de los formularios de contacto serán tratados con la finalidad de atender sus consultas y proporcionarle la información solicitada sobre nuestros servicios.</p>
-      <h2 class="text-[24px] font-bold text-black mt-8">Legitimación</h2>
-      <p>La base legal para el tratamiento de sus datos es el consentimiento del interesado y/o la ejecución de un contrato.</p>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Finalidades y base jurídica</h2>
+      <p>Tratamos sus datos para las siguientes finalidades:</p>
+
+      <h3 class="text-[18px] font-bold text-black mt-6">1. Atender sus consultas y solicitudes de presupuesto</h3>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong class="text-black">Datos tratados:</strong> los que usted facilita en los formularios de contacto y de presupuesto —nombre, email, teléfono, empresa y el contenido de su mensaje—.</li>
+        <li><strong class="text-black">Base jurídica:</strong> su consentimiento al enviar el formulario y, en su caso, la aplicación de medidas precontractuales a petición suya (artículos 6.1.a y 6.1.b del RGPD).</li>
+      </ul>
+
+      <h3 class="text-[18px] font-bold text-black mt-6">2. Analítica de uso del sitio web</h3>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong class="text-black">Datos tratados:</strong> datos de navegación agregados recogidos mediante Google Analytics 4 —páginas visitadas, procedencia, tipo de dispositivo—.</li>
+        <li><strong class="text-black">Base jurídica:</strong> su consentimiento (artículo 6.1.a del RGPD y artículo 22.2 de la LSSI). <strong class="text-black">Si no lo presta, esta herramienta no se carga</strong> y no se recoge ningún dato.</li>
+        <li><strong class="text-black">Cómo retirarlo:</strong> desde «Preferencias de cookies», en el pie de cualquier página. Detalles en la <a href="/politica-cookies/" class="underline hover:text-black transition-colors">política de cookies</a>.</li>
+      </ul>
+
+      <h3 class="text-[18px] font-bold text-black mt-6">3. Mapa de ubicación</h3>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong class="text-black">Datos tratados:</strong> si acepta la categoría «Mapas», al cargarse el mapa de Google Maps en la página de contacto Google recibe su dirección IP y datos técnicos de su navegador.</li>
+        <li><strong class="text-black">Base jurídica:</strong> su consentimiento. Sin él el mapa no se carga y no se produce ninguna comunicación con Google.</li>
+      </ul>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Destinatarios</h2>
+      <p>Sus datos no se ceden a terceros, salvo obligación legal. Al margen de esas cesiones, intervienen como prestadores de servicio:</p>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong class="text-black">Google Ireland Limited</strong> (Gordon House, Barrow Street, Dublín 4, Irlanda), por los servicios de Google Analytics y Google Maps, y únicamente si usted ha consentido las categorías correspondientes.</li>
+        <li><strong class="text-black">El proveedor de alojamiento y de correo electrónico</strong> de este sitio, que trata los datos por cuenta del responsable y conforme al artículo 28 del RGPD, con el único fin de hacer posible el envío y la recepción de los formularios.</li>
+      </ul>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Transferencias internacionales</h2>
+      <p>Los servicios de Google descritos arriba pueden implicar el tratamiento de datos en servidores situados fuera del Espacio Económico Europeo, incluidos los Estados Unidos. Dichas transferencias se amparan en el marco de adecuación aplicable a las transferencias entre la Unión Europea y Estados Unidos y, en su defecto, en las cláusulas contractuales tipo aprobadas por la Comisión Europea.</p>
+      <p>Si usted no consiente las categorías «Analíticas» y «Mapas», <strong class="text-black">no se produce ninguna transferencia</strong>, porque no llega a realizarse ninguna comunicación con esos servicios.</p>
+
       <h2 class="text-[24px] font-bold text-black mt-8">Conservación de datos</h2>
-      <p>Los datos se conservarán mientras se mantenga la relación comercial o durante el tiempo necesario para cumplir con las obligaciones legales.</p>
-      <h2 class="text-[24px] font-bold text-black mt-8">Derechos</h2>
-      <p>Puede ejercer sus derechos de acceso, rectificación, supresión, limitación, portabilidad y oposición enviando un email a info@obliqproductions.com.</p>
+      <p>Los datos facilitados a través de los formularios se conservarán mientras se mantenga la relación comercial y, una vez finalizada, durante los plazos de prescripción legalmente aplicables para atender posibles responsabilidades. Después se suprimirán.</p>
+      <p>Los datos analíticos se conservan según el plazo de retención configurado en Google Analytics. Su decisión sobre las cookies se conserva 24 meses en su navegador.</p>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Sus derechos</h2>
+      <p>Puede ejercer los derechos de <strong class="text-black">acceso, rectificación, supresión, limitación del tratamiento, portabilidad y oposición</strong>, así como retirar el consentimiento prestado en cualquier momento, escribiendo a <a href="mailto:info@obliqproductions.com" class="underline hover:text-black transition-colors">info@obliqproductions.com</a>. La retirada del consentimiento no afecta a la licitud del tratamiento previo.</p>
+      <p>Si considera que sus datos no se han tratado correctamente, tiene derecho a <strong class="text-black">presentar una reclamación ante la Agencia Española de Protección de Datos</strong> (C/ Jorge Juan 6, 28001 Madrid — <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer" class="underline hover:text-black transition-colors">www.aepd.es</a>).</p>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Menores</h2>
+      <p>Este sitio se dirige a profesionales y empresas. No recogemos de forma consciente datos de menores de 14 años.</p>
     </div>
   </section>
 </BaseLayout>

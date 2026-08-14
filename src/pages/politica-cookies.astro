@@ -1,24 +1,110 @@
 ---
+/**
+ * Política de cookies.
+ *
+ * ⚠️ TEXTO JURÍDICO — PENDIENTE DE VALIDACIÓN POR LA ASESORÍA (14-ago-2026).
+ * Reescrito para que describa lo que la web hace de verdad. La versión anterior
+ * declaraba `_gid` (que este sitio no instala), omitía `_ga_896V9YZVME` (que sí),
+ * y ofrecía como único mecanismo «configure su navegador» — que la AEPD rechaza
+ * expresamente y que además era falso desde que existe el banner.
+ *
+ * Los datos de cookies NO están inventados: son los verificados en producción
+ * con perfil limpio. Si cambian, la fuente de verdad es GA_COOKIE_NAMES en
+ * src/data/analytics.ts, y este texto hay que actualizarlo con ella.
+ *
+ * Ver docs/audits/legal-pendiente-revision.md para lo que queda abierto.
+ */
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Heading from '@/components/atoms/Heading.astro';
 
 const locale = 'es';
+const ACTUALIZADA = '14 de agosto de 2026';
 ---
 
 <BaseLayout title="Política de Cookies" locale={locale} noindex={true} pageColor="white">
   <section class="bg-white py-section px-4 md:px-section max-w-3xl mx-auto">
-    <Heading level={1} italic={false} class="text-black mb-8">Política de Cookies</Heading>
+    <Heading level={1} italic={false} class="text-black mb-4">Política de Cookies</Heading>
+    <p class="text-muted text-[14px] mb-8">Última actualización: {ACTUALIZADA}</p>
+
     <div class="prose prose-lg text-muted space-y-6 text-[16px] font-light leading-relaxed">
       <h2 class="text-[24px] font-bold text-black">¿Qué son las cookies?</h2>
-      <p>Las cookies son pequeños archivos de texto que se almacenan en su dispositivo cuando visita un sitio web. Se utilizan para mejorar la experiencia de navegación y proporcionar información analítica.</p>
-      <h2 class="text-[24px] font-bold text-black mt-8">Cookies utilizadas</h2>
+      <p>Las cookies son pequeños archivos de texto que un sitio web guarda en su dispositivo cuando lo visita. Sirven para recordar información entre páginas o entre visitas.</p>
+      <p>Esta política cubre también otras formas de almacenamiento en su navegador que no son técnicamente cookies —como el <em>almacenamiento local</em>—, porque la normativa aplicable (artículo 22.2 de la LSSI) se refiere a cualquier dispositivo de almacenamiento y recuperación de datos en su equipo, se llame como se llame.</p>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Cómo le pedimos el consentimiento</h2>
+      <p>La primera vez que accede a esta web verá un aviso con tres opciones del mismo peso: <strong class="text-black">Aceptar</strong>, <strong class="text-black">Rechazar</strong> y <strong class="text-black">Configurar</strong>. Nada que no sea estrictamente necesario se activa hasta que usted decide.</p>
       <ul class="list-disc pl-6 space-y-2">
-        <li><strong class="text-black">Google Analytics (_ga, _gid):</strong> Cookies analíticas que nos permiten medir y analizar la navegación de los usuarios. Duración: 2 años / 24 horas.</li>
+        <li>El consentimiento <strong class="text-black">solo se obtiene pulsando uno de esos botones</strong>. Navegar, hacer scroll o dejar pasar el tiempo no se interpretan como aceptación.</li>
+        <li>Puede aceptar unas categorías y rechazar otras desde «Configurar».</li>
+        <li>Su decisión tiene una <strong class="text-black">vigencia de 24 meses</strong>. Pasado ese plazo se le vuelve a preguntar.</li>
+        <li>Si añadimos una categoría nueva, su decisión anterior deja de valer para todo y se le pregunta otra vez: un consentimiento dado sobre unas categorías no dice nada sobre otra que no existía.</li>
       </ul>
-      <h2 class="text-[24px] font-bold text-black mt-8">Gestión de cookies</h2>
-      <p>Puede configurar su navegador para rechazar las cookies o para que le avise cuando un sitio web intente colocar una cookie. Sin embargo, si deshabilita las cookies, es posible que algunas funcionalidades no estén disponibles.</p>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Categorías</h2>
+
+      <h3 class="text-[18px] font-bold text-black mt-6">Necesarias — siempre activas</h3>
+      <p>Guardan su decisión sobre las cookies y el contenido de su presupuesto. Se quedan en su navegador, no se envían a nadie y sin ellas la web no puede funcionar correctamente. Están exentas de consentimiento, pero se lo informamos igualmente.</p>
+
+      <h3 class="text-[18px] font-bold text-black mt-6">Analíticas — desactivadas por defecto</h3>
+      <p>Google Analytics 4. Mide de forma agregada qué páginas se visitan y desde dónde, para entender el uso del sitio. <strong class="text-black">Si no las acepta, no se realiza ninguna petición a los servidores de Google</strong>: la herramienta ni siquiera se carga.</p>
+
+      <h3 class="text-[18px] font-bold text-black mt-6">Mapas — desactivadas por defecto</h3>
+      <p>El mapa de Google Maps con nuestra ubicación, en la página de contacto. Si no lo acepta, <strong class="text-black">el mapa no se carga y no se realiza ninguna petición a Google</strong>: en su lugar se muestran nuestra dirección y un enlace para abrir el mapa en Google, que no instala nada mientras usted no lo pulse.</p>
+      <p>Si lo acepta, se incrusta contenido servido por Google, que puede instalar sus propias cookies desde el dominio <code>google.com</code>. En nuestras comprobaciones el mapa no instaló ninguna, pero eso es el comportamiento observado y no algo que podamos garantizar, porque depende de Google. Si revoca el consentimiento, el mapa se retira de la página de inmediato y deja de comunicarse con Google; las cookies que Google hubiera podido instalar desde su propio dominio no podemos eliminarlas nosotros, y tendría que borrarlas desde su navegador.</p>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Cookies concretas</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-[14px] border-collapse">
+          <thead>
+            <tr class="border-b border-border-light text-left text-black">
+              <th class="py-2 pr-4 font-semibold">Nombre</th>
+              <th class="py-2 pr-4 font-semibold">Titular</th>
+              <th class="py-2 pr-4 font-semibold">Finalidad</th>
+              <th class="py-2 font-semibold">Duración</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-border-light">
+              <td class="py-2 pr-4"><code>_ga</code></td>
+              <td class="py-2 pr-4">Google</td>
+              <td class="py-2 pr-4">Analítica. Distingue visitantes.</td>
+              <td class="py-2">2 años</td>
+            </tr>
+            <tr class="border-b border-border-light">
+              <td class="py-2 pr-4"><code>_ga_896V9YZVME</code></td>
+              <td class="py-2 pr-4">Google</td>
+              <td class="py-2 pr-4">Analítica. Mantiene el estado de la sesión.</td>
+              <td class="py-2">2 años</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-[14px]">Son las únicas dos cookies que instala este sitio, y solo si acepta la categoría «Analíticas». La duración indicada es la que se establece al crearlas; algunos navegadores la acortan por su cuenta. Al rechazar o revocar, estas cookies se eliminan de su navegador.</p>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Almacenamiento local</h2>
+      <p>Estos datos se guardan en su navegador y <strong class="text-black">no se envían a ningún servidor</strong>, ni al nuestro ni a terceros:</p>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><code>obliq-consent</code> — su decisión sobre las cookies, con la fecha en que la tomó. Necesaria para no volver a preguntarle y para poder acreditar el consentimiento. Vigencia: 24 meses.</li>
+        <li><code>obliq-quote-cart</code> y <code>obliq-quote-half-days</code> — el contenido de su presupuesto de alquiler, para que no se pierda al cambiar de página.</li>
+      </ul>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Vídeos de Vimeo</h2>
+      <p>Los vídeos de esta web se sirven desde Vimeo con el parámetro <em>do not track</em> activado, de modo que <strong class="text-black">no instalan cookies de seguimiento</strong>. Vimeo puede utilizar cookies técnicas propias necesarias para la reproducción.</p>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Destinatarios y transferencias internacionales</h2>
+      <p>Las cookies analíticas y el mapa implican a <strong class="text-black">Google Ireland Limited</strong> (Gordon House, Barrow Street, Dublín 4, Irlanda) como prestador de los servicios de Google Analytics y Google Maps.</p>
+      <p>Google puede tratar estos datos en servidores situados fuera del Espacio Económico Europeo, incluidos los Estados Unidos. Dichas transferencias se amparan en el marco de adecuación aplicable a las transferencias entre la Unión Europea y Estados Unidos y, en su defecto, en las cláusulas contractuales tipo aprobadas por la Comisión Europea.</p>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Base jurídica</h2>
+      <p>El uso de las cookies analíticas y del mapa se basa en <strong class="text-black">su consentimiento</strong>, conforme al artículo 22.2 de la Ley 34/2002 (LSSI) y al artículo 6.1.a del Reglamento General de Protección de Datos. Puede retirarlo en cualquier momento y con la misma facilidad con la que lo dio.</p>
+      <p>Las cookies y el almacenamiento estrictamente necesarios para prestar el servicio que usted ha solicitado están exentos de consentimiento, conforme al mismo artículo.</p>
+
+      <h2 class="text-[24px] font-bold text-black mt-8">Cómo cambiar o retirar su decisión</h2>
+      <p>En el pie de cualquier página de esta web hay un enlace permanente, <strong class="text-black">«Preferencias de cookies»</strong>, que abre el panel de configuración. Desde ahí puede cambiar cualquier categoría o rechazarlas todas, en cualquier momento y sin dar explicaciones. El cambio tiene efecto inmediato.</p>
+      <p>Con carácter adicional, puede gestionar o eliminar las cookies ya almacenadas desde la configuración de su navegador. Tenga en cuenta que ese ajuste no sustituye al mecanismo anterior, y que si bloquea todas las cookies es posible que algunas funcionalidades dejen de estar disponibles.</p>
+
       <h2 class="text-[24px] font-bold text-black mt-8">Más información</h2>
-      <p>Para más información sobre el uso de cookies, puede contactarnos en info@obliqproductions.com.</p>
+      <p>Para cualquier duda sobre esta política puede escribirnos a <a href="mailto:info@obliqproductions.com" class="underline hover:text-black transition-colors">info@obliqproductions.com</a>.</p>
     </div>
   </section>
 </BaseLayout>
