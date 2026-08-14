@@ -8,6 +8,88 @@
 
 ---
 
+## 🗺️ SPRINT MAPA DE GOOGLE EN /CONTACTO/ (14-Ago-2026)
+
+### Estado: verificado en local sobre build real; **pendiente de staging y de autorización para producción**
+
+Sustituye el rectángulo gris `bg-[#E8E8E8] h-[400px]` con el texto «Google Maps — Valencia» que estaba en `contacto.astro` y `en/contact.astro` desde el rediseño y que **nunca se conectó**.
+
+### La decisión que sostiene todo lo demás: la URL se DERIVA de la dirección
+
+`src/lib/maps.ts` construye las dos URLs a partir de `contact.address`, que ya venía de WordPress (`ct_address_*` → `src/data/site.ts`) y ya alimentaba el texto de la página y el `PostalAddress` del JSON-LD. **El mapa no añade un dato propio.** Tres consecuencias, y las tres importan:
+
+1. **No puede divergir.** Si el cliente corrige la dirección en wp-admin, el texto, el schema y el mapa se mueven a la vez porque son la misma cadena.
+2. **Cero cambios en el mu-plugin.** No hace falta campo nuevo, así que este sprint **no queda encadenado al Gate 1 pendiente** (`hm_hero_wait_image`), que el cliente quiso desacoplado a propósito.
+3. Se descartó pegar el `<iframe src="…pb=!1m18!1m12…">` del botón «Compartir» de Maps: es un literal opaco que nadie recuerda actualizar cuando la empresa se muda.
+
+**Sin clave de API** (`?q=…&z=16&hl=<locale>&output=embed`). La alternativa documentada —Maps Embed API— obliga a declarar la clave en `.env`, `.env.local` y `deploy.yml`, y ese último tiene el check de paridad `main`↔`redesign`: un commit coordinado en dos ramas por un valor público. Es el mismo motivo por el que `GA_MEASUREMENT_ID` tampoco es variable de entorno.
+
+### Categoría PROPIA «Mapas», no una genérica de «terceros»
+
+`CONSENT_SCHEMA 1 → 2`. Una categoría paraguas haría que aceptar hoy autorizase de paso un embed que todavía no existe, y eso no es consentimiento sobre nada. El coste —volver a preguntar cuando se añada otro tercero— **es el comportamiento correcto, no un inconveniente**.
+
+⚠️ **Efecto visible para el cliente: todo el mundo que ya había decidido vuelve a ver el banner una vez.** Es el mecanismo funcionando, no un fallo. Conviene anticipárselo.
+
+### Lo que hubo que añadir al CMP: un evento
+
+`save()` **no emitía nada**. GA no lo necesitaba porque se carga desde `apply()`, dentro del propio bootstrap del `<head>`. El mapa sí: solo existe en `/contacto/`, y **ese bootstrap no puede saber en qué página está** (Astro deduplica los `is:inline` por `textContent`). Así que:
+
+- Una línea en `save()`: `document.dispatchEvent(new CustomEvent('obliq:consent', { detail: d }))`.
+- La lógica del mapa vive en el componente, que lee con `read()` al arrancar y escucha el evento para el caso «el usuario acepta estando ya en contacto».
+- Tipado en `DocumentEventMap` (`src/env.d.ts`) para que el listener no necesite un `as`.
+
+`apply()` **no se tocó**: Maps no es gtag y no tiene señal de Consent Mode. El control es montar el iframe o no montarlo.
+
+### 🔑 Dos trampas que costaron tiempo y que volverán a morder
+
+1. **`data-map-url`, NUNCA `data-map-src`.** `check-consent.mjs` busca la subcadena `src="https://…`. Un atributo acabado en `-src` la contiene, así que el gate habría fallado contra su propio marcado. El nombre del atributo es funcional.
+
+2. **El gate cazó el `<a href>` legítimo, y la respuesta correcta NO era silenciarlo.** El bloque sin consentimiento incluye a propósito un enlace a Maps —que no descarga nada hasta que se pulsa—, y el check prohibía `href` para todos los dominios. Se afinó: los dominios de Maps se comprueban solo en `src`, y los `href` que **sí** cargan (los de `<link rel=preconnect|preload>`) se cubren con una comprobación aparte sobre la etiqueta `<link>`. Prohibir `href` a secas habría convertido en fallo justo la pieza que resuelve el problema.
+
+### Sin guard `__obliqMapsLoaded` — el antipatrón que NO se copió
+
+`__obliqGaLoaded` nunca se resetea, y para un script que solo se carga una vez está bien. Para un iframe sería un bug: tras **revocar y volver a aceptar en la misma pestaña**, el mapa no volvería a montarse nunca. La idempotencia se comprueba mirando el DOM (`section.querySelector('iframe')`). Y al revocar el iframe se **elimina**, no se oculta: un iframe oculto sigue siendo un contexto de Google vivo dentro de la página.
+
+### 🍪 Cookies del embed: MEDIDAS, no supuestas — y con control
+
+Con perfil limpio y build real, el embed **no escribió ni una cookie**: ni al cargar, ni tras arrastrar el mapa y hacer doble clic para zoom.
+
+**El cero se validó contra un control**, que es lo que lo hace creíble: con analíticas aceptadas sí aparecían `_ga` y `_ga_896V9YZVME`. Sin ese control, «0 cookies» podría haber sido simplemente una medición rota.
+
+⚠️ **Límite que el código no puede superar, y hay que decirlo.** Ese cero es comportamiento observado, no una garantía del sitio. Una cookie puesta por Google desde dentro del iframe sería de **otro dominio**, y nuestro `document.cookie` **no puede borrarla** — a diferencia de `_ga`, que es de primera parte y sí se barre. Si Google cambiara ese comportamiento, seguiríamos cumpliendo el **consentimiento previo** (que es lo que exige el art. 22.2 LSSI) pero no podríamos prometer borrado retroactivo. Por eso el texto legal no debe afirmar lo segundo. Ver punto 11 de `docs/audits/legal-pendiente-revision.md`.
+
+### Detalles menores con motivo
+
+- **`<span class="block">` ×2 y no `<br>`** en la dirección: con `<br>` el `textContent` sale «…bajo 346008 Valencia», pegado. Se ve bien en pantalla, pero al copiar la dirección sale mal.
+- **`#map-fallback[hidden] { display: none }` explícito.** El atributo `hidden` del preflight y la utilidad `.flex` tienen la misma especificidad (0-1-0) y gana la que venga después: el fallback se quedaba visible **debajo** del mapa. La regla lleva el sufijo de ámbito de Astro, así que decide sin depender del orden de las capas de Tailwind.
+- **`min-h-[400px] md:h-[400px]`** en vez de `h-[400px]`: misma altura de siempre en desktop, pero el bloque puede crecer en móvil sin desbordar.
+- **`bg-surface-light`** (token) en vez del `#E8E8E8` que estaba fuera del sistema.
+- El botón de preferencias del bloque va **en el HTML servido**: `initCookieConsent()` hace su `querySelectorAll('[data-cookie-prefs]')` una sola vez, así que uno inyectado por JS no quedaría enganchado.
+- `hasMap` añadido al `LocalBusiness`, con el **mismo** `mapsLinkUrl()` que el botón.
+
+### Evidencia (local, build real, Chromium perfil limpio)
+
+| | Sin decisión | Solo «Mapas» | Solo «Analíticas» | Revocar «Mapas» |
+|---|---|---|---|---|
+| Peticiones a Google | **ninguna** | mapa | `gtag/js` | **cesan** |
+| iframe en la sección | 0 | 1 | **0** | **0** |
+| GA cargado | no | **no** | sí | **sí** (intacto) |
+| Cookies `google.com` | 0 | **0** | 0 | **0** |
+
+Independencia comprobada **en las dos direcciones**. Además: banner reaparece con un registro `v1` (prueba de que el esquema subió), **1 solo `consent default`** tras atrás/adelante, los tres botones del banner siguen a 52 px iguales a 390 px, sin scroll horizontal, y los tres gates en verde sobre 76 páginas.
+
+### 🧹 Aviso de entorno — duplicados de iCloud en `dist/`
+
+Durante la verificación, `check:consent` informó de **83 páginas** en vez de 76. No era un fallo del gate: iCloud había creado 60 ficheros `«… 2.html» / «… 2.png»` dentro de `dist/` (el proyecto vive en `~/Documents`, sincronizado). El gate hizo bien en contarlos —**todo lo que está en `dist/` es lo que sube el rsync**—, pero enturbian la evidencia. Se resolvió con `rm -rf dist && pnpm build`. **Si un recuento no cuadra, mira esto antes de sospechar del código.** No afecta a producción: los despliegues construyen en un runner limpio de GitHub.
+
+### ⏳ Pendientes de este sprint
+
+1. Verificación en **staging** y autorización de Víctor para producción.
+2. `check:consent` **sigue sin estar en CI** — no se tocó, sigue bloqueado por el check de paridad `main`↔`redesign`. Sigue siendo la tarea nº 4 del siguiente sprint.
+3. El texto de `politica-cookies.astro` **no se ha tocado**: la categoría nueva está documentada en `docs/audits/legal-pendiente-revision.md` (punto 11) para que la corrija la asesoría junto con lo demás.
+
+---
+
 ## 🍪 SPRINT BANNER DE COOKIES + BANDA KIT DIGITAL (13-Ago-2026)
 
 ### ✅ EN PRODUCCIÓN — run 31748165298, `redesign` → `~/httpdocs`

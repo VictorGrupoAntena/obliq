@@ -57,7 +57,7 @@ El único que ofrece es «configure su navegador para rechazar las cookies». La
 El documento no habla de aceptar, rechazar, configurar ni revocar. Hay que describir lo que ahora existe:
 
 - Tres acciones con el mismo peso: **Aceptar · Rechazar · Configurar**.
-- Granularidad por categorías (hoy: necesarias y analíticas).
+- Granularidad por categorías (desde el 14-ago-2026: necesarias, analíticas y **mapas** — ver el punto 11).
 - **Revocación permanente** desde «Preferencias de cookies», en el pie de todas las páginas.
 - **Vigencia del consentimiento: 24 meses.** Pasado ese plazo se vuelve a preguntar.
 - La decisión se guarda en el navegador del usuario (`localStorage`, clave `obliq-consent`), **no en una cookie de terceros**. Nada del consentimiento sale del dispositivo.
@@ -90,6 +90,22 @@ En las tres páginas legales.
 ### 10. La política de privacidad no menciona la analítica
 
 Su finalidad declarada se limita a «los formularios de contacto». El tratamiento analítico vía Google Analytics —que ocurre en todas las páginas, cuando hay consentimiento— no está declarado ni tiene base jurídica asignada. También le faltan: destinatarios, transferencias internacionales y el derecho a reclamar ante la AEPD.
+
+### 11. Mapa de Google en /contacto/ — categoría nueva sin declarar (14-ago-2026)
+
+Añadido en el sprint del mapa. Hasta esa fecha el hueco de `/contacto/` era un rectángulo gris sin conectar; ahora hay un mapa de Google Maps que **carga únicamente con consentimiento**, bajo una categoría propia.
+
+Lo que la política tiene que recoger:
+
+- **Categoría «Mapas»**, independiente de la de analíticas. Aceptar una no concede la otra, en ninguna de las dos direcciones (verificado).
+- **Destinatario: Google Ireland Ltd.**, el mismo que ya habría que declarar por Analytics (punto 5). Y la **transferencia internacional** a Estados Unidos, con su marco de amparo.
+- **Sin consentimiento no se carga nada**: no hay iframe, no hay petición a ningún dominio de Google, y en su lugar se muestran la dirección y un enlace para abrir Maps en una pestaña nueva. Ese enlace no instala nada hasta que el usuario lo pulsa, y al pulsarlo ya está en el sitio de Google.
+- **Al revocar, el iframe se elimina del DOM** —no se oculta— y cesan las peticiones.
+- **Cookies concretas a declarar: medidas, no supuestas.** En la verificación con perfil limpio (Chromium, build real), el embed **no escribió ninguna cookie**: ni al cargar, ni tras arrastrar y hacer zoom sobre el mapa. Se comprobó contra un control —con analíticas aceptadas sí aparecían `_ga` y `_ga_896V9YZVME`—, así que el cero no es un fallo de medición.
+
+  ⚠️ **Matiz que la asesoría debe conocer, porque condiciona cómo se redacta.** Ese cero es el comportamiento observado, no una garantía que el sitio pueda dar. Las cookies que Google pusiera desde dentro del iframe serían de **otro dominio** (`google.com`), y el JavaScript de obliqproductions.com **no puede borrarlas** — a diferencia de `_ga`, que es de primera parte y sí se barre al revocar. Si Google cambia ese comportamiento, la web seguiría cumpliendo la obligación de **consentimiento previo**, que es lo que exige el art. 22.2 LSSI, pero no podría prometer un borrado retroactivo. Conviene que el texto no afirme lo segundo.
+- **Vigencia y revocación**: las mismas que el resto, 24 meses y «Preferencias de cookies» en el pie. Además, el propio bloque del mapa incluye un enlace que abre el panel.
+- **Los consentimientos anteriores quedaron invalidados** al añadir la categoría (esquema `v1` → `v2`): quien ya había decidido volvió a ver el banner una vez. Es deliberado — una decisión tomada sobre un panel de dos categorías no dice nada sobre una tercera que no existía.
 
 ---
 

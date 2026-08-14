@@ -109,14 +109,33 @@ const btn =
     {/* Añadir una categoría = duplicar este bloque + una clave en `categories`
         + subir CONSENT_SCHEMA en src/data/analytics.ts (para que los
         consentimientos ya dados, que nada dicen de la categoría nueva, se
-        vuelvan a pedir). */}
-    <div class="border border-border p-4 mb-8 flex items-start justify-between gap-4">
+        vuelvan a pedir). Se hizo con «Mapas» el 14-ago-2026 (esquema v2). */}
+    <div class="border border-border p-4 mb-4 flex items-start justify-between gap-4">
       <div>
         <label for="consent-analytics" class="text-[14px] font-semibold mb-1 block cursor-pointer">{c.ANALYTICS_TITLE}</label>
         <p class="text-dim text-[13px] font-light">{c.ANALYTICS_TEXT}</p>
       </div>
       <input
         id="consent-analytics"
+        type="checkbox"
+        style="accent-color:#fff"
+        class="w-6 h-6 shrink-0 cursor-pointer"
+      />
+    </div>
+
+    {/* Categoría PROPIA para el mapa, no una genérica de «contenido de
+        terceros». El consentimiento tiene que ser específico e informado: una
+        categoría paraguas haría que aceptar hoy autorizase de paso un embed que
+        todavía no existe, y eso no es consentimiento sobre nada. El coste
+        —volver a preguntar cuando se añada otro tercero— es el comportamiento
+        correcto, no un inconveniente. */}
+    <div class="border border-border p-4 mb-8 flex items-start justify-between gap-4">
+      <div>
+        <label for="consent-maps" class="text-[14px] font-semibold mb-1 block cursor-pointer">{c.MAPS_TITLE}</label>
+        <p class="text-dim text-[13px] font-light">{c.MAPS_TEXT}</p>
+      </div>
+      <input
+        id="consent-maps"
         type="checkbox"
         style="accent-color:#fff"
         class="w-6 h-6 shrink-0 cursor-pointer"
@@ -153,7 +172,8 @@ const btn =
     const banner = document.getElementById('cookie-banner');
     const panel = document.getElementById('cookie-panel') as HTMLDialogElement | null;
     const analytics = document.getElementById('consent-analytics') as HTMLInputElement | null;
-    if (!banner || !panel || !analytics) return;
+    const maps = document.getElementById('consent-maps') as HTMLInputElement | null;
+    if (!banner || !panel || !analytics || !maps) return;
 
     // Repone la clase que el swap de View Transitions borra de <html>. La
     // visibilidad se deriva SIEMPRE de api.read(), nunca de una variable en
@@ -161,8 +181,12 @@ const btn =
     // swap, ni en recarga dura, ni en atrás/adelante.
     document.documentElement.classList.toggle('obliq-consent-pending', api.read() === null);
 
+    // El tipo es ObliqConsentCategories y NO un literal escrito aquí: con un
+    // literal inline, añadir una categoría dejaba esta firma corta sin que el
+    // compilador dijera nada. Ahora el contrato está en un sitio (env.d.ts) y
+    // olvidarse de una clave es un error de tipos.
     const decide = (
-      categories: { analytics: boolean },
+      categories: ObliqConsentCategories,
       action: 'accept' | 'reject' | 'custom',
     ) => {
       api.save(categories, action); // persiste + consent update + oculta el banner
@@ -170,7 +194,9 @@ const btn =
     };
 
     const openPanel = () => {
-      analytics.checked = !!api.read()?.categories.analytics;
+      const stored = api.read();
+      analytics.checked = !!stored?.categories.analytics;
+      maps.checked = !!stored?.categories.maps;
       panel.showModal();
     };
 
@@ -179,11 +205,11 @@ const btn =
         button.addEventListener('click', () => {
           switch (button.dataset.consentAction) {
             case 'accept':
-              return decide({ analytics: true }, 'accept');
+              return decide({ analytics: true, maps: true }, 'accept');
             case 'reject':
-              return decide({ analytics: false }, 'reject');
+              return decide({ analytics: false, maps: false }, 'reject');
             case 'save':
-              return decide({ analytics: analytics.checked }, 'custom');
+              return decide({ analytics: analytics.checked, maps: maps.checked }, 'custom');
             case 'settings':
               return openPanel();
             case 'close':

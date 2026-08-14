@@ -16,6 +16,14 @@ export interface BusinessContact {
   streetAddress?: string;
   postalCode?: string;
   addressLocality?: string;
+  /**
+   * URL canónica de la ubicación en Google Maps. Se construye con
+   * `mapsLinkUrl()` (src/lib/maps.ts) a partir de la MISMA dirección que
+   * alimenta el PostalAddress de aquí abajo y el mapa de /contacto/, para que
+   * las tres no puedan divergir. Es la URL de la ficha, no la del incrustado:
+   * `hasMap` es un dato, no una carga de terceros, y no instala nada.
+   */
+  hasMap?: string;
 }
 
 export function localBusinessSchema(contact: BusinessContact = {}) {
@@ -44,6 +52,7 @@ export function localBusinessSchema(contact: BusinessContact = {}) {
       latitude: 39.4699,
       longitude: -0.3763,
     },
+    ...(contact.hasMap ? { hasMap: contact.hasMap } : {}),
     sameAs: [
       'https://www.instagram.com/obliqproductions/',
       'https://www.tiktok.com/@obliqproductions',

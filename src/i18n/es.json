@@ -77,7 +77,7 @@
   "COOKIES": {
     "BANNER_ARIA": "Aviso de cookies",
     "BANNER_TITLE": "Cookies",
-    "BANNER_TEXT": "Usamos cookies analíticas para saber cómo se usa la web. No se activan hasta que las aceptas y puedes cambiar tu decisión cuando quieras.",
+    "BANNER_TEXT": "Usamos cookies analíticas para saber cómo se usa la web, y un mapa de Google en la página de contacto. Nada de esto se carga hasta que lo aceptas, y puedes cambiar tu decisión cuando quieras.",
     "POLICY_LINK": "Ver política de cookies",
     "ACCEPT": "Aceptar",
     "REJECT": "Rechazar",
@@ -91,6 +91,8 @@
     "ESSENTIAL_ALWAYS": "Siempre activas",
     "ANALYTICS_TITLE": "Analíticas",
     "ANALYTICS_TEXT": "Google Analytics. Mide de forma agregada qué páginas se visitan y desde dónde. Cookies de Google con una duración de 24 meses.",
+    "MAPS_TITLE": "Mapas",
+    "MAPS_TEXT": "Mapa de Google Maps con nuestra ubicación, en la página de contacto. Al activarlo, Google Ireland Ltd. puede instalar sus propias cookies desde google.com. Si lo dejas desactivado verás la dirección y un enlace para abrir el mapa en Google.",
     "REVOKE": "Preferencias de cookies"
   },
   "CTA": {
@@ -288,6 +290,11 @@
     "SUCCESS_MESSAGE": "Gracias por escribirnos. Te responderemos lo antes posible.",
     "SUCCESS_BACK": "VOLVER AL INICIO",
     "ERROR": "No se pudo enviar el mensaje. Inténtalo de nuevo más tarde.",
-    "SIMULATED": "Envío simulado — en producción se enviará el mensaje por email."
+    "SIMULATED": "Envío simulado — en producción se enviará el mensaje por email.",
+    "MAP_SECTION_ARIA": "Ubicación",
+    "MAP_IFRAME_TITLE": "Mapa con la ubicación de Obliq Productions en Valencia",
+    "MAP_OPEN": "Ver en Google Maps",
+    "MAP_CONSENT_NOTICE": "El mapa no se carga hasta que aceptas las cookies de mapas.",
+    "MAP_CONSENT_LINK": "Cambiar preferencias"
   }
 }

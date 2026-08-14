@@ -17,6 +17,7 @@ import {
 import { getLocale } from '@/lib/i18n';
 import { translatePath } from '@/lib/routes';
 import { localBusinessSchema } from '@/lib/schema';
+import { mapsLinkUrl } from '@/lib/maps';
 import { getSiteContactAsync } from '@/data/site';
 import { ClientRouter } from 'astro:transitions';
 
@@ -191,6 +192,12 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
           try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
           apply(d);
           document.documentElement.classList.remove('obliq-consent-pending');
+          // Para los consumidores que NO viven aquí. `apply()` resuelve GA, que
+          // se carga desde este mismo script; el mapa de /contacto/ no puede
+          // —esto es global a las 76 páginas y no sabe en cuál está—, así que
+          // se entera por el evento. Solo en save(): al arrancar, el componente
+          // aún no ha bindeado nada y lee el estado con read() directamente.
+          document.dispatchEvent(new CustomEvent('obliq:consent', { detail: d }));
           return d;
         }
 
@@ -222,6 +229,7 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
       streetAddress: contact.addressStreet,
       postalCode: contact.addressPostal,
       addressLocality: contact.addressCity,
+      hasMap: mapsLinkUrl(contact.address),
     }))} />
     {schema && (
       <script type="application/ld+json" set:html={JSON.stringify(schema)} />

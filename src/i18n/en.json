@@ -77,7 +77,7 @@
   "COOKIES": {
     "BANNER_ARIA": "Cookie notice",
     "BANNER_TITLE": "Cookies",
-    "BANNER_TEXT": "We use analytics cookies to understand how the site is used. They stay off until you accept, and you can change your choice at any time.",
+    "BANNER_TEXT": "We use analytics cookies to understand how the site is used, and a Google map on the contact page. None of it loads until you accept, and you can change your choice at any time.",
     "POLICY_LINK": "See cookie policy",
     "ACCEPT": "Accept",
     "REJECT": "Reject",
@@ -91,6 +91,8 @@
     "ESSENTIAL_ALWAYS": "Always on",
     "ANALYTICS_TITLE": "Analytics",
     "ANALYTICS_TEXT": "Google Analytics. Measures in aggregate which pages are visited and from where. Google cookies lasting 24 months.",
+    "MAPS_TITLE": "Maps",
+    "MAPS_TEXT": "A Google Maps map showing our location, on the contact page. If you turn it on, Google Ireland Ltd. may set its own cookies from google.com. If you leave it off, you will see the address and a link to open the map on Google.",
     "REVOKE": "Cookie preferences"
   },
   "CTA": {
@@ -288,6 +290,11 @@
     "SUCCESS_MESSAGE": "Thanks for reaching out. We'll get back to you as soon as possible.",
     "SUCCESS_BACK": "BACK TO HOME",
     "ERROR": "Could not send the message. Please try again later.",
-    "SIMULATED": "Simulated submission — in production the message will be sent by email."
+    "SIMULATED": "Simulated submission — in production the message will be sent by email.",
+    "MAP_SECTION_ARIA": "Location",
+    "MAP_IFRAME_TITLE": "Map showing the location of Obliq Productions in Valencia",
+    "MAP_OPEN": "View on Google Maps",
+    "MAP_CONSENT_NOTICE": "The map does not load until you accept map cookies.",
+    "MAP_CONSENT_LINK": "Change preferences"
   }
 }

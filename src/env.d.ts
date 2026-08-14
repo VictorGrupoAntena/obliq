@@ -9,6 +9,13 @@
 
 interface ObliqConsentCategories {
   analytics: boolean;
+  /**
+   * Contenido incrustado de Google Maps. Categoría propia y no una genérica de
+   * «terceros»: el consentimiento tiene que ser específico, así que un embed
+   * distinto que se añada mañana exigirá su propia categoría y su propia
+   * subida de CONSENT_SCHEMA. Vimeo queda fuera del CMP (usa dnt=1).
+   */
+  maps: boolean;
 }
 
 interface ObliqConsentRecord {
@@ -32,12 +39,33 @@ interface ObliqConsentApi {
 }
 
 declare global {
+  /**
+   * Evento que `save()` emite sobre `document` tras aplicar una decisión, con
+   * el registro recién guardado en `detail`.
+   *
+   * Existe porque el consumidor de una categoría puede no vivir en el <head>.
+   * GA no lo necesitaba: se carga desde `apply()`, dentro del propio bootstrap.
+   * El mapa sí — solo existe en /contacto/, y el bootstrap del <head> NO PUEDE
+   * saber en qué página está (Astro deduplica los is:inline por textContent;
+   * ver el comentario largo de BaseLayout.astro). Así que la lógica vive en el
+   * componente y este evento es cómo se entera de que el usuario ha decidido
+   * sin recargar la página.
+   *
+   * Declarado en DocumentEventMap para que el listener venga tipado y no haga
+   * falta un `as` en el `detail` (Protocolo Anti-Atajo).
+   */
+  interface DocumentEventMap {
+    'obliq:consent': CustomEvent<ObliqConsentRecord>;
+  }
+
   interface Window {
     __obliqConsent?: ObliqConsentApi;
     /** Guard para no duplicar el listener de astro:after-swap. */
     __obliqCmpBound?: boolean;
     /** Guard para no inyectar gtag.js dos veces. */
     __obliqGaLoaded?: boolean;
+    /** Guard para no duplicar los listeners del mapa de /contacto/. */
+    __obliqMapBound?: boolean;
   }
 }
 

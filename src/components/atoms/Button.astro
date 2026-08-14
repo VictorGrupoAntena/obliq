@@ -4,9 +4,12 @@ interface Props {
   href?: string;
   size?: 'default' | 'small';
   class?: string;
+  /** Solo con `href`. Para enlaces externos: `_blank` + rel. */
+  target?: string;
+  rel?: string;
 }
 
-const { variant = 'primary', href, size = 'default', class: className } = Astro.props;
+const { variant = 'primary', href, size = 'default', class: className, target, rel } = Astro.props;
 const Tag = href ? 'a' : 'button';
 
 const baseClasses = 'inline-flex items-center gap-3 uppercase font-semibold tracking-[3px] transition-all cursor-pointer group';
@@ -26,6 +29,8 @@ const variantClasses = {
 
 <Tag
   href={href}
+  target={target}
+  rel={rel}
   class:list={[
     baseClasses,
     sizeClasses[size],

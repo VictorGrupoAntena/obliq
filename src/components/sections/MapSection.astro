@@ -1,0 +1,162 @@
+---
+/**
+ * Mapa de la ubicación, condicionado al consentimiento de la categoría `maps`.
+ *
+ * QUÉ SUSTITUYE. Hasta agosto de 2026 aquí había un rectángulo gris con el
+ * texto «Google Maps — Valencia», duplicado a mano en las dos páginas de
+ * contacto. Nunca se conectó.
+ *
+ * POR QUÉ NO ES UN IFRAME A SECAS. El sitio acaba de estrenar un CMP que impide
+ * que GA cargue sin consentimiento; un iframe de Maps incondicional instalaría
+ * cookies de Google saltándose ese mismo banner. Así que el iframe se monta y se
+ * desmonta según `categories.maps`, y sin consentimiento se sirve un bloque útil
+ * —dirección real y enlace a Maps— en lugar del hueco gris.
+ *
+ * DE DÓNDE SALE LA DIRECCIÓN. De `contact`, que viene de WordPress vía
+ * src/data/site.ts. Es la MISMA cadena que alimenta el JSON-LD PostalAddress y
+ * el bloque de información de la página, así que no puede divergir. La URL se
+ * construye en src/lib/maps.ts.
+ *
+ * EL MARCADO SERVIDO ES EL BLOQUE SIN CONSENTIMIENTO. Es lo que ven un visitante
+ * que no ha decidido, un visitante que ha rechazado, y un rastreador. El iframe
+ * solo existe en el DOM cuando hay un sí.
+ */
+import Button from '@/components/atoms/Button.astro';
+import { t } from '@/lib/i18n';
+import { mapsEmbedUrl, mapsLinkUrl } from '@/lib/maps';
+import type { SiteContact } from '@/data/site';
+
+interface Props {
+  locale: string;
+  contact: SiteContact;
+}
+
+const { locale, contact } = Astro.props;
+const c = t(locale).CONTACT_PAGE;
+---
+
+{/* `data-map-url` y NO `data-map-src`. Con un atributo acabado en `-src`, el
+    valor renderizado contendría la subcadena `src="https://www.google.com/maps`
+    y scripts/check-consent.mjs —que busca justamente eso para detectar cargas
+    estáticas de terceros— fallaría contra su propio gate. El nombre del
+    atributo es funcional, no decorativo: no lo renombres a `-src`.
+
+    `min-h` y no `h` fijo: en desktop mantiene los 400 px del hueco de siempre,
+    pero en móvil el bloque de dirección puede crecer sin desbordar la caja. */}
+<section
+  id="map-embed"
+  aria-label={c.MAP_SECTION_ARIA}
+  data-map-url={mapsEmbedUrl(contact.address, locale)}
+  data-map-title={c.MAP_IFRAME_TITLE}
+  class="bg-surface-light min-h-[400px] md:h-[400px] flex items-stretch"
+>
+  {/* El botón de preferencias va en el HTML SERVIDO, no inyectado por JS:
+      initCookieConsent() hace su querySelectorAll('[data-cookie-prefs]') una
+      sola vez por ejecución, así que un botón creado después no quedaría
+      enganchado y no abriría nada. */}
+  <div
+    id="map-fallback"
+    class="flex-1 flex flex-col items-center justify-center gap-5 px-4 py-12 text-center"
+  >
+    {/* <address> y no un <p>: la dirección queda marcada semánticamente y un
+        lector de pantalla la anuncia como tal. `not-italic` porque los
+        navegadores la ponen en cursiva por defecto. */}
+    {/* Dos <span class="block"> y no un <br>: con <br> el textContent queda
+        «…bajo 346008 Valencia», sin separación entre el número de la calle y el
+        código postal. Se ve bien en pantalla, pero al copiar la dirección —o al
+        extraerla cualquier herramienta que lea texto— sale pegada. */}
+    <address class="not-italic text-[18px] leading-relaxed text-black">
+      <span class="block">{contact.addressStreet}</span>
+      <span class="block">{contact.addressPostal} {contact.addressCity}</span>
+    </address>
+
+    <Button
+      variant="dark"
+      href={mapsLinkUrl(contact.address)}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {c.MAP_OPEN}<span class="sr-only"> ({locale === 'en' ? 'opens in a new tab' : 'se abre en una pestaña nueva'})</span>
+    </Button>
+
+    <p class="text-[13px] text-muted max-w-[46ch]">
+      {c.MAP_CONSENT_NOTICE}{' '}
+      <button
+        type="button"
+        data-cookie-prefs
+        class="underline underline-offset-4 hover:text-black transition-colors cursor-pointer"
+      >{c.MAP_CONSENT_LINK}</button>
+    </p>
+  </div>
+</section>
+
+<style>
+  /* El atributo `hidden` NO basta por sí solo: `[hidden]{display:none}` del
+     preflight y la utilidad `.flex` del bloque tienen la misma especificidad
+     (0-1-0), y gana la que venga después en la hoja — que es la utilidad. El
+     fallback se quedaría visible DEBAJO del mapa. Esta regla lleva el sufijo
+     de ámbito que añade Astro, así que sube de especificidad y decide sin
+     depender del orden de las capas de Tailwind. */
+  #map-fallback[hidden] { display: none; }
+</style>
+
+<script>
+  function initMapEmbed() {
+    const section = document.getElementById('map-embed');
+    const fallback = document.getElementById('map-fallback');
+    if (!section || !fallback) return; // no estamos en /contacto/
+
+    const url = section.dataset.mapUrl;
+    const title = section.dataset.mapTitle;
+    if (!url || !title) return;
+
+    const mount = () => {
+      // La idempotencia se comprueba MIRANDO EL DOM, no con un guard de tipo
+      // `window.__obliqMapLoaded`. El guard de gtag.js (__obliqGaLoaded) nunca
+      // se resetea, y para un script que solo hay que cargar una vez eso está
+      // bien; aquí sería un bug: tras revocar y volver a aceptar en la misma
+      // pestaña, el mapa no volvería a montarse nunca.
+      if (section.querySelector('iframe')) return;
+
+      const iframe = document.createElement('iframe');
+      iframe.src = url;
+      iframe.title = title;
+      iframe.loading = 'lazy';
+      iframe.referrerPolicy = 'no-referrer-when-downgrade';
+      iframe.allowFullscreen = true;
+      iframe.className = 'flex-1 self-stretch min-h-[400px] border-0 block';
+
+      fallback.hidden = true;
+      section.appendChild(iframe);
+    };
+
+    const unmount = () => {
+      // Quitar el iframe del DOM, no solo ocultarlo: un iframe oculto sigue
+      // cargado y sigue siendo un contexto de Google vivo dentro de la página.
+      section.querySelector('iframe')?.remove();
+      fallback.hidden = false;
+    };
+
+    const sync = () => {
+      if (window.__obliqConsent?.read()?.categories.maps) mount();
+      else unmount();
+    };
+
+    sync();
+  }
+
+  // Al arrancar se lee el estado directamente: el bootstrap del <head> ya ha
+  // corrido, y las navegaciones internas del sitio son recargas completas
+  // (TransitionMask mata al ClientRouter), así que «acepté en la home y llego a
+  // contacto» queda cubierto sin ningún evento.
+  initMapEmbed();
+
+  // El evento cubre el otro caso, que es el más probable: el usuario ya está en
+  // /contacto/ —viendo el bloque con el botón de preferencias— y decide ahí
+  // mismo. El mapa aparece o desaparece sin recargar.
+  if (!window.__obliqMapBound) {
+    window.__obliqMapBound = true;
+    document.addEventListener('obliq:consent', () => initMapEmbed());
+    document.addEventListener('astro:after-swap', () => initMapEmbed());
+  }
+</script>

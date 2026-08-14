@@ -31,8 +31,17 @@ export const CONSENT_KEY = 'obliq-consent';
  * consentimientos anteriores y vuelve a preguntar: es el mecanismo para cuando
  * se añada una categoría nueva (un consentimiento dado sobre dos categorías no
  * dice nada sobre una tercera que no existía).
+ *
+ * La comparación en read() es por igualdad estricta, no por «menor que»: no hay
+ * migración de esquemas, es todo o nada. A propósito — migrar un consentimiento
+ * es inventarse lo que el usuario habría dicho sobre algo que no se le enseñó.
+ *
+ *   v2 — categoría «maps» (mapa de Google en /contacto/, 14-ago-2026). Quien ya
+ *        había aceptado o rechazado lo hizo sobre un panel donde los mapas no
+ *        existían, así que su decisión no dice nada sobre ellos. Consecuencia
+ *        asumida y esperada: TODO el mundo vuelve a ver el banner una vez.
  */
-export const CONSENT_SCHEMA = 1;
+export const CONSENT_SCHEMA = 2;
 
 /** 24 meses — máximo de vigencia del consentimiento según la guía de la AEPD. */
 export const CONSENT_MAX_AGE_MS = 730 * 24 * 60 * 60 * 1000;

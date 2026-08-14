@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HeroSection from '@/components/sections/HeroSection.astro';
+import MapSection from '@/components/sections/MapSection.astro';
 import Heading from '@/components/atoms/Heading.astro';
 import { t, localizedUrl } from '@/lib/i18n';
 import { getSiteContactAsync } from '@/data/site';
@@ -133,9 +134,8 @@ const serviceOptions = (await getServicesAsync()).map((s) => s.name.en);
     </div>
   </section>
 
-  <section class="bg-[#E8E8E8] h-[400px] flex items-center justify-center">
-    <p class="text-muted text-[14px] uppercase tracking-[2px]">Google Maps — Valencia</p>
-  </section>
+  <!-- Mapa — carga solo con consentimiento de la categoría `maps` -->
+  <MapSection locale={locale} contact={info} />
 </BaseLayout>
 
 <script>
