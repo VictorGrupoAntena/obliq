@@ -63,7 +63,16 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
 
     <title>{fullTitle}</title>
     {description && <meta name="description" content={description} />}
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {/*
+      noindex + FOLLOW, no nofollow. Estas páginas (las legales) no deben
+      aparecer en los resultados, pero sí deben repartir el enlazado que
+      reciben del pie: con `nofollow` el rastreador entra, lee y no sigue
+      ninguno de sus enlaces, que apuntan de vuelta al sitio. `follow` es la
+      pareja correcta de `noindex` para una página de servicio interno.
+      Van además EXCLUIDAS del sitemap (scripts/build-sitemap.mjs): enviar una
+      URL noindex es contradictorio y Search Console lo reporta como aviso.
+    */}
+    {noindex && <meta name="robots" content="noindex, follow" />}
 
     <link rel="canonical" href={canonicalUrl} />
     {altPath && (
