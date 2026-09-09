@@ -75,14 +75,17 @@ fecharla con el commit la haría mentir en cuanto la ventana se abriera otro dí
    red que queda. **No ablandarla.** El «no copies el patrón de `operator.ts`» de la fase 4 se
    refiere a los campos nuevos, no autoriza a tocar esa guarda.
 
-**Siguiente:** fase 2 — página de servicios editable (entrada `_obliq_key='servicios'`, prefijo
-`sp_`, 14 campos, seed **v5**) + contrato del título en `BaseLayout` + los **4 títulos con la marca
-duplicada** (`ABOUT_PAGE.TITLE` y `CONTACT_PAGE.TITLE` en `es.json`/`en.json`), que viajan con
-excepción **declarada** al criterio byte a byte.
+**Siguiente:** fase 2 ✅ desplegada el 9-sep-2026 — ver la sección siguiente.
 
 ---
 
-## 🧪 FASE 2 — Verificación previa a la ventana (G2 aprobado, 9-Sep-2026)
+## 🛠️ FASE 2 — Página de servicios editable + títulos sin marca duplicada ✅ EN PRODUCCIÓN (9-Sep-2026)
+
+Cierra la **petición 2 del cliente**: la página que lista los servicios no aparecía en «Contenido
+de páginas» y ahora sí, con 14 campos `sp_`. Y de paso los **4 títulos que llevaban la marca dos
+veces**, que viajaban con excepción declarada al criterio byte a byte.
+
+### El diff se produjo ANTES de la ventana, no después
 
 El diff byte a byte de la fase 2 se produjo y se revisó **antes** de la ventana, no después:
 después del `rsync` ya no sería una verificación, sería un parte de daños. Resultado: **72 páginas
@@ -105,6 +108,53 @@ Lo que queda como regla: **un doble build de control del mismo código mide el r
 creerse ninguna diferencia**, y **todo simulador se contrasta contra el sistema real antes de
 usarlo como patrón de medida**. Un banco de pruebas sin calibrar no es un banco de pruebas.
 
+### Qué cambió
+
+- **Entrada `servicios` en el CPT `contenido`** (`id=117`, `_obliq_key='servicios'`), con **14
+  campos `sp_`** y **seed v5**. Los 14 nacen **con valor**, no vacíos: el cliente encuentra la
+  pantalla escrita, no en blanco.
+- **`BaseLayout` acepta `seoTitle`** y, cuando viene, lo usa **TAL CUAL** sin componerle nada. Es
+  lo que hace que el cliente vea en Google exactamente lo que escribe. Sin valor, mantiene la
+  composición de siempre (`title` + ` | Obliq Productions`).
+- **`src/data/services-page.ts`**: facade con fallback **campo a campo** a `src/i18n`, patrón de
+  `about.ts`. Nunca rompe el build.
+- **Los 4 títulos con la marca duplicada** pasan a llevarla una sola vez.
+
+### Evidencia de la ventana (9-sep, 06:20-07:28 UTC · commit `9efcb62`)
+
+| | |
+|---|---|
+| Copia previa | `mu-plugins/obliq-cpts.php.bak.pre-fase2` · `7cf0571d…` (= el subido en la fase 1: **cero deriva**) · también en `~/Backups/obliq/fase2/` |
+| Fichero subido | `c866353e3698ea9229b02024e17e4eef64426f2ddbe0472367332d8be0087844` · versión **`2026.09.09`** |
+| Seeds antes → después | `obliq_contenido_seeded` **4 → 5** · `obliq_servicio_seeded` 1 (sin tocar) |
+| REST antes → después | 4 → **5** entradas · 92 → **106** editables · 2 solo lectura · 94 → **108** total · **14/14** `sp_` con valor → **`FASE 2 APLICADA`** |
+| Los 14 sembrados | **14/14 idénticos a `src/i18n` carácter por carácter** — por eso `/servicios/` se reconstruyó byte a byte |
+| Commit | `9efcb62`, **13 ficheros**, push `d5ef91d..9efcb62` a `redesign`. `main` intacta (`767dca1`) |
+| Gate 13b | rango = **1 commit**, el nuestro, coincidiendo con el local |
+| Run | **34323813425**, `repository_dispatch`, **success**, **34 s**. Gates 6 y 8 en verde antes del `rsync` |
+| Producción | **76/76 páginas idénticas al build verificado.** Las 4 esperadas con sus 12 etiquetas cambiadas, `/servicios/` sin mover |
+
+### 🔑 Tres cosas que aprendimos y que volverán a morder
+
+1. **iCloud se come `.git`.** `git diff` colgado sin una sola traza: **654 de 1.013 objetos sueltos
+   marcados `dataless`** —existen, declaran tamaño, no tienen contenido—, y el `.pack` de 41 MB
+   igual. `git status` y `git log` iban rápidos porque leen el índice; en cuanto algo tenía que
+   leer un *blob* evictado, el proceso esperaba una descarga que no llegaba. **Un `commit` o un
+   `push` habría hecho lo mismo.** Se materializa con `brctl download` **fichero a fichero** (sobre
+   el directorio NO recursa) más una lectura forzada. **Es un parche:** mientras el proyecto viva
+   en `~/Documents` sincronizado, volverá a pasar. El mismo origen produjo
+   `.git/refs/heads/redesign 2` —un duplicado con espacio en el nombre— que **rompe `git fetch` y
+   no rompe `git push`**. Ver `docs/guides/fase2-ventana.md`.
+2. **El `headSha` de un run NO es el de la rama que construye.** Los tres últimos runs con éxito
+   declaran `767dca17`, que es la punta de **`main`**: GitHub sella los `repository_dispatch` con
+   el SHA de la rama por defecto mientras el workflow hace `checkout` con `ref: redesign`. El
+   comando del gate 13b de `fase1-rollback.md` comparaba contra la rama equivocada. **Corregido:
+   se pregunta la punta con `gh api`**, que además esquiva los refs locales rotos.
+3. **`ssh $USUARIO@$HOST` no basta: la clave la trae el alias.** `~/.ssh/config` define
+   `Host obliq-plesk` con `IdentityFile ~/.ssh/id_ed25519_obliq` e `IdentitiesOnly yes`. Invocando
+   usuario@host directamente se salta el alias → `Permission denied (publickey)`. **Siempre
+   `ssh obliq-plesk`.** Corregido en `fase1-rollback.md` §7.
+
 ### Dos hallazgos incidentales, fuera del alcance de la fase
 
 - **`public/favicon.svg` no está versionado en git.** No lo referencia nada —`BaseLayout` solo
@@ -112,6 +162,15 @@ usarlo como patrón de medida**. Un banco de pruebas sin calibrar no es un banco
   sondeo de navegador, no una regresión. Lo único real es que **el `public/` local y el del runner
   de CI no son el mismo**, y por eso los builds no coinciden fichero a fichero.
 - **Los nueve servicios comparten `date` y tienen `menu_order = 0`** → backlog, punto 14.
+
+### Estado de la rama al cerrar
+
+`redesign` lleva **un commit de solo documentación por delante de lo desplegado** (este bloque de
+`MEMORY.md` y los ajustes de las guías). **Es esperado y no cambia el HTML**: el gate 13b de la
+fase 3 debe encontrar exactamente ese commit y ninguno más.
+
+**Siguiente:** fase 3 — párrafo opcional bajo cada H2 (24 campos, seed **v6**). Vuelve a estar en
+pie la regla «no commit, no push» hasta que Víctor la levante para esa ventana.
 
 ---
 

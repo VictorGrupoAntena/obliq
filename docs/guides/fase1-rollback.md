@@ -275,7 +275,7 @@ Reconstruir desde el repositorio (§1, «segunda red») y subir por SSH o FTP:
 
 ```bash
 git show b75495d:scripts/obliq-cpts.php > /tmp/obliq-cpts.servidor.php
-scp /tmp/obliq-cpts.servidor.php <USUARIO>@<HOST_PLESK>:~/admin.obliqproductions.com/wp-content/mu-plugins/obliq-cpts.php
+scp /tmp/obliq-cpts.servidor.php obliq-plesk:admin.obliqproductions.com/wp-content/mu-plugins/obliq-cpts.php
 ```
 
 ### Verificación final — solo cuando WordPress ya responde
@@ -347,10 +347,17 @@ MU=~/admin.obliqproductions.com/wp-content/mu-plugins
 WPP=~/admin.obliqproductions.com
 ```
 
+> ⚠️ **Corregido el 9-sep-2026: conéctate por el alias, no por `usuario@host`.** `~/.ssh/config`
+> define `Host obliq-plesk` con `IdentityFile ~/.ssh/id_ed25519_obliq` e `IdentitiesOnly yes`.
+> Escribir `ssh obliq-plesk` **se salta el alias y por tanto la clave**, y devuelve
+> `Permission denied (publickey…)`. Usa **`ssh obliq-plesk`** y `scp obliq-plesk:<ruta relativa>`
+> (relativa al home, sin `$HOME` entre comillas: `scp` no lo expande). Las variables de arriba
+> siguen valiendo para construir rutas.
+
 ### Paso 0 — Copia y hash, antes de tocar nada · SERVIDOR
 
 ```bash
-ssh "$USUARIO@$HOST"
+ssh obliq-plesk
 cd "$MU"
 cp -n obliq-cpts.php obliq-cpts.php.bak.pre-fase1     # -n: no pisa si ya existe
 ls -l obliq-cpts.php.bak.pre-fase1
@@ -361,7 +368,7 @@ sha256sum obliq-cpts.php obliq-cpts.php.bak.pre-fase1  # deben coincidir → ano
 
 ```bash
 mkdir -p ~/Backups/obliq/fase1
-scp "$USUARIO@$HOST:$MU/obliq-cpts.php.bak.pre-fase1" \
+scp obliq-plesk:admin.obliqproductions.com/wp-content/mu-plugins/obliq-cpts.php.bak.pre-fase1 \
     ~/Backups/obliq/fase1/obliq-cpts.php.servidor-pre-fase1
 shasum -a 256 ~/Backups/obliq/fase1/obliq-cpts.php.servidor-pre-fase1
 # Debe coincidir con el sha256sum del paso 0. Si no, PARAR.
@@ -378,8 +385,11 @@ ls -l obliq-deploy-hook.php*        # debe verse SOLO el .OFF
 ### Pasos 5-6 — Diagnóstico de los seeds · SERVIDOR
 
 ```bash
-wp option get obliq_contenido_seeded --path="$WPP"   # esperado: 4
-wp option get obliq_servicio_seeded  --path="$WPP"   # esperado: 1
+# OJO: `wp` a secas falla con /usr/bin/env: 'php': No such file or directory.
+# Hay que invocarlo con el PHP del dominio.
+PHP=/opt/plesk/php/8.3/bin/php
+$PHP /usr/local/bin/wp option get obliq_contenido_seeded --path="$WPP"   # esperado: 4
+$PHP /usr/local/bin/wp option get obliq_servicio_seeded  --path="$WPP"   # esperado: 1
 ```
 
 Si `wp` no está disponible en el servidor, **anótalo y continúa**: es diagnóstico, no
@@ -405,8 +415,8 @@ print('editables:', len(edit), '| solo lectura:', len(solo), '| version:', r.get
 ```bash
 cd "<raíz del repo>"
 shasum -a 256 scripts/obliq-cpts.php          # anotar: es el hash que debe quedar arriba
-scp scripts/obliq-cpts.php "$USUARIO@$HOST:$MU/obliq-cpts.php"
-ssh "$USUARIO@$HOST" "sha256sum $MU/obliq-cpts.php"   # debe coincidir con el de arriba
+scp scripts/obliq-cpts.php obliq-plesk:admin.obliqproductions.com/wp-content/mu-plugins/obliq-cpts.php
+ssh obliq-plesk "sha256sum $MU/obliq-cpts.php"   # debe coincidir con el de arriba
 ```
 
 ### Pasos 9-11 — Comprobar que WordPress vive y el estado DESPUÉS
@@ -473,8 +483,8 @@ cambiar nada. En ~90 s debe aparecer en GitHub → Actions un run **disparado po
 
 ```bash
 # Si el deploy no está autorizado todavía, cancelar el dispatch antes de que expire:
-ssh "$USUARIO@$HOST" "wp cron event list --path=$WPP | grep obliq_deploy_dispatch"
-ssh "$USUARIO@$HOST" "wp cron event delete obliq_deploy_dispatch --path=$WPP"
+ssh obliq-plesk "wp cron event list --path=$WPP | grep obliq_deploy_dispatch"
+ssh obliq-plesk "wp cron event delete obliq_deploy_dispatch --path=$WPP"
 ```
 
 **Si no aparece ningún run por `repository_dispatch`:** el hook quedó muerto. No es un
