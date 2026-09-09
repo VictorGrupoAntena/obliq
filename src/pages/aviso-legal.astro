@@ -1,8 +1,48 @@
 ---
+/**
+ * Aviso legal — datos del art. 10 LSSI.
+ *
+ * ⚠️ TEXTO JURÍDICO — PENDIENTE DE VALIDACIÓN POR LA ASESORÍA.
+ *
+ * Ni la denominación, ni el domicilio social, ni los datos registrales se
+ * escriben aquí: salen de `src/data/legal-entity.ts`, que es la fuente única.
+ *
+ * Tres criterios que conviene no deshacer sin pensarlo:
+ *
+ * 1. **La lista de identificación usa la denominación registral; la prosa usa la
+ *    marca.** El art. 10 exige identificar al prestador, y ese requisito se
+ *    cumple en la lista. En los párrafos de propiedad intelectual y de
+ *    responsabilidad se hablaba de la sociedad por su razón social sin
+ *    necesidad: ahí lo natural es la marca.
+ * 2. **«Domicilio social», no «Domicilio».** Es el registral, y desde ahora es un
+ *    dato distinto de la dirección de contacto que el cliente edita en wp-admin.
+ * 3. **La línea de datos registrales se OMITE mientras no haya datos**, no se
+ *    imprime como hueco marcado. Ver la explicación en `legal-entity.ts`: esa
+ *    línea nunca ha estado publicada, así que omitirla mantiene el estado actual,
+ *    mientras que un «[pendiente]» convertiría una ausencia que hoy no ve nadie
+ *    en una declaración pública de trabajo a medias. El Titular y el Domicilio
+ *    social son distintos: **sí estaban publicados** —y mal—, así que ahí una
+ *    laguna marcada sería preferible a callar. Hoy los dos traen valor.
+ *
+ * ⚠️ El correo y el teléfono NO se escriben aquí: salen de WordPress
+ * (`ct_email` / `ct_phone`) a través de `getSiteContactAsync()`. Son datos de
+ * contacto que el cliente edita en wp-admin, igual que la dirección de
+ * /contacto/, y tenerlos a mano en las páginas legales los condenaba a
+ * desincronizarse. Si WordPress no responde, `site.ts` cae a sus constantes y la
+ * página sale igual: el fallback es campo a campo y nunca rompe el build.
+ */
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Heading from '@/components/atoms/Heading.astro';
+import {
+  LEGAL_ENTITY,
+  orPending,
+  registeredOfficeLine,
+  registryEntryLine,
+} from '@/data/legal-entity';
+import { getSiteContactAsync } from '@/data/site';
 
 const locale = 'es';
+const contacto = await getSiteContactAsync(locale);
 ---
 
 <BaseLayout title="Aviso Legal" locale={locale} noindex={true} pageColor="white">
@@ -11,16 +51,19 @@ const locale = 'es';
     <div class="prose prose-lg text-muted space-y-6 text-[16px] font-light leading-relaxed">
       <p>En cumplimiento con el deber de información dispuesto en la Ley 34/2002 de Servicios de la Sociedad de la Información y el Comercio Electrónico (LSSI-CE), se facilitan los siguientes datos:</p>
       <ul class="list-disc pl-6 space-y-2">
-        <li><strong class="text-black">Titular:</strong> Obliq Audiovisual SL</li>
-        <li><strong class="text-black">CIF:</strong> B19377019</li>
-        <li><strong class="text-black">Domicilio:</strong> C/ Pintor Navarro Llorens bajo 3, 46008 Valencia</li>
-        <li><strong class="text-black">Email:</strong> info@obliqproductions.com</li>
-        <li><strong class="text-black">Teléfono:</strong> +34 675 489 980</li>
+        <li><strong class="text-black">Titular:</strong> {orPending(LEGAL_ENTITY.legalName)}</li>
+        <li><strong class="text-black">CIF:</strong> {LEGAL_ENTITY.taxId}</li>
+        <li><strong class="text-black">Domicilio social:</strong> {registeredOfficeLine()}</li>
+        {LEGAL_ENTITY.registryEntry && (
+          <li><strong class="text-black">Datos registrales:</strong> {registryEntryLine()}</li>
+        )}
+        <li><strong class="text-black">Email:</strong> {contacto.email}</li>
+        <li><strong class="text-black">Teléfono:</strong> {contacto.phone}</li>
       </ul>
       <h2 class="text-[24px] font-bold text-black mt-8">Propiedad intelectual</h2>
-      <p>Todos los contenidos de esta web (textos, fotografías, vídeos, diseños, logotipos, etc.) son propiedad de Obliq Audiovisual SL o de sus legítimos titulares y están protegidos por la legislación sobre propiedad intelectual e industrial.</p>
+      <p>Todos los contenidos de esta web (textos, fotografías, vídeos, diseños, logotipos, etc.) son propiedad de {LEGAL_ENTITY.brandName} o de sus legítimos titulares y están protegidos por la legislación sobre propiedad intelectual e industrial.</p>
       <h2 class="text-[24px] font-bold text-black mt-8">Responsabilidad</h2>
-      <p>Obliq Audiovisual SL no se hace responsable del uso que terceros puedan hacer de la información publicada en esta web, ni de los daños y perjuicios que pudieran derivarse del acceso o uso de la misma.</p>
+      <p>{LEGAL_ENTITY.brandName} no se hace responsable del uso que terceros puedan hacer de la información publicada en esta web, ni de los daños y perjuicios que pudieran derivarse del acceso o uso de la misma.</p>
       <h2 class="text-[24px] font-bold text-black mt-8">Legislación aplicable</h2>
       <p>Para la resolución de controversias se aplicará la legislación española, siendo competentes los Juzgados y Tribunales de Valencia.</p>
     </div>

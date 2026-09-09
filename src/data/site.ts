@@ -38,8 +38,22 @@ export interface SiteContact {
 }
 
 /**
- * Valores estáticos por defecto. Espejo de lo que hoy está hardcodeado en
- * src/lib/schema.ts, Footer.astro y WhatsAppFAB.astro.
+ * Valores de reserva del lado del build — ÚNICA copia en TypeScript.
+ *
+ * La autoridad de estos datos es **WordPress** (`ct_*`): esto solo se usa si
+ * `WP_API_URL` no está definido, si WP no contesta o si un campo llega vacío.
+ * El comentario anterior decía que eran «espejo de lo que hay hardcodeado en
+ * schema.ts, Footer.astro y WhatsAppFAB.astro»; ya no hay tal cosa: `schema.ts`
+ * exige ahora estos valores como parámetros obligatorios y los otros dos no
+ * llevan literales. Aquí es donde se cambian, y en ningún otro sitio del build.
+ *
+ * Su gemelo del lado servidor es `obliq_seed_contact_address()` en
+ * `scripts/obliq-cpts.php`, que da el valor de arranque de una instalación
+ * limpia. No pueden compartir literal —el mu-plugin se sube suelto y no lee el
+ * repositorio—, así que si la dirección cambia se tocan los dos.
+ *
+ * ⚠️ Esto NO es el domicilio social. El registral vive en
+ * `src/data/legal-entity.ts` y solo sale en las páginas legales.
  */
 const DEFAULT_EMAIL = 'info@obliqproductions.com';
 const DEFAULT_PHONE = '+34 675 489 980';

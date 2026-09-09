@@ -9,11 +9,24 @@
  * declarado ni tenía base jurídica asignada), los destinatarios, las
  * transferencias internacionales y el derecho a reclamar ante la AEPD.
  *
- * ⚠️ La identidad del responsable arrastra el problema del AVISO LEGAL, que NO
- * se ha tocado: aquí dice «Obliq Audiovisual SL» y el sitio anterior decía
- * «ACMG AGENCY S.L.» con el MISMO CIF. Solo una es la registral vigente y hace
- * falta una nota simple para saber cuál. Ver el Bloque 1 de
- * docs/audits/legal-pendiente-revision.md.
+ * ✅ La identidad del responsable YA NO se escribe aquí. Sale de
+ * `src/data/legal-entity.ts`, la fuente única que comparte con el aviso legal y
+ * con el JSON-LD, de modo que las tres no pueden volver a divergir. Antes decía
+ * «Obliq Audiovisual SL» mientras el sitio anterior decía «ACMG AGENCY S.L.» con
+ * el MISMO CIF: solo una es la registral vigente, y esa contradicción sobrevivió
+ * un mes porque el dato estaba escrito a mano en cinco sitios.
+ *
+ * ⚠️ Sigue faltando el dato en sí. La denominación y el domicilio social se
+ * imprimen como hueco marcado hasta que llegue la nota simple del Registro
+ * Mercantil; entonces se sustituyen en el fichero único y nada más. Ver el
+ * Bloque 1 de docs/audits/legal-pendiente-revision.md.
+ *
+ * ⚠️ El correo y el teléfono NO se escriben aquí: salen de WordPress
+ * (`ct_email` / `ct_phone`) a través de `getSiteContactAsync()`. Son datos de
+ * contacto que el cliente edita en wp-admin, igual que la dirección de
+ * /contacto/, y tenerlos a mano en las páginas legales los condenaba a
+ * desincronizarse. Si WordPress no responde, `site.ts` cae a sus constantes y la
+ * página sale igual: el fallback es campo a campo y nunca rompe el build.
  *
  * ⚠️ El plazo de conservación usa la formulación estándar por prescripción
  * legal, no un número concreto: no se ha inventado ninguno. Fijar un plazo
@@ -21,8 +34,11 @@
  */
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Heading from '@/components/atoms/Heading.astro';
+import { LEGAL_ENTITY, orPending, registeredOfficeLine } from '@/data/legal-entity';
+import { getSiteContactAsync } from '@/data/site';
 
 const locale = 'es';
+const contacto = await getSiteContactAsync(locale);
 const ACTUALIZADA = '14 de agosto de 2026';
 ---
 
@@ -34,10 +50,10 @@ const ACTUALIZADA = '14 de agosto de 2026';
     <div class="prose prose-lg text-muted space-y-6 text-[16px] font-light leading-relaxed">
       <h2 class="text-[24px] font-bold text-black">Responsable del tratamiento</h2>
       <ul class="list-disc pl-6 space-y-2">
-        <li><strong class="text-black">Identidad:</strong> Obliq Audiovisual SL</li>
-        <li><strong class="text-black">CIF:</strong> B19377019</li>
-        <li><strong class="text-black">Dirección:</strong> C/ Pintor Navarro Llorens bajo 3, 46008 Valencia</li>
-        <li><strong class="text-black">Email:</strong> info@obliqproductions.com</li>
+        <li><strong class="text-black">Identidad:</strong> {orPending(LEGAL_ENTITY.legalName)}</li>
+        <li><strong class="text-black">CIF:</strong> {LEGAL_ENTITY.taxId}</li>
+        <li><strong class="text-black">Domicilio social:</strong> {registeredOfficeLine()}</li>
+        <li><strong class="text-black">Email:</strong> {contacto.email}</li>
       </ul>
 
       <h2 class="text-[24px] font-bold text-black mt-8">Finalidades y base jurídica</h2>
@@ -78,7 +94,7 @@ const ACTUALIZADA = '14 de agosto de 2026';
       <p>Los datos analíticos se conservan según el plazo de retención configurado en Google Analytics. Su decisión sobre las cookies se conserva 24 meses en su navegador.</p>
 
       <h2 class="text-[24px] font-bold text-black mt-8">Sus derechos</h2>
-      <p>Puede ejercer los derechos de <strong class="text-black">acceso, rectificación, supresión, limitación del tratamiento, portabilidad y oposición</strong>, así como retirar el consentimiento prestado en cualquier momento, escribiendo a <a href="mailto:info@obliqproductions.com" class="underline hover:text-black transition-colors">info@obliqproductions.com</a>. La retirada del consentimiento no afecta a la licitud del tratamiento previo.</p>
+      <p>Puede ejercer los derechos de <strong class="text-black">acceso, rectificación, supresión, limitación del tratamiento, portabilidad y oposición</strong>, así como retirar el consentimiento prestado en cualquier momento, escribiendo a <a href={`mailto:${contacto.email}`} class="underline hover:text-black transition-colors">{contacto.email}</a>. La retirada del consentimiento no afecta a la licitud del tratamiento previo.</p>
       <p>Si considera que sus datos no se han tratado correctamente, tiene derecho a <strong class="text-black">presentar una reclamación ante la Agencia Española de Protección de Datos</strong> (C/ Jorge Juan 6, 28001 Madrid — <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer" class="underline hover:text-black transition-colors">www.aepd.es</a>).</p>
 
       <h2 class="text-[24px] font-bold text-black mt-8">Menores</h2>

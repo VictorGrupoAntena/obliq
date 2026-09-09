@@ -11,7 +11,7 @@
 |---|---|
 | **Política de cookies** | ✍️ **REESCRITA.** Puntos 1, 2, 3, 4, 5, 6, 7, 8, 9 y 11 resueltos. **Pendiente de validación por la asesoría.** |
 | **Política de privacidad** | ✍️ **COMPLETADA.** Puntos 5, 6, 9 y 10 resueltos. **Pendiente de validación por la asesoría.** Arrastra la identidad del Bloque 1. |
-| **Aviso legal** | 🔴 **SIN TOCAR.** Bloqueado por el Bloque 1: hace falta la denominación registral vigente. |
+| **Aviso legal** | ✅ **CORREGIDO (9-sep-2026).** Titular y domicilio social ya son los registrales. Pendiente solo lo aplazado: tomo, folio y hoja. Ver abajo. |
 
 **Lo que se reescribió está basado en datos verificados en producción**, no en supuestos: nombres y duraciones reales de cookie, categorías reales del panel, comportamiento medido del mapa. Lo que exigía un dato externo **no se ha inventado** (ver «Qué sigue abierto» al final).
 
@@ -36,6 +36,40 @@ El sitio anterior (artefacto de build de febrero de 2026, conservado en el repos
 **Qué hace falta.** Confirmación documental de la denominación registral vigente: nota simple del Registro Mercantil, o escritura de cambio de denominación si lo hubo. Con ese dato se corrige el texto en un commit.
 
 **Además falta** en el mismo aviso legal: los **datos de inscripción registral** (tomo, folio, hoja), también exigidos por el art. 10 LSSI.
+
+### ✅ RESUELTO el 9-sep-2026 — con un pendiente aplazado
+
+**La nota simple llegó y la denominación publicada era la incorrecta.** La vigente en el Registro
+Mercantil es:
+
+> **AC MG AGENCY, S.L.** — CIF **B19377019** — Calle Pintor Navarro Llorens 3, bajo izquierda ·
+> 46008 Valencia
+
+Ninguna de las dos que circulaban era exacta: la web decía «Obliq Audiovisual SL» y el sitio
+anterior «ACMG AGENCY S.L.». La inscrita lleva **espacio entre «AC» y «MG»** y **coma antes de
+«S.L.»**, y así se ha publicado, sin normalizar.
+
+⚠️ **Sigue faltando, APLAZADO por decisión de Víctor con el riesgo asumido:** los **datos de
+inscripción registral** (tomo, folio, hoja), que el art. 10.1.a exige igual que la denominación.
+**La línea se omite del aviso legal mientras no estén** — no se publica un «pendiente»: esa línea
+nunca ha estado publicada, así que omitirla mantiene el estado actual, mientras que anunciarla
+convertiría una ausencia invisible en una declaración pública de trabajo a medias. En cuanto se
+rellenen en `src/data/legal-entity.ts`, la línea aparece sola.
+
+### La mitad estructural, que es la que impedía arreglarlo antes
+
+Lo que impedía corregir esto en cinco minutos no era el dato: era que **la razón social estaba escrita a mano en cinco sitios de tres ficheros** (`aviso-legal.astro` ×3, `politica-privacidad.astro` y `schema.ts`) y el domicilio en cuatro más. Por eso pudo estar un mes mal sin que nadie lo viera: no había un sitio donde mirar, había cinco donde no mirar.
+
+**Ya está consolidado.** Los cuatro datos de la entidad —denominación, NIF, domicilio social y datos registrales— viven en **`src/data/legal-entity.ts`** y los tres ficheros leen de ahí. Se añadió además la línea de **datos registrales**, que nunca había estado publicada.
+
+**Lo que queda es sustituir tres valores en ese fichero y reconstruir.** Está medido, no supuesto: se construyó con valores de prueba y el cambio quedó confinado exactamente a los mismos sitios.
+
+Dos decisiones que conviene que la asesoría conozca:
+
+1. **El domicilio social y la dirección de contacto son ahora datos distintos.** Es habitual que una sociedad esté domiciliada en su gestoría y no donde trabaja. Hoy coinciden; si la nota simple trae otra dirección, la web puede publicar las dos sin contradecirse. La de contacto (`/contacto/`, y el `PostalAddress` de Google) sigue editándose en wp-admin.
+2. **En los párrafos de propiedad intelectual y responsabilidad se pasa a usar la marca** «Obliq Productions» en vez de la razón social. La identificación que exige el art. 10 se cumple en la lista de datos del titular, que es donde va.
+
+⚠️ **Sigue pendiente, del mismo tipo y no incluido:** el **correo** aparece a mano en cuatro sitios de las páginas legales y el **teléfono** en uno, cuando los dos viven en WordPress (`ct_email`, `ct_phone`). No se ha tocado por no ampliar el alcance de una corrección jurídica, pero es el mismo defecto y merece su propio cambio.
 
 Ficheros afectados: `src/pages/aviso-legal.astro`, `src/pages/politica-privacidad.astro`.
 
