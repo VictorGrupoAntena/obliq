@@ -206,23 +206,92 @@ cambiaban a la vez.
 commit desplegado y contra el WordPress de ese momento, y se comprueba que los `modified` de
 `contenido` no se han movido entre los dos builds.
 
+### Estado de la rama al cerrar la fase 2
+
+`redesign` quedó en `7d201ce`, un commit de solo documentación por delante de lo desplegado.
+
+---
+
+## ⚖️ CORRECCIÓN LEGAL + 🔍 FASE 3 ✅ EN PRODUCCIÓN (9-Sep-2026)
+
+Una ventana, **dos commits independientes** para que la corrección legal no quedase esperando a
+que la fase 3 tropezara.
+
+### La razón social publicada era falsa — commit `9c7ee8b`
+
+La nota simple del Registro Mercantil confirma que la denominación vigente es
+**`AC MG AGENCY, S.L.`** Ni la que publicaba la web («Obliq Audiovisual SL») ni la del sitio
+anterior («ACMG AGENCY S.L.») eran exactas: la inscrita lleva **espacio entre «AC» y «MG»** y
+**coma antes de «S.L.»**. Copiada tal cual y verificada byte a byte — `41 43 20 4d 47`,
+`2c 20 53 2e 4c 2e` —, porque el art. 10 LSSI pide la exacta y normalizarla la convierte en otra.
+
+Domicilio social: **`Calle Pintor Navarro Llorens 3, bajo izquierda · 46008 · Valencia`**.
+
+**Lo estructural importa más que los literales.** El dato estaba a mano en **cinco sitios de tres
+ficheros** y el domicilio en cuatro más; por eso pudo estar un mes mal sin que nadie lo viera. Ahora
+`src/data/legal-entity.ts` es la fuente única. Además:
+
+- **Domicilio SOCIAL y dirección de CONTACTO son datos distintos.** Hoy coinciden, pero es habitual
+  que una sociedad esté domiciliada en su gestoría; separados, la web puede decir los dos sin
+  contradecirse. El de contacto sigue en WordPress.
+- **El correo (4 sitios) y el teléfono (1) de las legales leen de WordPress**, como `/contacto/`.
+- Retiradas `INFO_ADDRESS`, `INFO_PHONE` e `INFO_EMAIL` de `src/i18n`: huérfanas las tres.
+- `schema.ts`: `name` es la marca, `legalName` la registral, fuera `alternateName`, y cinco
+  literales de contacto muertos menos.
+
+> **Los datos registrales (tomo, folio, hoja) quedan APLAZADOS por decisión de Dirección**, con el
+> riesgo asumido: el art. 10.1.a los exige. **La línea se OMITE, no se marca.** El razonamiento de
+> «una laguna visible es honesta» valía cuando la alternativa era no desplegar nada con el titular
+> equivocado; con el titular correcto, un «pendiente» convierte una ausencia que nadie ve en una
+> declaración pública de trabajo a medias, en una web con los emblemas de red.es y la UE.
+> **La página legal del cliente no es nuestra lista de tareas.**
+
+### Fase 3 — seis URLs más editables en Google — commit `4713ffa`
+
+24 campos nuevos (106 → **130**), cuatro por URL, y **dos entradas nuevas** —`portfolio` (id 119) y
+`presupuesto` (id 120)— que no existían porque esas páginas no tenían texto editable. Seed **v6**.
+
+**Los 24 valores se leyeron de PRODUCCIÓN, no del plan.** La fase 2 había cambiado el título
+efectivo de `/nosotros/` y `/contacto/`; sembrar el literal del plan los habría vuelto a cambiar.
+
+**El prefijo es `pt_`, no `pf_`.** `pf_` ya lo usa el CPT `portfolio` (`pf_client`, `pf_title_en`,
+`pf_vimeo_url`…). Se barrieron **los trece prefijos** del plugin: era la única colisión. Se
+descartó `po_` porque es `op_` transpuesto, y `op_` vive en el mismo fichero.
+
+### Evidencia de la ventana (9-sep, 12:04-12:58 UTC)
+
+| | |
+|---|---|
+| Copia previa | `obliq-cpts.php.bak.pre-fase3` · `c866353e…` (= el de la fase 2: **cero deriva**) · y en `~/Backups/obliq/fase3/` |
+| Fichero subido | `c670039b7979889e735c6841469cac59fd7e85695886b8f43a31ca4aa15ba6d3` |
+| Seeds | `obliq_contenido_seeded` **5 → 6** · `obliq_servicio_seeded` 1 |
+| REST antes → después | 5 → **7** entradas · 106 → **130** editables · 4 → **28** de Google · 108 → **132** total → **`FASE 3 APLICADA`** |
+| Los 24 sembrados | **24/24 idénticos a producción**, carácter por carácter |
+| Commits | `9c7ee8b` (9 ficheros) + `4713ffa` (20). Push `7d201ce..4713ffa`. `main` intacta (`767dca1`) |
+| Gate 13b | rango = **2 commits**, los nuestros, coincidiendo con el local |
+| Run | **34353940860**, `repository_dispatch`, **success**, **37 s** |
+| Producción | **76/76 páginas idénticas al build verificado.** Las 12 de la fase 3 sin cambiar; las 2 legales con los literales nuevos |
+
+### 🔑 Dos cosas que aprendimos
+
+1. **Un «idéntico» no demuestra que algo esté conectado.** El escenario post-seed dio 76 páginas
+   idénticas… que es exactamente lo que se vería **si el cableado no funcionase**, porque cada
+   página caería a su fallback. Es el error del simulador infiel de la fase 2, por el otro lado. La
+   prueba de verdad es el **control negativo**: servir valores marcados y comprobar que cambia lo
+   que debe y **solo** lo que debe (12 de 76 en la fase 3; las 3 legales con el correo marcado).
+2. **iCloud vuelve a expulsar `.git` en horas, no en meses.** Reaparecieron **679 objetos
+   `dataless` de 1071 con la ventana abierta**, y esta vez `brctl` apenas devolvió diez en trece
+   minutos. `git add`, `git commit` y `git push` funcionaron igual —solo escriben y leen lo
+   fresco—; lo que revienta es `git diff`, que lee blobs viejos. **Sacar el repositorio de
+   `~/Documents` deja de ser higiene y pasa a ser condición para operar.**
+
 ### Estado de la rama al cerrar
 
-`redesign` lleva **un commit de solo documentación por delante de lo desplegado** (este bloque de
-`MEMORY.md` y los ajustes de las guías). **Es esperado y no cambia el HTML**: el gate 13b de la
-fase 3 debe encontrar exactamente ese commit y ninguno más.
+`redesign` en `4713ffa`, **sin nada pendiente**: los dos commits están desplegados. El gate 13b de
+la fase 4 debe encontrar el rango **vacío**.
 
-**Siguiente:** fase 3 — **SEO de las seis URLs restantes** (24 campos, seed **v6**).
-
-> ⚠️ **Corregido el 9-sep-2026: esta línea decía «párrafo opcional bajo cada H2» y era falsa.**
-> El párrafo bajo H2 es la fase **4**. La fase 3 son los campos de título y descripción para
-> Google de las seis páginas singulares que aún no los tienen —`/`, `/nosotros/`, `/contacto/`,
-> `/portfolio/`, `/presupuesto/` y `/alquiler/`—, a cuatro campos cada una (título y descripción
-> × 2 idiomas) = **24**. El sitemap confirma que son exactamente esas seis: las demás URLs
-> singulares o ya los tienen (`/servicios/`, fase 2) o son `noindex` (las tres legales).
->
-> Consecuencia que no es menor: **`portfolio` y `presupuesto` no tienen entrada en el CPT
-> `contenido`**. Cuatro entradas existentes × 4 campos = 16, más **dos entradas nuevas** × 4 = 8.
+**Siguiente:** fase 4 — párrafo opcional bajo cada H2 (8 campos, seed **v7**). Vuelve a estar en pie
+la regla «no commit, no push» hasta que Víctor la levante.
 
 ---
 
