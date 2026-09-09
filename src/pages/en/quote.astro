@@ -3,15 +3,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import HeroSection from '@/components/sections/HeroSection.astro';
 import { t, localizedUrl } from '@/lib/i18n';
 import { getOperatorTariffAsync } from '@/data/operator';
+import { getPageSeoAsync } from '@/data/page-seo';
 
 const locale = 'en';
 const i18n = t(locale);
 const q = i18n.QUOTE;
 const r = i18n.RENTAL;
 const operator = await getOperatorTariffAsync();
+
+// Título y descripción para Google, editables en wp-admin (fase 3).
+// Si no hay nada escrito, la página conserva los de siempre.
+const seo = await getPageSeoAsync('presupuesto', locale);
 ---
 
-<BaseLayout title={q.TITLE} description={q.SUBTITLE} locale={locale} pageColor="black">
+<BaseLayout title={q.TITLE} seoTitle={seo.seoTitle} description={seo.seoDescription ?? q.SUBTITLE} locale={locale} pageColor="black">
   <!-- Hero -->
   <HeroSection
     tag={r.HERO_TAG}

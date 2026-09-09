@@ -12,6 +12,7 @@ import { t, localizedUrl } from '@/lib/i18n';
 import { getCategoriesAsync, getFeaturedProductsAsync, getPacksAsync, getPackWithProducts } from '@/data/rental';
 import { getOperatorTariffAsync } from '@/data/operator';
 import { rentalServiceSchema } from '@/lib/schema';
+import { getPageSeoAsync } from '@/data/page-seo';
 
 const locale = 'es';
 const i18n = t(locale);
@@ -39,11 +40,16 @@ const breadcrumbItems = [
   { label: i18n.BREADCRUMBS.HOME, href: '/' },
   { label: i18n.NAV.RENTAL },
 ];
+
+// Título y descripción para Google, editables en wp-admin (fase 3).
+// Si no hay nada escrito, la página conserva los de siempre.
+const seo = await getPageSeoAsync('alquiler', locale);
 ---
 
 <BaseLayout
   title={r.TITLE}
-  description={r.HERO_SUBTITLE}
+  seoTitle={seo.seoTitle}
+  description={seo.seoDescription ?? r.HERO_SUBTITLE}
   locale={locale}
   pageColor="white"
   schema={schema}

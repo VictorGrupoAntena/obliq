@@ -155,6 +155,20 @@ usarlo como patrón de medida**. Un banco de pruebas sin calibrar no es un banco
    usuario@host directamente se salta el alias → `Permission denied (publickey)`. **Siempre
    `ssh obliq-plesk`.** Corregido en `fase1-rollback.md` §7.
 
+### ⚠️ Corrección (9-sep-2026): por qué difieren los 16 bundles
+
+En el informe de G2 atribuí las 16 diferencias de `_astro/*.js` a que añadir `services-page.ts`
+cambiaba el grafo de módulos de rollup. **Es falso**, y este fichero ya tenía la respuesta buena
+más abajo (11-ago): **el build de Astro no es determinista**. Medido el 9-sep con un doble build
+del MISMO código y el MISMO WordPress: **HTML 0 diferencias · 16 bundles distintos**. Lo que
+cambia son las letras de los identificadores minificados que rollup asigna a los exports
+(`j as z, k as R` → `i as z, j as R`) y, en cascada, el hash del trozo.
+
+**Consecuencia práctica: el criterio byte a byte se afirma sobre el HTML, nunca sobre los
+bundles.** El HTML y el CSS sí son deterministas; los `.js` tienen un suelo de ruido de 16
+ficheros entre dos builds cualesquiera. Buscar una explicación causal a esas 16 diferencias es
+perder el tiempo: no la tienen.
+
 ### Dos hallazgos incidentales, fuera del alcance de la fase
 
 - **`public/favicon.svg` no está versionado en git.** No lo referencia nada —`BaseLayout` solo
@@ -163,14 +177,52 @@ usarlo como patrón de medida**. Un banco de pruebas sin calibrar no es un banco
   de CI no son el mismo**, y por eso los builds no coinciden fichero a fichero.
 - **Los nueve servicios comparten `date` y tienen `menu_order = 0`** → backlog, punto 14.
 
+### 🔑 El CMS publica por una vía que no pasa por git
+
+El 9-sep, **diecisiete minutos** después de cerrar la ventana de la fase 2, `/servicios/` cambió
+en producción: `SOLUCIONES AUDIOVISUALES` → `SOLUCIONES Y SERVICIOS AUDIOVISUALES`. Fue **una
+edición de Víctor en wp-admin como prueba de aceptación** del camino de edición — el cliente
+todavía no ha tocado nada. El hook la recogió, disparó el run `34326566129` y producción la
+publicó sin que nadie interviniera.
+
+**Como validación, es el mejor resultado posible:** la cadena entera —wp-admin →
+`transition_post_status` → debounce de 90 s → `repository_dispatch` → build → `rsync`— funciona
+con una edición real, no solo con las nuestras por WP-CLI.
+
+**Como lección de método, es estructural y no depende de suponer nada sobre nadie:**
+
+> **El CMS tiene una vía de publicación que no pasa por git.** Cualquiera con acceso a wp-admin
+> —el cliente, la agencia, o una prueba coordinada nuestra— cambia lo que se publica sin tocar el
+> repositorio y sin que nada avise a quien esté midiendo. Un `dist/` guardado como línea base
+> caduca solo.
+
+Pasó exactamente eso: el `dist/` de la fase 2 dejó de representar el estado de WordPress y el
+primer diff de la fase 3 mezclaba código con contenido. **Lo cazó la cláusula de confinamiento**
+del criterio nuevo —«el diff debe estar confinado al bloque JSON-LD»—, que marcó `/servicios/`
+como cambio no declarado. Sin esa cláusula habría pasado escondido entre las 76 páginas que
+cambiaban a la vez.
+
+**Regla que queda:** la línea base se construye **inmediatamente antes** de comparar, desde el
+commit desplegado y contra el WordPress de ese momento, y se comprueba que los `modified` de
+`contenido` no se han movido entre los dos builds.
+
 ### Estado de la rama al cerrar
 
 `redesign` lleva **un commit de solo documentación por delante de lo desplegado** (este bloque de
 `MEMORY.md` y los ajustes de las guías). **Es esperado y no cambia el HTML**: el gate 13b de la
 fase 3 debe encontrar exactamente ese commit y ninguno más.
 
-**Siguiente:** fase 3 — párrafo opcional bajo cada H2 (24 campos, seed **v6**). Vuelve a estar en
-pie la regla «no commit, no push» hasta que Víctor la levante para esa ventana.
+**Siguiente:** fase 3 — **SEO de las seis URLs restantes** (24 campos, seed **v6**).
+
+> ⚠️ **Corregido el 9-sep-2026: esta línea decía «párrafo opcional bajo cada H2» y era falsa.**
+> El párrafo bajo H2 es la fase **4**. La fase 3 son los campos de título y descripción para
+> Google de las seis páginas singulares que aún no los tienen —`/`, `/nosotros/`, `/contacto/`,
+> `/portfolio/`, `/presupuesto/` y `/alquiler/`—, a cuatro campos cada una (título y descripción
+> × 2 idiomas) = **24**. El sitemap confirma que son exactamente esas seis: las demás URLs
+> singulares o ya los tienen (`/servicios/`, fase 2) o son `noindex` (las tres legales).
+>
+> Consecuencia que no es menor: **`portfolio` y `presupuesto` no tienen entrada en el CPT
+> `contenido`**. Cuatro entradas existentes × 4 campos = 16, más **dos entradas nuevas** × 4 = 8.
 
 ---
 
@@ -902,6 +954,21 @@ Diseño cerrado y medido, para no rehacer el análisis:
     está definido por nada. Hoy el orden es estable, y esa estabilidad no está garantizada por
     ningún contrato. Se cierra dando `menu_order` distintos a las nueve fichas —un movimiento de
     datos, sin código—. **Fuera del alcance de las fases 1-4.**
+
+15. **`check-seo.mjs` necesita una línea base (detectado 9-sep-2026).** Nace avisando **105 veces**
+    sobre 72 páginas, y casi todo es preexistente: las fichas de `/alquiler/` y `/servicios/`
+    componen el título como `<nombre> — <sección> | Obliq Productions` y se van a 70-90 caracteres.
+    **Un check que grita 105 veces desde el primer día se vuelve ruido y nadie lo lee**, y entonces
+    el primer aviso de verdad se pierde entre los ciento cinco que ya estaban. Hace falta un fichero
+    de línea base con lo conocido, y que el script solo destaque lo NUEVO. Mientras tanto sale
+    siempre con 0 y no bloquea nada.
+
+16. **Dos descripciones duplicadas, ahora arreglables desde wp-admin (9-sep-2026).** `/` comparte
+    descripción con `/servicios/`, y `/en/` con `/en/services/`: las cuatro caían a
+    `GLOBAL.DESCRIPTION`. **El criterio «cero descripciones duplicadas» del plan NO lo cumple la
+    fase 3** y no se da por cumplido — la fase entrega la capacidad de diferenciarlas, no la
+    diferenciación. Es **tarea de contenido**: wp-admin → Contenido de páginas → Inicio y
+    Servicios · Página → «Cómo se ve en Google», en los dos idiomas. Dos minutos.
 
 **PRIORIDAD BAJA:**
 9. Schema.org VideoObject en portfolio (cuando haya URLs Vimeo reales)

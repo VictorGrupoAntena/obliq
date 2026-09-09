@@ -133,6 +133,6 @@ export interface WPCliente extends WPPost {
 
 export interface WPContenido extends WPPost {
   /** Discriminador de entrada. Estable frente a cambios de título o slug. */
-  _obliq_key?: 'about' | 'contact' | 'home' | 'servicios' | 'alquiler' | string;
+  _obliq_key?: 'about' | 'contact' | 'home' | 'servicios' | 'alquiler' | 'portfolio' | 'presupuesto' | string;
   [field: string]: unknown;
 }

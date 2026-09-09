@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "dev:host": "astro dev --host",
-    "build": "node scripts/check-duplicates.mjs && astro build && node scripts/build-sitemap.mjs",
+    "build": "node scripts/check-duplicates.mjs && astro build && node scripts/build-sitemap.mjs && node scripts/check-seo.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "check:consent": "node scripts/check-consent.mjs",
@@ -14,7 +14,8 @@
     "check:links": "node scripts/check-links.mjs",
     "check:redirects": "node scripts/verify-redirects.mjs",
     "check:services": "node scripts/check-services.mjs",
-    "build:sitemap": "node scripts/build-sitemap.mjs"
+    "build:sitemap": "node scripts/build-sitemap.mjs",
+    "check:seo": "node scripts/check-seo.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.3.1",

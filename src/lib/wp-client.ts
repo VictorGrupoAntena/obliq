@@ -389,6 +389,10 @@ export interface ContenidoBundle {
   home: WPContenido | null;
   servicios: WPContenido | null;
   alquiler: WPContenido | null;
+  /** Fase 3 (seed v6): SOLO campos de Google, sin textos de página. */
+  portfolio: WPContenido | null;
+  /** Fase 3 (seed v6): SOLO campos de Google, sin textos de página. */
+  presupuesto: WPContenido | null;
 }
 
 /**
@@ -405,6 +409,8 @@ const EMPTY_CONTENIDO: ContenidoBundle = {
   home: null,
   servicios: null,
   alquiler: null,
+  portfolio: null,
+  presupuesto: null,
 };
 
 /**
@@ -432,6 +438,12 @@ export function getContenido(): Promise<ContenidoBundle> {
         // `alquiler` (seed v3): tarifa de operador. Si falta, el data layer de
         // operador (src/data/operator.ts) hace fallar el build a propósito (A2).
         alquiler: rows.find((r) => r._obliq_key === 'alquiler') ?? null,
+        // `portfolio` y `presupuesto` (seed v6): entradas que SOLO gobiernan lo
+        // que Google enseña. Si faltan, page-seo.ts devuelve undefined en los
+        // dos campos y cada página conserva el título y la descripción que ya
+        // tenía. Es el caso normal mientras el mu-plugin no esté desplegado.
+        portfolio: rows.find((r) => r._obliq_key === 'portfolio') ?? null,
+        presupuesto: rows.find((r) => r._obliq_key === 'presupuesto') ?? null,
       }))
       .catch((e) => {
         console.warn('[contenido] WP fetch failed, using i18n/static content:', e);

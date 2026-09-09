@@ -6,6 +6,7 @@ import VideoLightbox from '@/components/organisms/VideoLightbox.astro';
 import { t } from '@/lib/i18n';
 import { getPortfolioProjectsAsync, getPortfolioCategoriesAsync } from '@/data/portfolio';
 import { getVimeoEmbedUrl } from '@/lib/vimeo';
+import { getPageSeoAsync } from '@/data/page-seo';
 
 const locale = 'en';
 const i18n = t(locale);
@@ -21,9 +22,13 @@ const filters = [
   { key: 'all', label: p.FILTER_ALL },
   ...categories.map((category) => ({ key: category, label: category })),
 ];
+
+// Título y descripción para Google, editables en wp-admin (fase 3).
+// Si no hay nada escrito, la página conserva los de siempre.
+const seo = await getPageSeoAsync('portfolio', locale);
 ---
 
-<BaseLayout title={p.TITLE} description={p.HERO_SUBTITLE} locale={locale}>
+<BaseLayout title={p.TITLE} seoTitle={seo.seoTitle} description={seo.seoDescription ?? p.HERO_SUBTITLE} locale={locale}>
   <HeroSection
     tag={p.HERO_TAG}
     title={p.HERO_TITLE}

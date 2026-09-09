@@ -12,6 +12,7 @@ import { getServicesAsync } from '@/data/services';
 import { getFeaturedProjectsAsync } from '@/data/portfolio';
 import { getClientNamesAsync } from '@/data/clients';
 import { getHomeContentAsync } from '@/data/home';
+import { getPageSeoAsync } from '@/data/page-seo';
 
 const locale = 'es';
 const i18n = t(locale);
@@ -20,11 +21,16 @@ const services = await getServicesAsync();
 const portfolioProjects = await getFeaturedProjectsAsync();
 const clientNames = await getClientNamesAsync();
 const home = await getHomeContentAsync(locale);
+
+// Título y descripción para Google, editables en wp-admin (fase 3).
+// Si no hay nada escrito, la página conserva los de siempre.
+const seo = await getPageSeoAsync('home', locale);
 ---
 
 <BaseLayout
   title={i18n.HOME.TITLE}
-  description={i18n.GLOBAL.DESCRIPTION}
+  seoTitle={seo.seoTitle}
+  description={seo.seoDescription ?? i18n.GLOBAL.DESCRIPTION}
   locale={locale}
 >
   <!-- 1. Hero -->

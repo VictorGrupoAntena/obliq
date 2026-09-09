@@ -655,7 +655,7 @@ function obliq_save_meta_fields( $post_id, $post ) {
 //        los que hoy vienen de src/i18n/*.json, incluido el sufijo « | Obliq Productions»
 //        del título en Google: así la página se reconstruye byte a byte igual que antes.
 if ( ! defined( 'OBLIQ_CONTENIDO_SEED_VERSION' ) ) {
-    define( 'OBLIQ_CONTENIDO_SEED_VERSION', '5' );
+    define( 'OBLIQ_CONTENIDO_SEED_VERSION', '6' );
 }
 
 /**
@@ -706,6 +706,11 @@ function obliq_contenido_field_defs() {
         'ab_team_title_es'      => array( 'Equipo — título de bloque (H2) (ES)', 'text' ),
         'ab_team_title_en'      => array( 'Equipo — título de bloque (H2) (EN)', 'text' ),
 
+        'ab_seo_title_es'         => array( 'Cómo se ve en Google — título en Google (ES)', 'text' ),
+        'ab_seo_title_en'         => array( 'Cómo se ve en Google — título en Google (EN)', 'text' ),
+        'ab_seo_desc_es'          => array( 'Cómo se ve en Google — descripción en Google (ES)', 'textarea' ),
+        'ab_seo_desc_en'          => array( 'Cómo se ve en Google — descripción en Google (EN)', 'textarea' ),
+
         // ---------- Entrada "Datos de contacto" (16 campos) ----------
         // El orden de ESTE array no ordena nada: lo hacen las listas de
         // obliq_contenido_meta_html(). Se conserva el orden histórico para que el
@@ -724,6 +729,11 @@ function obliq_contenido_field_defs() {
         'ct_email'              => array( 'Información de contacto — email', 'text' ),
         'ct_phone'              => array( 'Información de contacto — teléfono, tal y como debe verse', 'text' ),
         'ct_whatsapp'           => array( 'WhatsApp — número, solo dígitos con prefijo de país y sin el signo +', 'text' ),
+
+        'ct_seo_title_es'         => array( 'Cómo se ve en Google — título en Google (ES)', 'text' ),
+        'ct_seo_title_en'         => array( 'Cómo se ve en Google — título en Google (EN)', 'text' ),
+        'ct_seo_desc_es'          => array( 'Cómo se ve en Google — descripción en Google (ES)', 'textarea' ),
+        'ct_seo_desc_en'          => array( 'Cómo se ve en Google — descripción en Google (EN)', 'textarea' ),
         'ct_address_street'     => array( 'Información de contacto — dirección, calle y número', 'text' ),
         'ct_address_postal'     => array( 'Información de contacto — dirección, código postal', 'text' ),
         'ct_address_city'       => array( 'Información de contacto — dirección, ciudad', 'text' ),
@@ -784,6 +794,11 @@ function obliq_contenido_field_defs() {
         'hm_cta_button_es'      => array( 'Llamada final — botón (ES)', 'text' ),
         'hm_cta_button_en'      => array( 'Llamada final — botón (EN)', 'text' ),
 
+        'hm_seo_title_es'         => array( 'Cómo se ve en Google — título en Google (ES)', 'text' ),
+        'hm_seo_title_en'         => array( 'Cómo se ve en Google — título en Google (EN)', 'text' ),
+        'hm_seo_desc_es'          => array( 'Cómo se ve en Google — descripción en Google (ES)', 'textarea' ),
+        'hm_seo_desc_en'          => array( 'Cómo se ve en Google — descripción en Google (EN)', 'textarea' ),
+
         // ---------- Entrada "Servicios" (14 campos) — fase 2 ----------
         // La PÁGINA que lista los servicios (/servicios/ y /en/services/), no las fichas:
         // el nombre y la descripción de cada servicio siguen en el CPT `servicio`.
@@ -813,12 +828,43 @@ function obliq_contenido_field_defs() {
         'op_includes_en'        => array( 'Qué incluye — lista (EN)', 'textarea' ),
         'op_terms_es'           => array( 'Condiciones — párrafo (ES)', 'textarea' ),
         'op_terms_en'           => array( 'Condiciones — párrafo (EN)', 'textarea' ),
+
+        'op_seo_title_es'         => array( 'Cómo se ve en Google — título en Google (ES)', 'text' ),
+        'op_seo_title_en'         => array( 'Cómo se ve en Google — título en Google (EN)', 'text' ),
+        'op_seo_desc_es'          => array( 'Cómo se ve en Google — descripción en Google (ES)', 'textarea' ),
+        'op_seo_desc_en'          => array( 'Cómo se ve en Google — descripción en Google (EN)', 'textarea' ),
+
+        // --- Portfolio (/portfolio/ y /en/portfolio/) ---------------------
+        // Entrada NUEVA en la fase 3. Solo lleva SEO: los proyectos se editan
+        // en su propio CPT «Portfolio», no aquí.
+        'pt_seo_title_es'         => array( 'Cómo se ve en Google — título en Google (ES)', 'text' ),
+        'pt_seo_title_en'         => array( 'Cómo se ve en Google — título en Google (EN)', 'text' ),
+        'pt_seo_desc_es'          => array( 'Cómo se ve en Google — descripción en Google (ES)', 'textarea' ),
+        'pt_seo_desc_en'          => array( 'Cómo se ve en Google — descripción en Google (EN)', 'textarea' ),
+
+        // --- Presupuesto (/presupuesto/ y /en/quote/) ---------------------
+        // Entrada NUEVA en la fase 3. Solo lleva SEO: el carrito y el
+        // formulario no son texto editable.
+        'pr_seo_title_es'         => array( 'Cómo se ve en Google — título en Google (ES)', 'text' ),
+        'pr_seo_title_en'         => array( 'Cómo se ve en Google — título en Google (EN)', 'text' ),
+        'pr_seo_desc_es'          => array( 'Cómo se ve en Google — descripción en Google (ES)', 'textarea' ),
+        'pr_seo_desc_en'          => array( 'Cómo se ve en Google — descripción en Google (EN)', 'textarea' ),
     );
 }
 
 /** Lista de meta_keys de una entrada: 'about' | 'contact' | 'home' | 'alquiler' | 'all' */
 function obliq_contenido_keys( $which = 'all' ) {
-    $prefixes = array( 'about' => 'ab_', 'contact' => 'ct_', 'home' => 'hm_', 'alquiler' => 'op_' );
+    // `servicios` faltaba desde la fase 2: inofensivo porque solo se llama con
+    // 'all', pero un mapa incompleto es una trampa esperando al primer uso.
+    $prefixes = array(
+        'about'       => 'ab_',
+        'contact'     => 'ct_',
+        'home'        => 'hm_',
+        'alquiler'    => 'op_',
+        'servicios'   => 'sp_',
+        'portfolio'   => 'pt_',
+        'presupuesto' => 'pr_',
+    );
     $prefix   = isset( $prefixes[ $which ] ) ? $prefixes[ $which ] : '';
     $keys   = array();
     foreach ( obliq_contenido_field_defs() as $key => $def ) {
@@ -952,6 +998,34 @@ function obliq_contenido_add_meta_box() {
     add_meta_box( 'obliq_contenido_meta', 'Contenido de la página', 'obliq_contenido_meta_html', 'contenido', 'normal', 'high' );
 }
 
+/**
+ * Bloque «Cómo se ve en Google» — idéntico en las SIETE pantallas que lo llevan.
+ *
+ * Estaba escrito una vez (fase 2, «Servicios»). Con la fase 3 pasaría a estar
+ * copiado siete veces, y un texto de ayuda repetido siete veces es un texto que
+ * dentro de un mes dirá siete cosas distintas. Aquí solo se cambia el número del
+ * bloque, que depende de cuántos lo preceden en cada pantalla.
+ *
+ * El texto explica el contrato real, que no es evidente: el título se publica
+ * TAL CUAL, sin que el sitio le añada « | Obliq Productions». Es lo que permite
+ * al cliente ver en Google exactamente lo que escribe, y también lo que le
+ * obliga a escribir la marca si la quiere.
+ */
+function obliq_contenido_render_seo( $id, $prefix, $numero, $nota = '' ) {
+    echo '<hr><h4>' . intval( $numero ) . ' · Cómo se ve en Google</h4>';
+    echo '<p style="background:#f0f6fc;border-left:4px solid #2271b1;padding:10px 12px;max-width:760px">';
+    echo 'Esto <strong>no se ve en la página</strong>: es lo que Google enseña en sus resultados de búsqueda.<br>';
+    echo '• <strong>Título en Google</strong>: sale <strong>tal y como lo escribas</strong>, sin añadidos. Si quieres que aparezca el nombre de la empresa, escríbelo tú. Unos 60 caracteres entran sin cortarse.<br>';
+    echo '• <strong>Descripción en Google</strong>: el texto gris bajo el título. Unos 155 caracteres.<br>';
+    echo '• Si dejas alguno vacío, Google usa el texto que trae la web por defecto.';
+    if ( $nota ) { echo '<br>' . $nota; }
+    echo '</p>';
+    obliq_contenido_render_fields( $id, array(
+        $prefix . 'seo_title_es', $prefix . 'seo_title_en',
+        $prefix . 'seo_desc_es',  $prefix . 'seo_desc_en',
+    ) );
+}
+
 /** Render de un grupo de campos según su definición */
 function obliq_contenido_render_fields( $post_id, $keys ) {
     $defs = obliq_contenido_field_defs();
@@ -991,6 +1065,7 @@ function obliq_contenido_meta_html( $post ) {
         echo '<hr><h4>4 · Equipo</h4>';
         echo '<p><em>Aquí va solo la cabecera del bloque. Las personas se editan en <strong>Equipo</strong>.</em></p>';
         obliq_contenido_render_fields( $id, array( 'ab_team_tag_es', 'ab_team_tag_en', 'ab_team_title_es', 'ab_team_title_en' ) );
+        obliq_contenido_render_seo( $id, 'ab_', 5, 'Esta pantalla gobierna <strong>/nosotros/</strong> y <strong>/en/about/</strong>.' );
         return;
     }
 
@@ -1020,6 +1095,7 @@ function obliq_contenido_meta_html( $post ) {
         echo '<hr><h4>3 · WhatsApp</h4>';
         echo '<p><em>El botón verde flotante. No sale en esta página: sale en todas.</em></p>';
         obliq_contenido_render_fields( $id, array( 'ct_whatsapp' ) );
+        obliq_contenido_render_seo( $id, 'ct_', 4, 'Esta pantalla gobierna <strong>/contacto/</strong> y <strong>/en/contact/</strong>.' );
         return;
     }
 
@@ -1094,6 +1170,7 @@ function obliq_contenido_meta_html( $post ) {
             'hm_cta_title_es', 'hm_cta_title_en',
             'hm_cta_button_es', 'hm_cta_button_en',
         ) );
+        obliq_contenido_render_seo( $id, 'hm_', 8, 'Esta pantalla gobierna la <strong>portada</strong>: <strong>/</strong> y <strong>/en/</strong>.' );
         return;
     }
 
@@ -1116,17 +1193,7 @@ function obliq_contenido_meta_html( $post ) {
             'sp_cta_button_es', 'sp_cta_button_en',
         ) );
 
-        echo '<hr><h4>3 · Cómo se ve en Google</h4>';
-        echo '<p style="background:#f0f6fc;border-left:4px solid #2271b1;padding:10px 12px;max-width:760px">';
-        echo 'Esto <strong>no se ve en la página</strong>: es lo que Google enseña en sus resultados de búsqueda.<br>';
-        echo '• <strong>Título en Google</strong>: sale <strong>tal y como lo escribas</strong>, sin añadidos. Si quieres que aparezca el nombre de la empresa, escríbelo tú. Unos 60 caracteres entran sin cortarse.<br>';
-        echo '• <strong>Descripción en Google</strong>: el texto gris bajo el título. Unos 155 caracteres.<br>';
-        echo '• Si dejas alguno vacío, Google usa el texto que trae la web por defecto.';
-        echo '</p>';
-        obliq_contenido_render_fields( $id, array(
-            'sp_seo_title_es', 'sp_seo_title_en',
-            'sp_seo_desc_es', 'sp_seo_desc_en',
-        ) );
+        obliq_contenido_render_seo( $id, 'sp_', 3 );
         return;
     }
 
@@ -1144,6 +1211,25 @@ function obliq_contenido_meta_html( $post ) {
         echo '<strong>Pendiente de confirmar:</strong> el formato y plazo de entrega de los brutos, el límite horario de la media jornada y el desplazamiento incluido nacen marcados como <code>[PENDIENTE DE CONFIRMAR CON CLIENTE]</code>. Sustituye ese texto por los datos reales cuando estén definidos.';
         echo '</p>';
         obliq_contenido_render_fields( $id, array( 'op_terms_es', 'op_terms_en' ) );
+        obliq_contenido_render_seo( $id, 'op_', 4, 'Aquí se edita lo que Google enseña de <strong>/alquiler/</strong> y <strong>/en/rental/</strong> — la portada del catálogo, no las fichas de cada equipo.' );
+        return;
+    }
+
+    if ( 'portfolio' === $key ) {
+        echo '<p><em>Esta entrada <strong>no cambia nada de lo que se ve</strong> en la página de portfolio: sirve solo para decidir cómo aparece en Google.<br>';
+        echo 'Los <strong>proyectos</strong> —su nombre, su vídeo y su imagen— se editan en <strong>Portfolio</strong>, en el menú de la izquierda.<br>';
+        echo '<strong>Cada idioma se escribe por separado</strong>: no hay traducción automática.</em></p>';
+        obliq_contenido_render_seo( $id, 'pt_', 1,
+            'Esta pantalla gobierna <strong>/portfolio/</strong> y <strong>/en/portfolio/</strong>.' );
+        return;
+    }
+
+    if ( 'presupuesto' === $key ) {
+        echo '<p><em>Esta entrada <strong>no cambia nada de lo que se ve</strong> en la página de presupuesto: sirve solo para decidir cómo aparece en Google.<br>';
+        echo 'El <strong>carrito y el formulario</strong> no son texto editable, y los <strong>precios</strong> se editan en <strong>Alquiler</strong> y en <strong>Packs</strong>.<br>';
+        echo '<strong>Cada idioma se escribe por separado</strong>: no hay traducción automática.</em></p>';
+        obliq_contenido_render_seo( $id, 'pr_', 1,
+            'Esta pantalla gobierna <strong>/presupuesto/</strong> y <strong>/en/quote/</strong>.' );
         return;
     }
 
@@ -1184,6 +1270,35 @@ function obliq_contenido_save( $post_id, $post ) {
 // - Solo INSERTA lo que falta; nunca sobrescribe lo ya escrito.
 // ------------------------------------------------------------
 
+/**
+ * Valores iniciales de «Portfolio · Google» — leídos de PRODUCCIÓN el 9-sep-2026.
+ *
+ * La entrada nace con los mismos textos que la web ya emite, de modo que sembrar
+ * NO cambia el HTML: `/portfolio/` se reconstruye byte a byte. Lo que cambia es
+ * quién manda a partir de ahora — antes el título salía de `src/i18n`, ahora de
+ * aquí—, y eso es justamente lo que pedía el cliente.
+ */
+function obliq_contenido_seed_portfolio() {
+    return array(
+        'pt_seo_title_es'       => 'Portfolio — Nuestro trabajo | Obliq Productions',
+        'pt_seo_title_en'       => 'Portfolio — Our work | Obliq Productions',
+        'pt_seo_desc_es'        => 'Una selección de proyectos que hablan por sí mismos.',
+        'pt_seo_desc_en'        => 'A selection of projects that speak for themselves.',
+ );
+}
+
+/**
+ * Valores iniciales de «Presupuesto · Google» — leídos de PRODUCCIÓN el 9-sep-2026.
+ */
+function obliq_contenido_seed_presupuesto() {
+    return array(
+        'pr_seo_title_es'       => 'Solicitar presupuesto | Obliq Productions',
+        'pr_seo_title_en'       => 'Request a quote | Obliq Productions',
+        'pr_seo_desc_es'        => 'Revisa tu pedido y completa tus datos para recibir un presupuesto detallado.',
+        'pr_seo_desc_en'        => 'Review your order and complete your details to receive a detailed quote.',
+ );
+}
+
 add_action( 'init', 'obliq_contenido_seed', 20 );
 
 function obliq_contenido_seed() {
@@ -1196,6 +1311,10 @@ function obliq_contenido_seed() {
         'servicios' => array( 'Servicios · Página', obliq_contenido_seed_servicios() ),
         // Título inequívoco para que el cliente la localice en el listado sin ayuda.
         'alquiler' => array( 'Alquiler · Tarifa de operador', obliq_contenido_seed_alquiler() ),
+        // Fase 3: dos entradas que SOLO gobiernan lo que Google enseña. El
+        // sufijo «· Google» avisa de que dentro no hay textos de la página.
+        'portfolio'   => array( 'Portfolio · Google', obliq_contenido_seed_portfolio() ),
+        'presupuesto' => array( 'Presupuesto · Google', obliq_contenido_seed_presupuesto() ),
     );
 
     foreach ( $entries as $obliq_key => $entry ) {
@@ -1261,12 +1380,48 @@ function obliq_contenido_seed_about() {
         'ab_team_tag_en'      => 'TEAM',
         'ab_team_title_es'    => 'Las personas detrás de Obliq',
         'ab_team_title_en'    => 'The people behind Obliq',
+
+        // Leídos de PRODUCCIÓN el 9-sep-2026, no del plan: el título efectivo de
+        // /nosotros/ y /contacto/ cambió en la fase 2 al quitarles la marca
+        // duplicada, y sembrar el literal viejo los habría vuelto a cambiar.
+        'ab_seo_title_es'       => 'Sobre nosotros | Obliq Productions',
+        'ab_seo_title_en'       => 'About us | Obliq Productions',
+        'ab_seo_desc_es'        => 'Somos una productora audiovisual en Valencia con pasión por contar historias.',
+        'ab_seo_desc_en'        => 'We are an audiovisual production company in Valencia with a passion for storytelling.',
+    );
+}
+
+/**
+ * Dirección de contacto de partida — ÚNICO literal en todo el PHP.
+ *
+ * La autoridad de este dato es **WordPress**: en cuanto la entrada «Datos de
+ * contacto» existe, manda lo que haya en `ct_address_*` y esto no se vuelve a
+ * mirar. Lo que hay aquí es el valor de arranque de una instalación limpia.
+ *
+ * Y ahí estaba el peligro: como el seed solo rellena lo que está vacío, un
+ * literal desactualizado no molesta nunca... hasta el día en que alguien instale
+ * el plugin en limpio y siembre el domicilio de hace dos años. Por eso está
+ * aquí arriba, con nombre, y no escondido entre sesenta valores.
+ *
+ * Su gemelo en TypeScript son las constantes `DEFAULT_*` de `src/data/site.ts`,
+ * que cumplen la misma función para el build. **No pueden compartir un literal**:
+ * este fichero se sube suelto al servidor y no puede leer nada del repositorio.
+ * Si la dirección cambia, se tocan los dos — y se comprueba que coinciden.
+ *
+ * ⚠️ Esta NO es el domicilio social. El registral vive en
+ * `src/data/legal-entity.ts` y solo aparece en las páginas legales.
+ */
+function obliq_seed_contact_address() {
+    return array(
+        'ct_address_street' => 'C/ Pintor Navarro Llorens bajo 3',
+        'ct_address_postal' => '46008',
+        'ct_address_city'   => 'Valencia',
     );
 }
 
 /** Valores iniciales de "Datos de contacto" — espejo de CONTACT_PAGE + schema.ts */
 function obliq_contenido_seed_contact() {
-    return array(
+    $base = array(
         'ct_hero_tag_es'      => 'CONTACTO',
         'ct_hero_tag_en'      => 'CONTACT',
         'ct_hero_title_es'    => 'HABLEMOS DE TU PROYECTO',
@@ -1283,11 +1438,21 @@ function obliq_contenido_seed_contact() {
         'ct_email'            => 'info@obliqproductions.com',
         'ct_phone'            => '+34 675 489 980',
         'ct_whatsapp'         => '34675489980',
-
-        'ct_address_street'   => 'C/ Pintor Navarro Llorens bajo 3',
-        'ct_address_postal'   => '46008',
-        'ct_address_city'     => 'Valencia',
     );
+
+    // El domicilio no se escribe aquí: tiene nombre propio arriba, para que un
+    // literal viejo no pueda esconderse entre los demás valores del seed.
+    $base = array_merge( $base, array(
+        // Leídos de PRODUCCIÓN el 9-sep-2026, no del plan: el título efectivo de
+        // /nosotros/ y /contacto/ cambió en la fase 2 al quitarles la marca
+        // duplicada, y sembrar el literal viejo los habría vuelto a cambiar.
+        'ct_seo_title_es'       => 'Contacto | Obliq Productions',
+        'ct_seo_title_en'       => 'Contact | Obliq Productions',
+        'ct_seo_desc_es'        => 'Cuéntanos tu idea y te ayudamos a hacerla realidad.',
+        'ct_seo_desc_en'        => 'Tell us your idea and we\'ll help you make it happen.',
+    ) );
+
+    return array_merge( $base, obliq_seed_contact_address() );
 }
 
 /**
@@ -1347,6 +1512,14 @@ function obliq_contenido_seed_home() {
         'hm_cta_title_en'        => 'GOT A PROJECT?',
         'hm_cta_button_es'       => 'HABLEMOS',
         'hm_cta_button_en'       => "LET'S TALK",
+
+        // Leídos de PRODUCCIÓN el 9-sep-2026, no del plan: el título efectivo de
+        // /nosotros/ y /contacto/ cambió en la fase 2 al quitarles la marca
+        // duplicada, y sembrar el literal viejo los habría vuelto a cambiar.
+        'hm_seo_title_es'       => 'Productora audiovisual en Valencia | Obliq Productions',
+        'hm_seo_title_en'       => 'Audiovisual production company in Valencia | Obliq Productions',
+        'hm_seo_desc_es'        => 'Productora audiovisual en Valencia. Producción de vídeo, streaming, contenido para redes sociales y alquiler de equipos profesionales.',
+        'hm_seo_desc_en'        => 'Audiovisual production company in Valencia. Video production, streaming, social media content and professional equipment rental.',
     );
 }
 
@@ -1398,6 +1571,14 @@ function obliq_contenido_seed_alquiler() {
         'op_includes_en'   => "Qualified professional operator\nRaw footage delivery",
         'op_terms_es'      => 'Todos los alquileres se realizan con operador. Media jornada: 4 horas. Jornada completa: 8 horas. Entrega de brutos en 24 h desde la finalización del rodaje. Servicio disponible en toda la Comunitat Valenciana; para desplazamientos fuera de la comunidad, consúltanos.',
         'op_terms_en'      => 'All equipment rentals include an operator. Half day: 4 hours. Full day: 8 hours. Raw footage delivered within 24 hours of the end of the shoot. Available throughout the Valencian Community; for locations outside the region, get in touch.',
+
+        // Leídos de PRODUCCIÓN el 9-sep-2026, no del plan: el título efectivo de
+        // /nosotros/ y /contacto/ cambió en la fase 2 al quitarles la marca
+        // duplicada, y sembrar el literal viejo los habría vuelto a cambiar.
+        'op_seo_title_es'       => 'Alquiler de equipo audiovisual profesional | Obliq Productions',
+        'op_seo_title_en'       => 'Professional audiovisual equipment rental | Obliq Productions',
+        'op_seo_desc_es'        => 'Alquila equipo audiovisual profesional para tus producciones. Cámaras, ópticas, estabilización, audio y más.',
+        'op_seo_desc_en'        => 'Rent professional audiovisual equipment for your productions. Cameras, lenses, stabilization, audio and more.',
     );
 }
 

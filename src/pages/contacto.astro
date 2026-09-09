@@ -6,6 +6,7 @@ import Heading from '@/components/atoms/Heading.astro';
 import { t, localizedUrl } from '@/lib/i18n';
 import { getSiteContactAsync } from '@/data/site';
 import { getServicesAsync } from '@/data/services';
+import { getPageSeoAsync } from '@/data/page-seo';
 
 const locale = 'es';
 const i18n = t(locale);
@@ -14,9 +15,13 @@ const info = await getSiteContactAsync(locale);
 
 // Derivado de WordPress: un servicio nuevo aparece solo en el desplegable.
 const serviceOptions = (await getServicesAsync()).map((s) => s.name.es);
+
+// Título y descripción para Google, editables en wp-admin (fase 3).
+// Si no hay nada escrito, la página conserva los de siempre.
+const seo = await getPageSeoAsync('contact', locale);
 ---
 
-<BaseLayout title={c.TITLE} description={info.heroSubtitle} locale={locale}>
+<BaseLayout title={c.TITLE} seoTitle={seo.seoTitle} description={seo.seoDescription ?? info.heroSubtitle} locale={locale}>
   <!-- Hero -->
   <HeroSection
     tag={info.heroTag}
