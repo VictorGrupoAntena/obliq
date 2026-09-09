@@ -6,23 +6,26 @@ import ServiceCard from '@/components/cards/ServiceCard.astro';
 import Button from '@/components/atoms/Button.astro';
 import { t, localizedUrl } from '@/lib/i18n';
 import { getServicesAsync } from '@/data/services';
+import { getServicesPageAsync } from '@/data/services-page';
 
 const locale = 'en';
 const i18n = t(locale);
 const services = await getServicesAsync();
-const sp = i18n.SERVICES_PAGE;
+// Textos de esta página desde WordPress, con fallback campo a campo a i18n.
+const sp = await getServicesPageAsync(locale);
 ---
 
 <BaseLayout
-  title={sp.TITLE}
-  description={i18n.GLOBAL.DESCRIPTION}
+  title={i18n.SERVICES_PAGE.TITLE}
+  seoTitle={sp.seoTitle}
+  description={sp.seoDescription}
   locale={locale}
 >
   <!-- Hero -->
   <HeroSection
-    tag={sp.HERO_TAG}
-    title={sp.HERO_TITLE}
-    subtitle={sp.HERO_SUBTITLE}
+    tag={sp.heroTag}
+    title={sp.heroTitle}
+    subtitle={sp.heroSubtitle}
     height="min-h-[50vh] md:min-h-[60vh]"
   />
 
@@ -44,9 +47,9 @@ const sp = i18n.SERVICES_PAGE;
   </section>
 
   <!-- CTA -->
-  <CTASection title={sp.CTA_TITLE} background="dark">
+  <CTASection title={sp.ctaTitle} background="dark">
     <Button variant="primary" href={localizedUrl('/contacto/', locale)}>
-      {sp.CTA_BUTTON}
+      {sp.ctaButton}
     </Button>
   </CTASection>
 </BaseLayout>

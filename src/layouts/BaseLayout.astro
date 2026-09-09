@@ -23,6 +23,15 @@ import { ClientRouter } from 'astro:transitions';
 
 interface Props {
   title: string;
+  /**
+   * Título COMPLETO para el `<title>`, tal y como debe salir en Google.
+   *
+   * Cuando la página lo pasa se usa TAL CUAL y NO se le añade « | Obliq Productions»:
+   * lo que el cliente escribe en WordPress es exactamente lo que se publica. Sin esta
+   * prop —el caso de todas las páginas salvo /servicios/ hasta la fase 3— el
+   * comportamiento es el de siempre, así que su HTML no cambia.
+   */
+  seoTitle?: string;
   description?: string;
   locale?: string;
   ogImage?: string;
@@ -33,6 +42,7 @@ interface Props {
 
 const {
   title,
+  seoTitle,
   description,
   locale: localeProp,
   ogImage = '/hero.jpg',
@@ -49,7 +59,11 @@ const altLocale = locale === 'es' ? 'en' : 'es';
 const altPath = await translatePath(Astro.url.pathname, locale);
 const siteUrl = 'https://obliqproductions.com';
 const canonicalUrl = siteUrl + Astro.url.pathname;
-const fullTitle = title + ' | Obliq Productions';
+// El sufijo se añade SOLO cuando la página no trae un título completo. `og:title` y
+// `twitter:title` cuelgan de esta misma variable, así que las tres etiquetas dicen
+// siempre lo mismo — que es justo lo que se rompía cuando el título de i18n ya
+// llevaba la marca dentro y el sufijo la repetía.
+const fullTitle = seoTitle ?? title + ' | Obliq Productions';
 const ogImageUrl = ogImage.startsWith('http') ? ogImage : siteUrl + ogImage;
 ---
 

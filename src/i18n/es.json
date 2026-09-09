@@ -244,7 +244,7 @@
     "LIGHTBOX_CLOSE": "Cerrar vídeo"
   },
   "ABOUT_PAGE": {
-    "TITLE": "Sobre nosotros — Obliq Productions",
+    "TITLE": "Sobre nosotros",
     "HERO_TAG": "NOSOTROS",
     "HERO_TITLE": "CREAMOS HISTORIAS QUE IMPORTAN",
     "HERO_SUBTITLE": "Somos una productora audiovisual en Valencia con pasión por contar historias.",
@@ -264,7 +264,7 @@
     "CLIENTS_TITLE": "Marcas que confían en nosotros"
   },
   "CONTACT_PAGE": {
-    "TITLE": "Contacto — Obliq Productions",
+    "TITLE": "Contacto",
     "HERO_TAG": "CONTACTO",
     "HERO_TITLE": "HABLEMOS DE TU PROYECTO",
     "HERO_SUBTITLE": "Cuéntanos tu idea y te ayudamos a hacerla realidad.",

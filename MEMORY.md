@@ -8,6 +8,113 @@
 
 ---
 
+## 🏷️ FASE 1 — Nombres, orden y versión del mu-plugin ✅ EN PRODUCCIÓN (8-Sep-2026)
+
+Primera fase del plan «Editar Obliq por URL» (peticiones del cliente: campos identificados por
+su papel, página de servicios editable, párrafo bajo H2). **Solo PHP: cero cambios en `src/`**,
+así que el HTML de las 76 páginas no podía cambiar y no cambió.
+
+### 🔑 `OBLIQ_CPTS_VERSION` — la deriva del mu-plugin por fin es visible
+
+El mu-plugin se sube a mano, así que el fichero que corre en WordPress puede ir por detrás del
+repo **sin que nada lo delate**: el síntoma es que un campo no aparece y ya está. Pasó entre el
+11-ago y el 8-sep (servidor 91 campos, repo 92; faltaba `hm_hero_wait_image`) y solo se
+descubrió contándolos por REST.
+
+Ahora la versión se lee de dos formas: en el **pie de cualquier pantalla de wp-admin**
+(`Obliq CPTs 2026.09.08 · Versión 7.1`) y por **REST en `_obliq_cpts_version`** de cualquier
+entrada de `contenido`. **Regla (revisada el 9-sep-2026): la fecha es la del DESPLIEGUE, no la del commit**, y se
+ajusta justo antes de subir el fichero. La constante existe para responder «¿qué corre ahí fuera?»;
+fecharla con el commit la haría mentir en cuanto la ventana se abriera otro día.
+
+> Se registra con `register_rest_field`, igual que `_obliq_key`, **no** con `register_post_meta`.
+> Por eso el guion bajo no lo bloquea: `is_protected_meta()` solo interviene en las metas.
+> Verificado en PHP 8.3 antes de desplegar, no por analogía.
+
+### Qué cambió
+
+- **92 etiquetas reescritas** según `docs/guides/wp-convencion-campos.md` — **contrato cerrado**,
+  con vocabulario de 17 papeles, palabras prohibidas y verificador ejecutable dentro del propio
+  documento. «Cumple la convención de la fase 1» es criterio de aceptación de las fases 2-4.
+  Antes había **dos vocabularios en el mismo panel**: `Hero — título` en Nosotros y
+  `Cabecera — TITULAR PRINCIPAL / H1` en Inicio para exactamente lo mismo.
+- **Las 4 pantallas numeradas por bloques** (1·, 2·, 3·…) en el orden de la página, copiando el
+  patrón que «Inicio» ya tenía. **«Datos de contacto» se reordenó**: la cabecera estaba al final
+  y ahora va primero, como en la web. WhatsApp sale a su propio bloque (no está en esa página).
+- **Menú lateral reordenado** para reflejar la navegación: `contenido 4 · servicio 5 ·
+  portfolio 6 · alquiler 7 · alquiler_pack 8 · director 9 · cliente 10`. Antes «Equipo» se colaba
+  entre Portfolio y Alquiler, que en la web van seguidos, y «Contenido de páginas» era **la última**.
+- **`hm_hero_wait_image` desplegado** — cierra el pendiente n.º 5 del backlog. Nace vacío: el hero
+  sigue con el hueco oscuro, que es lo decidido y lo verificado.
+- **Sin campos nuevos → sin bump de seed.** `obliq_contenido_seeded` sigue en `'4'` y
+  `obliq_servicio_seeded` en `'1'`, leídos del servidor. La BD no se tocó.
+
+### Evidencia de la ventana (8-sep, ~06:25-06:42 UTC)
+
+| | |
+|---|---|
+| Copia previa | `mu-plugins/obliq-cpts.php.bak.pre-fase1` · `23babb13b5c5212b194ac393fd43bd20743b31a1d00a08a2d6fb865b48667793` · también en `~/Backups/obliq/fase1/` |
+| Fichero subido | `7cf0571d63844317b51c11bd4e22f993544acea9cf64930bc929782e9fe72f87` |
+| REST antes → después | 91 → **92** editables · 1 → **2** solo lectura · 92 → **94** total |
+| Run | **34195744376**, `repository_dispatch`, **success**, 33 s. Gates 6 y 8 en verde antes del rsync |
+| Docroot | 76 páginas, sin cambios |
+
+### 🔑 Tres cosas que aprendimos y que volverán a morder
+
+1. **WP-CLI existe en el servidor pero no arranca solo.** `/usr/local/bin/wp` falla con
+   `/usr/bin/env: 'php': No such file or directory`. Hay que invocarlo con el PHP del dominio:
+   `/opt/plesk/php/8.3/bin/php /usr/local/bin/wp <cmd> --path=$HOME/admin.obliqproductions.com`.
+2. **WP-CLI muere en el mismo escenario que wp-admin.** Un fatal en un mu-plugin tumba panel,
+   REST **y** WP-CLI —que carga WordPress igual—, y los mu-plugins **no tienen interruptor**. Por
+   eso el rollback de `docs/guides/fase1-rollback.md` es siempre **mover ficheros**, ejecutable por
+   SSH o FTP. Nivel 0: renombrar a `.ROTO` y el panel vuelve al instante.
+3. **Lo único que impide publicar el sitio con los datos de ejemplo del repo es `operator.ts`.**
+   `check:services` sale con 0 ante cero servicios (líneas 81-83, deliberado) y `services.ts` cae
+   al mock en silencio: un build sin CPT saldría **completo y en verde**. La guarda que lanza
+   excepción en `operator.ts` (líneas 107-113) se escribió para la tarifa de operador, pero es la
+   red que queda. **No ablandarla.** El «no copies el patrón de `operator.ts`» de la fase 4 se
+   refiere a los campos nuevos, no autoriza a tocar esa guarda.
+
+**Siguiente:** fase 2 — página de servicios editable (entrada `_obliq_key='servicios'`, prefijo
+`sp_`, 14 campos, seed **v5**) + contrato del título en `BaseLayout` + los **4 títulos con la marca
+duplicada** (`ABOUT_PAGE.TITLE` y `CONTACT_PAGE.TITLE` en `es.json`/`en.json`), que viajan con
+excepción **declarada** al criterio byte a byte.
+
+---
+
+## 🧪 FASE 2 — Verificación previa a la ventana (G2 aprobado, 9-Sep-2026)
+
+El diff byte a byte de la fase 2 se produjo y se revisó **antes** de la ventana, no después:
+después del `rsync` ya no sería una verificación, sería un parte de daños. Resultado: **72 páginas
+idénticas** —tras normalizar los hashes de bundle, con doble build de control que dio 0 ruido— y
+**4 que cambian**: `/nosotros/`, `/contacto/`, `/en/about/` y `/en/contact/`, con **12 etiquetas**
+en total. Son tres por página (`title`, `og:title`, `twitter:title`) porque las tres cuelgan de la
+misma variable `fullTitle` de `BaseLayout`: un cambio de título nunca produce una diferencia, produce tres.
+
+### 🔑 La lección de método del sprint
+
+> **Un simulador infiel no falla: produce un diff plausible.**
+
+El primer WordPress simulado servía ficheros JSON **ignorando los parámetros de consulta**, y
+`getServices()` pide `orderby=menu_order&order=asc`. Resultado: **76 falsas diferencias**, todas
+por el orden de los servicios en el pie. No dio ningún error ni ninguna traza: dio un diff creíble,
+que es bastante peor. Se sustituyó por un **proxy al WordPress real** que parchea únicamente la
+entrada `contenido`, y el resultado coincidió con el del build sin simular.
+
+Lo que queda como regla: **un doble build de control del mismo código mide el ruido antes de
+creerse ninguna diferencia**, y **todo simulador se contrasta contra el sistema real antes de
+usarlo como patrón de medida**. Un banco de pruebas sin calibrar no es un banco de pruebas.
+
+### Dos hallazgos incidentales, fuera del alcance de la fase
+
+- **`public/favicon.svg` no está versionado en git.** No lo referencia nada —`BaseLayout` solo
+  enlaza el `.ico`, que sí está versionado—, así que el 404 de `/favicon.svg` en producción es
+  sondeo de navegador, no una regresión. Lo único real es que **el `public/` local y el del runner
+  de CI no son el mismo**, y por eso los builds no coinciden fichero a fichero.
+- **Los nueve servicios comparten `date` y tienen `menu_order = 0`** → backlog, punto 14.
+
+---
+
 ## 🗺️ SPRINT MAPA DE GOOGLE EN /CONTACTO/ (14-Ago-2026)
 
 ### ✅ VERIFICADO EN STAGING — run 31779174471. **Pendiente solo de autorización para producción**
@@ -728,6 +835,14 @@ Diseño cerrado y medido, para no rehacer el análisis:
     - **En contra:** requiere recuperar **acceso a la cuenta de Resend** (¿de quién es?) + API key en el pool; ~20 líneas por endpoint (POST por curl, sin dependencias nuevas) + manejo de errores; **no arregla el servidor** (WordPress y cualquier otro `mail()` hacia `@obliqproductions.com` seguirían dependiendo de la config de Plesk).
     - **Criterio: complementaria, no alternativa.** La Opción A era el arreglo (un clic, cero código, arregla el dominio entero). B entra como sprint propio **por la observabilidad**, condicionada al acceso a Resend. Si se hace, el `-f` queda inerte pero inofensivo.
 13. **Limpieza DNS — restos de correo local (no urgente).** Con el correo ya en Google, los SRV `_imaps`/`_pop3s`/`_smtps` y los hosts `mail.`/`webmail.` siguen apuntando al Plesk → **autodiscover incorrecto** en clientes de correo. Retirar cuando se toque la zona. ⚠️ Hacerlo **a mano, registro a registro** — ver la advertencia de «Apply DNS Template».
+
+14. **`menu_order = 0` en los nueve servicios (detectado 9-Sep-2026).** **El orden del pie y de
+    las tarjetas lo desempata MySQL sin garantía; si algún día aparece reordenado sin que nadie
+    toque nada, la causa está aquí.** `getServices()` pide `orderby=menu_order&order=asc`, pero las
+    nueve fichas valen `0` y además comparten `date = 2026-03-02T16:55:26`, así que el desempate no
+    está definido por nada. Hoy el orden es estable, y esa estabilidad no está garantizada por
+    ningún contrato. Se cierra dando `menu_order` distintos a las nueve fichas —un movimiento de
+    datos, sin código—. **Fuera del alcance de las fases 1-4.**
 
 **PRIORIDAD BAJA:**
 9. Schema.org VideoObject en portfolio (cuando haya URLs Vimeo reales)

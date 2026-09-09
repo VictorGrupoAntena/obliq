@@ -14,6 +14,37 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 // ============================================================
+// VERSIÓN DE ESTE FICHERO
+//
+// El mu-plugin se sube A MANO al servidor, así que el fichero que corre en
+// WordPress puede ir por detrás del que está en el repositorio y NADA lo
+// delata: el síntoma es que un campo simplemente no aparece en wp-admin.
+// Ocurrió: entre el 11-ago y el 8-sep-2026 el servidor tuvo 91 campos y el
+// repositorio 92, y la diferencia (`hm_hero_wait_image`) solo se descubrió
+// contándolos por REST.
+//
+// Con esta constante la deriva se ve de dos maneras, sin contar nada:
+//   - en el pie de CUALQUIER pantalla de wp-admin;
+//   - por REST, en `_obliq_cpts_version` de cualquier entrada de `contenido`.
+//
+// REGLA: subir la fecha en el MISMO commit que cambie este fichero, antes de
+// desplegarlo. Si dos versiones caen el mismo día, sufijo 'b', 'c'…
+// ============================================================
+
+if ( ! defined( 'OBLIQ_CPTS_VERSION' ) ) {
+    define( 'OBLIQ_CPTS_VERSION', '2026.09.09' );
+}
+
+// Pie de wp-admin, a la derecha, junto a la versión de WordPress.
+// Prioridad 20: el core engancha `core_update_footer` en la 10 y su texto se
+// conserva detrás del nuestro en vez de pisarse.
+add_filter( 'update_footer', 'obliq_cpts_version_footer', 20 );
+
+function obliq_cpts_version_footer( $text ) {
+    return 'Obliq CPTs ' . OBLIQ_CPTS_VERSION . ( $text ? ' · ' . $text : '' );
+}
+
+// ============================================================
 // TAXONOMÍAS (se registran primero — los CPTs las referencian)
 // ============================================================
 
@@ -125,7 +156,7 @@ function obliq_register_cpts() {
         'rest_base'     => 'director',
         'supports'      => array( 'title', 'thumbnail', 'page-attributes' ),
         'menu_icon'     => 'dashicons-groups',
-        'menu_position' => 7,
+        'menu_position' => 9,
     ) );
 
     // --- alquiler (productos de alquiler) ---
@@ -143,7 +174,7 @@ function obliq_register_cpts() {
         'supports'      => array( 'title', 'editor', 'thumbnail', 'page-attributes' ),
         'taxonomies'    => array( 'rental_category' ),
         'menu_icon'     => 'dashicons-camera',
-        'menu_position' => 8,
+        'menu_position' => 7,
     ) );
 
     // --- alquiler_pack (packs temáticos) ---
@@ -160,7 +191,7 @@ function obliq_register_cpts() {
         'rest_base'     => 'alquiler_pack',
         'supports'      => array( 'title', 'thumbnail' ),
         'menu_icon'     => 'dashicons-archive',
-        'menu_position' => 9,
+        'menu_position' => 8,
     ) );
 
     // --- cliente (logos de marcas) ---
@@ -589,6 +620,9 @@ function obliq_save_meta_fields( $post_id, $post ) {
 //                             (página de contacto + footer + WhatsApp
 //                              + JSON-LD LocalBusiness)
 //   _obliq_key = 'home'     → fondo del hero de la portada (vídeo + imagen)
+//   _obliq_key = 'servicios'→ textos de la PÁGINA /servicios/ y /en/services/
+//                             (cabecera, llamada final y cómo se ve en Google). Las
+//                             fichas de cada servicio siguen en el CPT `servicio`.
 //   _obliq_key = 'alquiler' → tarifa GLOBAL de operador de alquiler
 //                             (precio jornada/media, qué incluye, condiciones).
 //                             El alquiler es SIEMPRE con operador. La consume
@@ -615,8 +649,13 @@ function obliq_save_meta_fields( $post_id, $post ) {
 //        instalado, así que sin subir la versión el guard `obliq_contenido_seeded`
 //        cortaría antes de sembrarlos y el cliente encontraría 36 campos en
 //        blanco. El seed solo rellena lo vacío: lo ya escrito no se toca.
+//   v5 — entrada «Servicios» (_obliq_key = 'servicios'), 14 campos. La entrada NO existe
+//        en el WP instalado, así que sin subir la versión el guard `obliq_contenido_seeded`
+//        cortaría y la pantalla no aparecería nunca. Los valores sembrados son EXACTAMENTE
+//        los que hoy vienen de src/i18n/*.json, incluido el sufijo « | Obliq Productions»
+//        del título en Google: así la página se reconstruye byte a byte igual que antes.
 if ( ! defined( 'OBLIQ_CONTENIDO_SEED_VERSION' ) ) {
-    define( 'OBLIQ_CONTENIDO_SEED_VERSION', '4' );
+    define( 'OBLIQ_CONTENIDO_SEED_VERSION', '5' );
 }
 
 /**
@@ -630,65 +669,70 @@ function obliq_contenido_field_defs() {
     return array(
 
         // ---------- Entrada "Nosotros" (31 campos) ----------
-        'ab_hero_tag_es'        => array( 'Hero — etiqueta (ES)', 'text' ),
-        'ab_hero_tag_en'        => array( 'Hero — etiqueta (EN)', 'text' ),
-        'ab_hero_title_es'      => array( 'Hero — título (ES)', 'text' ),
-        'ab_hero_title_en'      => array( 'Hero — título (EN)', 'text' ),
-        'ab_hero_subtitle_es'   => array( 'Hero — subtítulo (ES)', 'textarea' ),
-        'ab_hero_subtitle_en'   => array( 'Hero — subtítulo (EN)', 'textarea' ),
+        // Etiquetas según docs/guides/wp-convencion-campos.md (fase 1, 8-sep-2026).
+        // El nombre del bloque coincide LITERALMENTE con el <h4> de su grupo en el metabox.
+        'ab_hero_tag_es'        => array( 'Cabecera — etiqueta superior (ES)', 'text' ),
+        'ab_hero_tag_en'        => array( 'Cabecera — etiqueta superior (EN)', 'text' ),
+        'ab_hero_title_es'      => array( 'Cabecera — titular de la página (H1) (ES)', 'text' ),
+        'ab_hero_title_en'      => array( 'Cabecera — titular de la página (H1) (EN)', 'text' ),
+        'ab_hero_subtitle_es'   => array( 'Cabecera — párrafo bajo el titular (ES)', 'textarea' ),
+        'ab_hero_subtitle_en'   => array( 'Cabecera — párrafo bajo el titular (EN)', 'textarea' ),
 
-        'ab_story_title_es'     => array( 'Historia — título (ES)', 'text' ),
-        'ab_story_title_en'     => array( 'Historia — título (EN)', 'text' ),
-        'ab_story_text_es'      => array( 'Historia — texto (ES)', 'textarea' ),
-        'ab_story_text_en'      => array( 'Historia — texto (EN)', 'textarea' ),
-        'ab_story_image'        => array( 'Historia — imagen', 'media' ),
+        'ab_story_title_es'     => array( 'Nuestra historia — título de bloque (H2) (ES)', 'text' ),
+        'ab_story_title_en'     => array( 'Nuestra historia — título de bloque (H2) (EN)', 'text' ),
+        'ab_story_text_es'      => array( 'Nuestra historia — párrafo bajo el título (ES)', 'textarea' ),
+        'ab_story_text_en'      => array( 'Nuestra historia — párrafo bajo el título (EN)', 'textarea' ),
+        'ab_story_image'        => array( 'Nuestra historia — imagen', 'media' ),
 
-        'ab_values_tag_es'      => array( 'Valores — etiqueta (ES)', 'text' ),
-        'ab_values_tag_en'      => array( 'Valores — etiqueta (EN)', 'text' ),
-        'ab_values_title_es'    => array( 'Valores — título (ES)', 'text' ),
-        'ab_values_title_en'    => array( 'Valores — título (EN)', 'text' ),
-        'ab_value_1_title_es'   => array( 'Valor 1 — título (ES)', 'text' ),
-        'ab_value_1_title_en'   => array( 'Valor 1 — título (EN)', 'text' ),
-        'ab_value_1_text_es'    => array( 'Valor 1 — texto (ES)', 'textarea' ),
-        'ab_value_1_text_en'    => array( 'Valor 1 — texto (EN)', 'textarea' ),
-        'ab_value_2_title_es'   => array( 'Valor 2 — título (ES)', 'text' ),
-        'ab_value_2_title_en'   => array( 'Valor 2 — título (EN)', 'text' ),
-        'ab_value_2_text_es'    => array( 'Valor 2 — texto (ES)', 'textarea' ),
-        'ab_value_2_text_en'    => array( 'Valor 2 — texto (EN)', 'textarea' ),
-        'ab_value_3_title_es'   => array( 'Valor 3 — título (ES)', 'text' ),
-        'ab_value_3_title_en'   => array( 'Valor 3 — título (EN)', 'text' ),
-        'ab_value_3_text_es'    => array( 'Valor 3 — texto (ES)', 'textarea' ),
-        'ab_value_3_text_en'    => array( 'Valor 3 — texto (EN)', 'textarea' ),
+        'ab_values_tag_es'      => array( 'Valores — etiqueta superior (ES)', 'text' ),
+        'ab_values_tag_en'      => array( 'Valores — etiqueta superior (EN)', 'text' ),
+        'ab_values_title_es'    => array( 'Valores — título de bloque (H2) (ES)', 'text' ),
+        'ab_values_title_en'    => array( 'Valores — título de bloque (H2) (EN)', 'text' ),
+        'ab_value_1_title_es'   => array( 'Valor 1 — título de bloque (H3) (ES)', 'text' ),
+        'ab_value_1_title_en'   => array( 'Valor 1 — título de bloque (H3) (EN)', 'text' ),
+        'ab_value_1_text_es'    => array( 'Valor 1 — párrafo bajo el título (ES)', 'textarea' ),
+        'ab_value_1_text_en'    => array( 'Valor 1 — párrafo bajo el título (EN)', 'textarea' ),
+        'ab_value_2_title_es'   => array( 'Valor 2 — título de bloque (H3) (ES)', 'text' ),
+        'ab_value_2_title_en'   => array( 'Valor 2 — título de bloque (H3) (EN)', 'text' ),
+        'ab_value_2_text_es'    => array( 'Valor 2 — párrafo bajo el título (ES)', 'textarea' ),
+        'ab_value_2_text_en'    => array( 'Valor 2 — párrafo bajo el título (EN)', 'textarea' ),
+        'ab_value_3_title_es'   => array( 'Valor 3 — título de bloque (H3) (ES)', 'text' ),
+        'ab_value_3_title_en'   => array( 'Valor 3 — título de bloque (H3) (EN)', 'text' ),
+        'ab_value_3_text_es'    => array( 'Valor 3 — párrafo bajo el título (ES)', 'textarea' ),
+        'ab_value_3_text_en'    => array( 'Valor 3 — párrafo bajo el título (EN)', 'textarea' ),
 
-        'ab_team_tag_es'        => array( 'Equipo — etiqueta (ES)', 'text' ),
-        'ab_team_tag_en'        => array( 'Equipo — etiqueta (EN)', 'text' ),
-        'ab_team_title_es'      => array( 'Equipo — título (ES)', 'text' ),
-        'ab_team_title_en'      => array( 'Equipo — título (EN)', 'text' ),
+        'ab_team_tag_es'        => array( 'Equipo — etiqueta superior (ES)', 'text' ),
+        'ab_team_tag_en'        => array( 'Equipo — etiqueta superior (EN)', 'text' ),
+        'ab_team_title_es'      => array( 'Equipo — título de bloque (H2) (ES)', 'text' ),
+        'ab_team_title_en'      => array( 'Equipo — título de bloque (H2) (EN)', 'text' ),
 
         // ---------- Entrada "Datos de contacto" (16 campos) ----------
-        'ct_hero_tag_es'        => array( 'Hero — etiqueta (ES)', 'text' ),
-        'ct_hero_tag_en'        => array( 'Hero — etiqueta (EN)', 'text' ),
-        'ct_hero_title_es'      => array( 'Hero — título (ES)', 'text' ),
-        'ct_hero_title_en'      => array( 'Hero — título (EN)', 'text' ),
-        'ct_hero_subtitle_es'   => array( 'Hero — subtítulo / intro (ES)', 'textarea' ),
-        'ct_hero_subtitle_en'   => array( 'Hero — subtítulo / intro (EN)', 'textarea' ),
-        'ct_info_title_es'      => array( 'Título del bloque de información (ES)', 'text' ),
-        'ct_info_title_en'      => array( 'Título del bloque de información (EN)', 'text' ),
-        'ct_hours_es'           => array( 'Horario (ES)', 'text' ),
-        'ct_hours_en'           => array( 'Horario (EN)', 'text' ),
+        // El orden de ESTE array no ordena nada: lo hacen las listas de
+        // obliq_contenido_meta_html(). Se conserva el orden histórico para que el
+        // diff de la fase 1 sea solo de etiquetas.
+        'ct_hero_tag_es'        => array( 'Cabecera — etiqueta superior (ES)', 'text' ),
+        'ct_hero_tag_en'        => array( 'Cabecera — etiqueta superior (EN)', 'text' ),
+        'ct_hero_title_es'      => array( 'Cabecera — titular de la página (H1) (ES)', 'text' ),
+        'ct_hero_title_en'      => array( 'Cabecera — titular de la página (H1) (EN)', 'text' ),
+        'ct_hero_subtitle_es'   => array( 'Cabecera — párrafo bajo el titular (ES)', 'textarea' ),
+        'ct_hero_subtitle_en'   => array( 'Cabecera — párrafo bajo el titular (EN)', 'textarea' ),
+        'ct_info_title_es'      => array( 'Información de contacto — título de bloque (H3) (ES)', 'text' ),
+        'ct_info_title_en'      => array( 'Información de contacto — título de bloque (H3) (EN)', 'text' ),
+        'ct_hours_es'           => array( 'Información de contacto — horario (ES)', 'text' ),
+        'ct_hours_en'           => array( 'Información de contacto — horario (EN)', 'text' ),
 
-        'ct_email'              => array( 'Email', 'text' ),
-        'ct_phone'              => array( 'Teléfono (tal y como debe verse)', 'text' ),
-        'ct_whatsapp'           => array( 'WhatsApp (solo dígitos, con prefijo país y sin +)', 'text' ),
-        'ct_address_street'     => array( 'Dirección — calle y número', 'text' ),
-        'ct_address_postal'     => array( 'Dirección — código postal', 'text' ),
-        'ct_address_city'       => array( 'Dirección — ciudad', 'text' ),
+        'ct_email'              => array( 'Información de contacto — email', 'text' ),
+        'ct_phone'              => array( 'Información de contacto — teléfono, tal y como debe verse', 'text' ),
+        'ct_whatsapp'           => array( 'WhatsApp — número, solo dígitos con prefijo de país y sin el signo +', 'text' ),
+        'ct_address_street'     => array( 'Información de contacto — dirección, calle y número', 'text' ),
+        'ct_address_postal'     => array( 'Información de contacto — dirección, código postal', 'text' ),
+        'ct_address_city'       => array( 'Información de contacto — dirección, ciudad', 'text' ),
 
         // ---------- Entrada "Inicio" (3 de fondo + 36 de texto) ----------
         // Los de fondo NO llevan sufijo de idioma: son el mismo vídeo y la
         // misma imagen en las dos versiones del sitio, igual que ab_story_image.
-        'hm_hero_vimeo_url'     => array( 'Hero — vídeo de Vimeo (URL). Si se deja vacío se muestra solo la imagen.', 'text' ),
-        'hm_hero_fallback_image' => array( 'Hero — imagen (se ve con reduced-motion o ahorro de datos, y si no hay vídeo)', 'media' ),
+        'hm_hero_vimeo_url'     => array( 'Cabecera — vídeo (dirección de Vimeo)', 'text' ),
+        'hm_hero_fallback_image' => array( 'Cabecera — imagen, la que sustituye al vídeo', 'media' ),
         // Campo de imagen y no un interruptor a propósito. Con un checkbox
         // habría un estado imposible —marcado y sin imagen que enseñar—, y
         // sobre todo: `hm_hero_fallback_image` YA viene sembrado con /hero.jpg,
@@ -696,59 +740,79 @@ function obliq_contenido_field_defs() {
         // devuelto el póster el primer día, justo lo contrario de lo que se
         // decidió en agosto. Un campo nuevo nace vacío: el hueco por defecto no
         // depende de acertar con el valor inicial de nada.
-        'hm_hero_wait_image'    => array( 'Hero — imagen de espera (OPCIONAL; vacío = sin imagen mientras carga el vídeo)', 'media' ),
+        'hm_hero_wait_image'    => array( 'Cabecera — imagen, la de espera mientras carga el vídeo (opcional)', 'media' ),
 
-        'hm_hero_tag_es'        => array( 'Cabecera — etiqueta pequeña (ES)', 'text' ),
-        'hm_hero_tag_en'        => array( 'Cabecera — etiqueta pequeña (EN)', 'text' ),
-        'hm_hero_title_es'      => array( 'Cabecera — TITULAR PRINCIPAL / H1 (ES)', 'text' ),
-        'hm_hero_title_en'      => array( 'Cabecera — TITULAR PRINCIPAL / H1 (EN)', 'text' ),
-        'hm_hero_subtitle_es'   => array( 'Cabecera — subtítulo (ES)', 'textarea' ),
-        'hm_hero_subtitle_en'   => array( 'Cabecera — subtítulo (EN)', 'textarea' ),
-        'hm_hero_cta_primary_es'   => array( 'Cabecera — botón principal (ES)', 'text' ),
-        'hm_hero_cta_primary_en'   => array( 'Cabecera — botón principal (EN)', 'text' ),
-        'hm_hero_cta_secondary_es' => array( 'Cabecera — botón secundario (ES)', 'text' ),
-        'hm_hero_cta_secondary_en' => array( 'Cabecera — botón secundario (EN)', 'text' ),
+        'hm_hero_tag_es'        => array( 'Cabecera — etiqueta superior (ES)', 'text' ),
+        'hm_hero_tag_en'        => array( 'Cabecera — etiqueta superior (EN)', 'text' ),
+        'hm_hero_title_es'      => array( 'Cabecera — titular de la página (H1) (ES)', 'text' ),
+        'hm_hero_title_en'      => array( 'Cabecera — titular de la página (H1) (EN)', 'text' ),
+        'hm_hero_subtitle_es'   => array( 'Cabecera — párrafo bajo el titular (ES)', 'textarea' ),
+        'hm_hero_subtitle_en'   => array( 'Cabecera — párrafo bajo el titular (EN)', 'textarea' ),
+        'hm_hero_cta_primary_es'   => array( 'Cabecera — botón, el principal (ES)', 'text' ),
+        'hm_hero_cta_primary_en'   => array( 'Cabecera — botón, el principal (EN)', 'text' ),
+        'hm_hero_cta_secondary_es' => array( 'Cabecera — botón, el secundario (ES)', 'text' ),
+        'hm_hero_cta_secondary_en' => array( 'Cabecera — botón, el secundario (EN)', 'text' ),
 
-        'hm_services_tag_es'    => array( 'Servicios — etiqueta (ES)', 'text' ),
-        'hm_services_tag_en'    => array( 'Servicios — etiqueta (EN)', 'text' ),
-        'hm_services_title_es'  => array( 'Servicios — título (ES)', 'text' ),
-        'hm_services_title_en'  => array( 'Servicios — título (EN)', 'text' ),
-        'hm_service_card_cta_es' => array( 'Servicios — texto que aparece al pasar el ratón por una tarjeta (ES)', 'text' ),
-        'hm_service_card_cta_en' => array( 'Servicios — texto que aparece al pasar el ratón por una tarjeta (EN)', 'text' ),
+        'hm_services_tag_es'    => array( 'Servicios — etiqueta superior (ES)', 'text' ),
+        'hm_services_tag_en'    => array( 'Servicios — etiqueta superior (EN)', 'text' ),
+        'hm_services_title_es'  => array( 'Servicios — título de bloque (H2) (ES)', 'text' ),
+        'hm_services_title_en'  => array( 'Servicios — título de bloque (H2) (EN)', 'text' ),
+        'hm_service_card_cta_es' => array( 'Servicios — texto al pasar el ratón por una tarjeta (ES)', 'text' ),
+        'hm_service_card_cta_en' => array( 'Servicios — texto al pasar el ratón por una tarjeta (EN)', 'text' ),
 
         'hm_marquee_work_es'    => array( 'Cinta deslizante — texto que se repite (ES)', 'text' ),
         'hm_marquee_work_en'    => array( 'Cinta deslizante — texto que se repite (EN)', 'text' ),
 
-        'hm_portfolio_tag_es'   => array( 'Portfolio — etiqueta (ES)', 'text' ),
-        'hm_portfolio_tag_en'   => array( 'Portfolio — etiqueta (EN)', 'text' ),
-        'hm_portfolio_title_es' => array( 'Portfolio — título (ES)', 'text' ),
-        'hm_portfolio_title_en' => array( 'Portfolio — título (EN)', 'text' ),
+        'hm_portfolio_tag_es'   => array( 'Portfolio — etiqueta superior (ES)', 'text' ),
+        'hm_portfolio_tag_en'   => array( 'Portfolio — etiqueta superior (EN)', 'text' ),
+        'hm_portfolio_title_es' => array( 'Portfolio — título de bloque (H2) (ES)', 'text' ),
+        'hm_portfolio_title_en' => array( 'Portfolio — título de bloque (H2) (EN)', 'text' ),
         'hm_portfolio_cta_es'   => array( 'Portfolio — botón (ES)', 'text' ),
         'hm_portfolio_cta_en'   => array( 'Portfolio — botón (EN)', 'text' ),
 
-        'hm_about_tag_es'       => array( 'Nosotros — etiqueta (ES)', 'text' ),
-        'hm_about_tag_en'       => array( 'Nosotros — etiqueta (EN)', 'text' ),
-        'hm_about_title_es'     => array( 'Nosotros — título (ES)', 'text' ),
-        'hm_about_title_en'     => array( 'Nosotros — título (EN)', 'text' ),
-        'hm_about_text_es'      => array( 'Nosotros — párrafo (ES)', 'textarea' ),
-        'hm_about_text_en'      => array( 'Nosotros — párrafo (EN)', 'textarea' ),
+        'hm_about_tag_es'       => array( 'Nosotros — etiqueta superior (ES)', 'text' ),
+        'hm_about_tag_en'       => array( 'Nosotros — etiqueta superior (EN)', 'text' ),
+        'hm_about_title_es'     => array( 'Nosotros — título de bloque (H2) (ES)', 'text' ),
+        'hm_about_title_en'     => array( 'Nosotros — título de bloque (H2) (EN)', 'text' ),
+        'hm_about_text_es'      => array( 'Nosotros — párrafo bajo el título (ES)', 'textarea' ),
+        'hm_about_text_en'      => array( 'Nosotros — párrafo bajo el título (EN)', 'textarea' ),
         'hm_about_cta_es'       => array( 'Nosotros — botón (ES)', 'text' ),
         'hm_about_cta_en'       => array( 'Nosotros — botón (EN)', 'text' ),
 
-        'hm_cta_title_es'       => array( 'Llamada final — título (ES)', 'text' ),
-        'hm_cta_title_en'       => array( 'Llamada final — título (EN)', 'text' ),
+        'hm_cta_title_es'       => array( 'Llamada final — título de bloque (H2) (ES)', 'text' ),
+        'hm_cta_title_en'       => array( 'Llamada final — título de bloque (H2) (EN)', 'text' ),
         'hm_cta_button_es'      => array( 'Llamada final — botón (ES)', 'text' ),
         'hm_cta_button_en'      => array( 'Llamada final — botón (EN)', 'text' ),
+
+        // ---------- Entrada "Servicios" (14 campos) — fase 2 ----------
+        // La PÁGINA que lista los servicios (/servicios/ y /en/services/), no las fichas:
+        // el nombre y la descripción de cada servicio siguen en el CPT `servicio`.
+        'sp_hero_tag_es'        => array( 'Cabecera — etiqueta superior (ES)', 'text' ),
+        'sp_hero_tag_en'        => array( 'Cabecera — etiqueta superior (EN)', 'text' ),
+        'sp_hero_title_es'      => array( 'Cabecera — titular de la página (H1) (ES)', 'text' ),
+        'sp_hero_title_en'      => array( 'Cabecera — titular de la página (H1) (EN)', 'text' ),
+        'sp_hero_subtitle_es'   => array( 'Cabecera — párrafo bajo el titular (ES)', 'textarea' ),
+        'sp_hero_subtitle_en'   => array( 'Cabecera — párrafo bajo el titular (EN)', 'textarea' ),
+
+        'sp_cta_title_es'       => array( 'Llamada final — título de bloque (H2) (ES)', 'text' ),
+        'sp_cta_title_en'       => array( 'Llamada final — título de bloque (H2) (EN)', 'text' ),
+        'sp_cta_button_es'      => array( 'Llamada final — botón (ES)', 'text' ),
+        'sp_cta_button_en'      => array( 'Llamada final — botón (EN)', 'text' ),
+
+        'sp_seo_title_es'       => array( 'Cómo se ve en Google — título en Google (ES)', 'text' ),
+        'sp_seo_title_en'       => array( 'Cómo se ve en Google — título en Google (EN)', 'text' ),
+        'sp_seo_desc_es'        => array( 'Cómo se ve en Google — descripción en Google (ES)', 'textarea' ),
+        'sp_seo_desc_en'        => array( 'Cómo se ve en Google — descripción en Google (EN)', 'textarea' ),
 
         // ---------- Entrada "Alquiler · Tarifa de operador" (6 campos) ----------
         // El alquiler es SIEMPRE con operador. Precios SIN IVA (mismo criterio
         // que el resto del catálogo). Modelo aditivo: TOTAL = material + operador.
-        'op_jornada_price'      => array( 'Operador — tarifa por JORNADA COMPLETA (€, sin IVA). Solo el número, p. ej. 300', 'number' ),
-        'op_media_price'        => array( 'Operador — tarifa por MEDIA JORNADA (€, sin IVA). Solo el número, p. ej. 200', 'number' ),
-        'op_includes_es'        => array( 'Qué incluye la tarifa de operador — una línea por ítem (ES)', 'textarea' ),
-        'op_includes_en'        => array( 'Qué incluye la tarifa de operador — una línea por ítem (EN)', 'textarea' ),
-        'op_terms_es'           => array( 'Condiciones (brutos, límite de media jornada, desplazamiento) (ES)', 'textarea' ),
-        'op_terms_en'           => array( 'Condiciones (brutos, límite de media jornada, desplazamiento) (EN)', 'textarea' ),
+        'op_jornada_price'      => array( 'Precios del operador — precio de la jornada completa (€, sin IVA)', 'number' ),
+        'op_media_price'        => array( 'Precios del operador — precio de la media jornada (€, sin IVA)', 'number' ),
+        'op_includes_es'        => array( 'Qué incluye — lista (ES)', 'textarea' ),
+        'op_includes_en'        => array( 'Qué incluye — lista (EN)', 'textarea' ),
+        'op_terms_es'           => array( 'Condiciones — párrafo (ES)', 'textarea' ),
+        'op_terms_en'           => array( 'Condiciones — párrafo (EN)', 'textarea' ),
     );
 }
 
@@ -811,7 +875,7 @@ function obliq_register_contenido_cpt() {
         'map_meta_cap'        => true,
         'capabilities'        => array( 'create_posts' => 'do_not_allow' ),
         'menu_icon'           => 'dashicons-admin-page',
-        'menu_position'       => 11,
+        'menu_position'       => 4,
     ) );
 }
 
@@ -848,6 +912,19 @@ function obliq_register_contenido_rest_fields() {
     register_rest_field( 'contenido', '_obliq_key', array(
         'get_callback' => function ( $post ) {
             return get_post_meta( $post['id'], '_obliq_key', true );
+        },
+        'schema' => null,
+    ) );
+
+    // Versión del mu-plugin QUE ESTÁ CORRIENDO en este WordPress. Solo lectura:
+    // no es un meta, no se guarda, no se siembra y no cuenta como campo editable.
+    // Permite comprobar la deriva repo↔servidor desde fuera, con el mismo curl
+    // que ya se usa para verificar los despliegues:
+    //   curl -s ".../wp/v2/contenido" | python3 -c "import sys,json; \
+    //     print(json.load(sys.stdin)[0]['_obliq_cpts_version'])"
+    register_rest_field( 'contenido', '_obliq_cpts_version', array(
+        'get_callback' => function () {
+            return OBLIQ_CPTS_VERSION;
         },
         'schema' => null,
     ) );
@@ -898,11 +975,12 @@ function obliq_contenido_meta_html( $post ) {
     if ( 'about' === $key ) {
         echo '<p><em>Textos de la página «Nosotros» (/nosotros/ y /en/about/).<br>';
         echo 'Los miembros del equipo se editan en <strong>Equipo</strong> y los logos de marcas en <strong>Clientes</strong>.</em></p>';
-        echo '<hr><h4>Cabecera</h4>';
+        echo '<hr><h4>1 · Cabecera</h4>';
         obliq_contenido_render_fields( $id, array( 'ab_hero_tag_es', 'ab_hero_tag_en', 'ab_hero_title_es', 'ab_hero_title_en', 'ab_hero_subtitle_es', 'ab_hero_subtitle_en' ) );
-        echo '<hr><h4>Nuestra historia</h4>';
+        echo '<hr><h4>2 · Nuestra historia</h4>';
         obliq_contenido_render_fields( $id, array( 'ab_story_title_es', 'ab_story_title_en', 'ab_story_text_es', 'ab_story_text_en', 'ab_story_image' ) );
-        echo '<hr><h4>Valores (siempre 3 — el diseño es una rejilla de tres columnas)</h4>';
+        echo '<hr><h4>3 · Valores</h4>';
+        echo '<p><em>Siempre tres: el diseño es una rejilla de tres columnas.</em></p>';
         obliq_contenido_render_fields( $id, array( 'ab_values_tag_es', 'ab_values_tag_en', 'ab_values_title_es', 'ab_values_title_en' ) );
         echo '<h4>Valor 1</h4>';
         obliq_contenido_render_fields( $id, array( 'ab_value_1_title_es', 'ab_value_1_title_en', 'ab_value_1_text_es', 'ab_value_1_text_en' ) );
@@ -910,22 +988,38 @@ function obliq_contenido_meta_html( $post ) {
         obliq_contenido_render_fields( $id, array( 'ab_value_2_title_es', 'ab_value_2_title_en', 'ab_value_2_text_es', 'ab_value_2_text_en' ) );
         echo '<h4>Valor 3</h4>';
         obliq_contenido_render_fields( $id, array( 'ab_value_3_title_es', 'ab_value_3_title_en', 'ab_value_3_text_es', 'ab_value_3_text_en' ) );
-        echo '<hr><h4>Cabecera del bloque de equipo</h4>';
+        echo '<hr><h4>4 · Equipo</h4>';
+        echo '<p><em>Aquí va solo la cabecera del bloque. Las personas se editan en <strong>Equipo</strong>.</em></p>';
         obliq_contenido_render_fields( $id, array( 'ab_team_tag_es', 'ab_team_tag_en', 'ab_team_title_es', 'ab_team_title_en' ) );
         return;
     }
 
     if ( 'contact' === $key ) {
-        echo '<p><em>Datos de contacto <strong>globales</strong>: se usan en la página de contacto, en el pie de página, en el botón de WhatsApp y en los datos que lee Google (JSON-LD).<br>';
+        echo '<p><em>Textos y datos de la página de contacto (/contacto/ y /en/contact/), en el mismo orden en que se ven en la página.<br>';
+        echo '<strong>Ojo:</strong> el email, el teléfono, el horario y la dirección se usan además en el pie de página y en la ficha que lee Google, así que cambiarlos aquí los cambia <strong>en todo el sitio</strong>.<br>';
         echo 'El formulario de contacto no se edita desde aquí.</em></p>';
-        echo '<hr><h4>Datos de contacto</h4>';
-        obliq_contenido_render_fields( $id, array( 'ct_email', 'ct_phone', 'ct_whatsapp' ) );
-        echo '<hr><h4>Dirección</h4>';
-        obliq_contenido_render_fields( $id, array( 'ct_address_street', 'ct_address_postal', 'ct_address_city' ) );
-        echo '<hr><h4>Horario</h4>';
-        obliq_contenido_render_fields( $id, array( 'ct_hours_es', 'ct_hours_en' ) );
-        echo '<hr><h4>Textos de la página de contacto</h4>';
-        obliq_contenido_render_fields( $id, array( 'ct_hero_tag_es', 'ct_hero_tag_en', 'ct_hero_title_es', 'ct_hero_title_en', 'ct_hero_subtitle_es', 'ct_hero_subtitle_en', 'ct_info_title_es', 'ct_info_title_en' ) );
+
+        echo '<hr><h4>1 · Cabecera</h4>';
+        obliq_contenido_render_fields( $id, array(
+            'ct_hero_tag_es', 'ct_hero_tag_en',
+            'ct_hero_title_es', 'ct_hero_title_en',
+            'ct_hero_subtitle_es', 'ct_hero_subtitle_en',
+        ) );
+
+        echo '<hr><h4>2 · Información de contacto</h4>';
+        echo '<p><em>El bloque que se ve a la derecha del formulario, en este mismo orden. ';
+        echo 'El <strong>mapa se coloca solo</strong> a partir de la dirección: no hay nada más que rellenar para moverlo.</em></p>';
+        obliq_contenido_render_fields( $id, array(
+            'ct_info_title_es', 'ct_info_title_en',
+            'ct_email',
+            'ct_phone',
+            'ct_hours_es', 'ct_hours_en',
+            'ct_address_street', 'ct_address_postal', 'ct_address_city',
+        ) );
+
+        echo '<hr><h4>3 · WhatsApp</h4>';
+        echo '<p><em>El botón verde flotante. No sale en esta página: sale en todas.</em></p>';
+        obliq_contenido_render_fields( $id, array( 'ct_whatsapp' ) );
         return;
     }
 
@@ -935,7 +1029,7 @@ function obliq_contenido_meta_html( $post ) {
         echo 'se usa el texto que trae la web por defecto.<br>';
         echo 'Los servicios, los proyectos del portfolio y los logos de marcas se editan en sus propias secciones.</em></p>';
 
-        echo '<hr><h4>1 · Cabecera — fondo</h4>';
+        echo '<hr><h4>1 · Cabecera: el fondo</h4>';
         obliq_contenido_render_fields( $id, array( 'hm_hero_vimeo_url', 'hm_hero_fallback_image', 'hm_hero_wait_image' ) );
         echo '<p style="background:#fff8e5;border-left:4px solid #dba617;padding:10px 12px;max-width:760px">';
         echo '<strong>Sobre el vídeo:</strong><br>';
@@ -948,16 +1042,16 @@ function obliq_contenido_meta_html( $post ) {
         echo '</p>';
         echo '<p style="background:#f0f6fc;border-left:4px solid #2271b1;padding:10px 12px;max-width:760px">';
         echo '<strong>Las dos imágenes hacen cosas distintas:</strong><br>';
-        echo '• <strong>Hero — imagen</strong>: es la que sustituye al vídeo cuando no va a haber vídeo ';
+        echo '• <strong>La que sustituye al vídeo</strong>: se ve cuando no va a haber vídeo ';
         echo '(el visitante tiene el ahorro de datos activado, ha pedido reducir las animaciones, o el navegador ';
         echo 'no deja arrancar el vídeo solo). Conviene que sea <strong>oscura</strong>: el titular va encima en blanco.<br>';
-        echo '• <strong>Hero — imagen de espera</strong>: solo se ve durante el segundo y pico que tarda el vídeo en ';
+        echo '• <strong>La de espera</strong>: solo se ve durante el segundo y pico que tarda el vídeo en ';
         echo 'arrancar. <strong>Si la dejas vacía no se ve nada durante ese rato</strong>, solo el fondo oscuro y el ';
         echo 'titular — que es como está ahora y como se decidió. Rellénala únicamente si prefieres que ahí se vea una imagen.<br>';
         echo '• Puedes poner la misma imagen en las dos: no se descarga dos veces.';
         echo '</p>';
 
-        echo '<hr><h4>2 · Cabecera — textos</h4>';
+        echo '<hr><h4>2 · Cabecera: los textos</h4>';
         obliq_contenido_render_fields( $id, array(
             'hm_hero_tag_es', 'hm_hero_tag_en',
             'hm_hero_title_es', 'hm_hero_title_en',
@@ -966,7 +1060,7 @@ function obliq_contenido_meta_html( $post ) {
             'hm_hero_cta_secondary_es', 'hm_hero_cta_secondary_en',
         ) );
 
-        echo '<hr><h4>3 · Bloque de servicios</h4>';
+        echo '<hr><h4>3 · Servicios</h4>';
         echo '<p><em>El nombre y la descripción de cada servicio se editan en <strong>Servicios</strong>, no aquí. ';
         echo 'Aquí solo va la cabecera del bloque.</em></p>';
         obliq_contenido_render_fields( $id, array(
@@ -979,7 +1073,7 @@ function obliq_contenido_meta_html( $post ) {
         echo '<p><em>Se repite cuatro veces en bucle. Escribe el texto una sola vez.</em></p>';
         obliq_contenido_render_fields( $id, array( 'hm_marquee_work_es', 'hm_marquee_work_en' ) );
 
-        echo '<hr><h4>5 · Bloque de portfolio</h4>';
+        echo '<hr><h4>5 · Portfolio</h4>';
         echo '<p><em>Qué proyectos salen aquí se decide marcándolos como destacados en <strong>Portfolio</strong>.</em></p>';
         obliq_contenido_render_fields( $id, array(
             'hm_portfolio_tag_es', 'hm_portfolio_tag_en',
@@ -987,7 +1081,7 @@ function obliq_contenido_meta_html( $post ) {
             'hm_portfolio_cta_es', 'hm_portfolio_cta_en',
         ) );
 
-        echo '<hr><h4>6 · Bloque «Nosotros»</h4>';
+        echo '<hr><h4>6 · Nosotros</h4>';
         obliq_contenido_render_fields( $id, array(
             'hm_about_tag_es', 'hm_about_tag_en',
             'hm_about_title_es', 'hm_about_title_en',
@@ -1003,15 +1097,49 @@ function obliq_contenido_meta_html( $post ) {
         return;
     }
 
+    if ( 'servicios' === $key ) {
+        echo '<p><em>Textos de la <strong>página que lista los servicios</strong> (/servicios/ y /en/services/), en el mismo orden en que se ven en la página.<br>';
+        echo 'El <strong>nombre y la descripción de cada servicio</strong> no se editan aquí, sino en <strong>Servicios</strong>. Aquí van solo los textos que envuelven a la lista.<br>';
+        echo '<strong>Cada idioma se escribe por separado</strong>: no hay traducción automática. Si dejas un campo vacío, se usa el texto que trae la web por defecto.</em></p>';
+
+        echo '<hr><h4>1 · Cabecera</h4>';
+        obliq_contenido_render_fields( $id, array(
+            'sp_hero_tag_es', 'sp_hero_tag_en',
+            'sp_hero_title_es', 'sp_hero_title_en',
+            'sp_hero_subtitle_es', 'sp_hero_subtitle_en',
+        ) );
+
+        echo '<hr><h4>2 · Llamada final</h4>';
+        echo '<p><em>El bloque que cierra la página, debajo de la lista de servicios.</em></p>';
+        obliq_contenido_render_fields( $id, array(
+            'sp_cta_title_es', 'sp_cta_title_en',
+            'sp_cta_button_es', 'sp_cta_button_en',
+        ) );
+
+        echo '<hr><h4>3 · Cómo se ve en Google</h4>';
+        echo '<p style="background:#f0f6fc;border-left:4px solid #2271b1;padding:10px 12px;max-width:760px">';
+        echo 'Esto <strong>no se ve en la página</strong>: es lo que Google enseña en sus resultados de búsqueda.<br>';
+        echo '• <strong>Título en Google</strong>: sale <strong>tal y como lo escribas</strong>, sin añadidos. Si quieres que aparezca el nombre de la empresa, escríbelo tú. Unos 60 caracteres entran sin cortarse.<br>';
+        echo '• <strong>Descripción en Google</strong>: el texto gris bajo el título. Unos 155 caracteres.<br>';
+        echo '• Si dejas alguno vacío, Google usa el texto que trae la web por defecto.';
+        echo '</p>';
+        obliq_contenido_render_fields( $id, array(
+            'sp_seo_title_es', 'sp_seo_title_en',
+            'sp_seo_desc_es', 'sp_seo_desc_en',
+        ) );
+        return;
+    }
+
     if ( 'alquiler' === $key ) {
-        echo '<p><em>Tarifa <strong>global</strong> del operador de alquiler. El alquiler de equipos es <strong>siempre con operador</strong>: este precio se <strong>suma</strong> al precio del material.<br>';
-        echo 'Se usa en el catálogo de alquiler, en la página de presupuesto y en los datos que lee Google.</em></p>';
-        echo '<hr><h4>Precios del operador (sin IVA)</h4>';
+        echo '<p><em><strong>Esto no es una página: es una tarifa.</strong> Por eso los bloques van numerados por temas y no por orden de aparición.<br>';
+        echo 'El alquiler de equipos es <strong>siempre con operador</strong>: este precio se <strong>suma</strong> al precio del material.<br>';
+        echo 'Se usa en el catálogo de alquiler, en la página de presupuesto y en la ficha que lee Google.</em></p>';
+        echo '<hr><h4>1 · Precios del operador</h4>';
         obliq_contenido_render_fields( $id, array( 'op_jornada_price', 'op_media_price' ) );
-        echo '<hr><h4>Qué incluye</h4>';
+        echo '<hr><h4>2 · Qué incluye</h4>';
         echo '<p><em>Una línea por ítem. La entrega de brutos debe figurar aquí.</em></p>';
         obliq_contenido_render_fields( $id, array( 'op_includes_es', 'op_includes_en' ) );
-        echo '<hr><h4>Condiciones</h4>';
+        echo '<hr><h4>3 · Condiciones</h4>';
         echo '<p style="background:#fff8e5;border-left:4px solid #dba617;padding:10px 12px;max-width:760px">';
         echo '<strong>Pendiente de confirmar:</strong> el formato y plazo de entrega de los brutos, el límite horario de la media jornada y el desplazamiento incluido nacen marcados como <code>[PENDIENTE DE CONFIRMAR CON CLIENTE]</code>. Sustituye ese texto por los datos reales cuando estén definidos.';
         echo '</p>';
@@ -1065,6 +1193,7 @@ function obliq_contenido_seed() {
         'about'    => array( 'Nosotros', obliq_contenido_seed_about() ),
         'contact'  => array( 'Datos de contacto', obliq_contenido_seed_contact() ),
         'home'     => array( 'Inicio', obliq_contenido_seed_home() ),
+        'servicios' => array( 'Servicios · Página', obliq_contenido_seed_servicios() ),
         // Título inequívoco para que el cliente la localice en el listado sin ayuda.
         'alquiler' => array( 'Alquiler · Tarifa de operador', obliq_contenido_seed_alquiler() ),
     );
@@ -1231,6 +1360,36 @@ function obliq_contenido_seed_home() {
  * Como el seed v3 NUNCA se subió, este texto entra en la PRIMERA creación del
  * singleton; no requiere bump de versión.
  */
+/**
+ * Valores iniciales de la página «Servicios» — espejo EXACTO de SERVICES_PAGE en
+ * src/i18n/*.json (y de GLOBAL.DESCRIPTION para la descripción en Google).
+ *
+ * El título en Google se siembra COMPLETO, con « | Obliq Productions» incluido: desde la
+ * fase 2 ese campo sale tal cual y BaseLayout ya no le añade el sufijo. Sembrarlo sin la
+ * marca cambiaría el <title> de dos páginas el día del despliegue, que es justo lo que el
+ * criterio de aceptación de esta fase prohíbe.
+ */
+function obliq_contenido_seed_servicios() {
+    return array(
+        'sp_hero_tag_es'      => 'SERVICIOS',
+        'sp_hero_tag_en'      => 'SERVICES',
+        'sp_hero_title_es'    => 'SOLUCIONES AUDIOVISUALES',
+        'sp_hero_title_en'    => 'AUDIOVISUAL SOLUTIONS',
+        'sp_hero_subtitle_es' => 'Ofrecemos un servicio integral de producción audiovisual. Desde la conceptualización hasta la entrega final.',
+        'sp_hero_subtitle_en' => 'We offer a comprehensive audiovisual production service. From conceptualization to final delivery.',
+
+        'sp_cta_title_es'     => '¿NO ENCUENTRAS LO QUE BUSCAS?',
+        'sp_cta_title_en'     => "CAN'T FIND WHAT YOU'RE LOOKING FOR?",
+        'sp_cta_button_es'    => 'CONTACTA CON NOSOTROS',
+        'sp_cta_button_en'    => 'CONTACT US',
+
+        'sp_seo_title_es'     => 'Servicios de producción audiovisual | Obliq Productions',
+        'sp_seo_title_en'     => 'Audiovisual production services | Obliq Productions',
+        'sp_seo_desc_es'      => 'Productora audiovisual en Valencia. Producción de vídeo, streaming, contenido para redes sociales y alquiler de equipos profesionales.',
+        'sp_seo_desc_en'      => 'Audiovisual production company in Valencia. Video production, streaming, social media content and professional equipment rental.',
+    );
+}
+
 function obliq_contenido_seed_alquiler() {
     return array(
         'op_jornada_price' => '300',
