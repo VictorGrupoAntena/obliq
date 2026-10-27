@@ -8,6 +8,16 @@
 
 ---
 
+## 📋 Subsanación Kit Digital (Red.es) — ✅ EN PRODUCCIÓN (27-Oct-2026)
+
+Commit `c659a00`, run **40551019500** (`workflow_dispatch`, produccion, success).
+- **/politica-cookies/**: sección «Tipos de cookies» (entidad + finalidad, «no utiliza cookies publicitarias»), tablas Nombre | Propia/Tercero | Tipo | Finalidad | Duración para cookies GA y almacenamiento local, Maps y Vimeo identificados como terceros. **El carrito (`obliq-quote-cart`/`-half-days`) no tiene TTL**: dura hasta vaciarlo (o enviar el presupuesto, que llama a `clearCart()`) o borrar datos del navegador.
+- **Portfolio EN**: los títulos de prueba venían de **WordPress, campo `pf_title_en`** (no del repo). Corregidos por WP-CLI a los títulos reales (nombres propios = ES). Valores previos en `~/Backups/obliq/pf_title_en.pre-20261027.tsv`. `wp post meta update` **no dispara el deploy-hook** (no hay `save_post`): se desplegó a mano.
+- **Categorías EN**: los términos de `portfolio_category` solo tienen nombre ES → `getPortfolioCategoryLabel()` en `src/data/portfolio.ts` (mapa Marcas/Entrevistas/Eventos). **Una categoría nueva creada en WP saldrá en castellano en /en/** hasta añadirla al mapa.
+- **Formulario de contacto**: el aviso «Simulated submission» está en el HTML con `hidden` y solo se muestra fuera de `obliqproductions.com`; en producción envía a `/api/send-contact.php` → `OBLIQ_MAIL_TO = info@obliqproductions.com`. Entrega no reverificada (maillog solo root; usar Track Email Delivery de Plesk).
+
+---
+
 ## 🏷️ FASE 1 — Nombres, orden y versión del mu-plugin ✅ EN PRODUCCIÓN (8-Sep-2026)
 
 Primera fase del plan «Editar Obliq por URL» (peticiones del cliente: campos identificados por
