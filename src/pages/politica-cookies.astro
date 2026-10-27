@@ -27,7 +27,7 @@ import { getSiteContactAsync } from '@/data/site';
 
 const locale = 'es';
 const contacto = await getSiteContactAsync(locale);
-const ACTUALIZADA = '14 de agosto de 2026';
+const ACTUALIZADA = '27 de octubre de 2026';
 ---
 
 <BaseLayout title="Política de Cookies" locale={locale} noindex={true} pageColor="white">
@@ -49,6 +49,23 @@ const ACTUALIZADA = '14 de agosto de 2026';
         <li>Si añadimos una categoría nueva, su decisión anterior deja de valer para todo y se le pregunta otra vez: un consentimiento dado sobre unas categorías no dice nada sobre otra que no existía.</li>
       </ul>
 
+      <h2 class="text-[24px] font-bold text-black mt-8">Tipos de cookies</h2>
+
+      <h3 class="text-[18px] font-bold text-black mt-6">Según la entidad que las gestiona</h3>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong class="text-black">Cookies propias:</strong> las que se envían a su equipo desde un dominio gestionado por el titular de este sitio web y desde el que se presta el servicio que usted solicita.</li>
+        <li><strong class="text-black">Cookies de terceros:</strong> las que se envían a su equipo desde un dominio que no gestiona el titular de este sitio web, sino otra entidad que trata los datos obtenidos a través de ellas.</li>
+      </ul>
+
+      <h3 class="text-[18px] font-bold text-black mt-6">Según su finalidad</h3>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong class="text-black">Cookies técnicas o necesarias:</strong> permiten navegar por el sitio web y utilizar sus funciones básicas, como recordar su decisión sobre las cookies o el contenido de un presupuesto. Sin ellas el sitio no puede funcionar correctamente.</li>
+        <li><strong class="text-black">Cookies de preferencias o personalización:</strong> recuerdan información para que el sitio se adapte a usted, como el idioma o la región desde la que accede.</li>
+        <li><strong class="text-black">Cookies analíticas o de medición:</strong> permiten cuantificar el número de visitantes y analizar de forma agregada cómo se utiliza el sitio, con el fin de mejorarlo.</li>
+        <li><strong class="text-black">Cookies publicitarias o de publicidad comportamental:</strong> almacenan información sobre el comportamiento del usuario, obtenida mediante la observación continuada de sus hábitos de navegación, para desarrollar un perfil específico y mostrarle publicidad en función de él.</li>
+      </ul>
+      <p><strong class="text-black">Este sitio web no utiliza cookies publicitarias ni de publicidad comportamental.</strong></p>
+
       <h2 class="text-[24px] font-bold text-black mt-8">Categorías</h2>
 
       <h3 class="text-[18px] font-bold text-black mt-6">Necesarias — siempre activas</h3>
@@ -59,30 +76,33 @@ const ACTUALIZADA = '14 de agosto de 2026';
 
       <h3 class="text-[18px] font-bold text-black mt-6">Mapas — desactivadas por defecto</h3>
       <p>El mapa de Google Maps con nuestra ubicación, en la página de contacto. Si no lo acepta, <strong class="text-black">el mapa no se carga y no se realiza ninguna petición a Google</strong>: en su lugar se muestran nuestra dirección y un enlace para abrir el mapa en Google, que no instala nada mientras usted no lo pulse.</p>
-      <p>Si lo acepta, se incrusta contenido servido por Google, que puede instalar sus propias cookies desde el dominio <code>google.com</code>. En nuestras comprobaciones el mapa no instaló ninguna, pero eso es el comportamiento observado y no algo que podamos garantizar, porque depende de Google. Si revoca el consentimiento, el mapa se retira de la página de inmediato y deja de comunicarse con Google; las cookies que Google hubiera podido instalar desde su propio dominio no podemos eliminarlas nosotros, y tendría que borrarlas desde su navegador.</p>
+      <p>Si lo acepta, se incrusta contenido servido por Google, que puede instalar sus propias cookies desde el dominio <code>google.com</code>. Se trata de <strong class="text-black">cookies de terceros (Google Ireland Ltd.), sujetas a su consentimiento</strong>; su tipo y su duración son los que establece Google en su política, que puede consultar en <a href="https://policies.google.com/technologies/cookies" class="underline hover:text-black transition-colors" target="_blank" rel="noopener noreferrer">policies.google.com/technologies/cookies</a>. En nuestras comprobaciones el mapa no instaló ninguna, pero eso es el comportamiento observado y no algo que podamos garantizar, porque depende de Google. Si revoca el consentimiento, el mapa se retira de la página de inmediato y deja de comunicarse con Google; las cookies que Google hubiera podido instalar desde su propio dominio no podemos eliminarlas nosotros, y tendría que borrarlas desde su navegador.</p>
 
       <h2 class="text-[24px] font-bold text-black mt-8">Cookies concretas</h2>
       <div class="overflow-x-auto">
         <table class="w-full text-[14px] border-collapse">
           <thead>
             <tr class="border-b border-border-light text-left text-black">
-              <th class="py-2 pr-4 font-semibold">Nombre</th>
-              <th class="py-2 pr-4 font-semibold">Titular</th>
-              <th class="py-2 pr-4 font-semibold">Finalidad</th>
-              <th class="py-2 font-semibold">Duración</th>
+              <th scope="col" class="py-2 pr-4 font-semibold">Nombre</th>
+              <th scope="col" class="py-2 pr-4 font-semibold">Propia / Tercero</th>
+              <th scope="col" class="py-2 pr-4 font-semibold">Tipo</th>
+              <th scope="col" class="py-2 pr-4 font-semibold">Finalidad</th>
+              <th scope="col" class="py-2 font-semibold">Duración</th>
             </tr>
           </thead>
           <tbody>
             <tr class="border-b border-border-light">
               <td class="py-2 pr-4"><code>_ga</code></td>
-              <td class="py-2 pr-4">Google</td>
-              <td class="py-2 pr-4">Analítica. Distingue visitantes.</td>
+              <td class="py-2 pr-4">Tercero (Google Ireland Ltd.)</td>
+              <td class="py-2 pr-4">Analítica</td>
+              <td class="py-2 pr-4">Distingue usuarios de forma anónima</td>
               <td class="py-2">2 años</td>
             </tr>
             <tr class="border-b border-border-light">
               <td class="py-2 pr-4"><code>_ga_896V9YZVME</code></td>
-              <td class="py-2 pr-4">Google</td>
-              <td class="py-2 pr-4">Analítica. Mantiene el estado de la sesión.</td>
+              <td class="py-2 pr-4">Tercero (Google Ireland Ltd.)</td>
+              <td class="py-2 pr-4">Analítica</td>
+              <td class="py-2 pr-4">Mantiene el estado de la sesión</td>
               <td class="py-2">2 años</td>
             </tr>
           </tbody>
@@ -92,13 +112,45 @@ const ACTUALIZADA = '14 de agosto de 2026';
 
       <h2 class="text-[24px] font-bold text-black mt-8">Almacenamiento local</h2>
       <p>Estos datos se guardan en su navegador y <strong class="text-black">no se envían a ningún servidor</strong>, ni al nuestro ni a terceros:</p>
-      <ul class="list-disc pl-6 space-y-2">
-        <li><code>obliq-consent</code> — su decisión sobre las cookies, con la fecha en que la tomó. Necesaria para no volver a preguntarle y para poder acreditar el consentimiento. Vigencia: 24 meses.</li>
-        <li><code>obliq-quote-cart</code> y <code>obliq-quote-half-days</code> — el contenido de su presupuesto de alquiler, para que no se pierda al cambiar de página.</li>
-      </ul>
+      <div class="overflow-x-auto">
+        <table class="w-full text-[14px] border-collapse">
+          <thead>
+            <tr class="border-b border-border-light text-left text-black">
+              <th scope="col" class="py-2 pr-4 font-semibold">Nombre</th>
+              <th scope="col" class="py-2 pr-4 font-semibold">Propia / Tercero</th>
+              <th scope="col" class="py-2 pr-4 font-semibold">Tipo</th>
+              <th scope="col" class="py-2 pr-4 font-semibold">Finalidad</th>
+              <th scope="col" class="py-2 font-semibold">Duración</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-border-light">
+              <td class="py-2 pr-4"><code>obliq-consent</code></td>
+              <td class="py-2 pr-4">Propia</td>
+              <td class="py-2 pr-4">Técnica</td>
+              <td class="py-2 pr-4">Registro de la decisión sobre cookies</td>
+              <td class="py-2">24 meses</td>
+            </tr>
+            <tr class="border-b border-border-light">
+              <td class="py-2 pr-4"><code>obliq-quote-cart</code></td>
+              <td class="py-2 pr-4">Propia</td>
+              <td class="py-2 pr-4">Técnica</td>
+              <td class="py-2 pr-4">Contenido del presupuesto de alquiler</td>
+              <td class="py-2">Hasta que el usuario vacíe el presupuesto o borre los datos del navegador</td>
+            </tr>
+            <tr class="border-b border-border-light">
+              <td class="py-2 pr-4"><code>obliq-quote-half-days</code></td>
+              <td class="py-2 pr-4">Propia</td>
+              <td class="py-2 pr-4">Técnica</td>
+              <td class="py-2 pr-4">Contenido del presupuesto de alquiler</td>
+              <td class="py-2">Hasta que el usuario vacíe el presupuesto o borre los datos del navegador</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <h2 class="text-[24px] font-bold text-black mt-8">Vídeos de Vimeo</h2>
-      <p>Los vídeos de esta web se sirven desde Vimeo con el parámetro <em>do not track</em> activado, de modo que <strong class="text-black">no instalan cookies de seguimiento</strong>. Vimeo puede utilizar cookies técnicas propias necesarias para la reproducción.</p>
+      <p>Los vídeos de esta web se sirven desde Vimeo con el parámetro <em>do not track</em> activado (<code>dnt=1</code>), de modo que <strong class="text-black">no instalan cookies de seguimiento</strong>. Vimeo puede utilizar <strong class="text-black">cookies técnicas de terceros (Vimeo.com, Inc.)</strong> necesarias para la reproducción.</p>
 
       <h2 class="text-[24px] font-bold text-black mt-8">Destinatarios y transferencias internacionales</h2>
       <p>Las cookies analíticas y el mapa implican a <strong class="text-black">Google Ireland Limited</strong> (Gordon House, Barrow Street, Dublín 4, Irlanda) como prestador de los servicios de Google Analytics y Google Maps.</p>

@@ -9,7 +9,7 @@ import Button from '@/components/atoms/Button.astro';
 import Paragraph from '@/components/atoms/Paragraph.astro';
 import { t, localizedUrl } from '@/lib/i18n';
 import { getServicesAsync } from '@/data/services';
-import { getFeaturedProjectsAsync } from '@/data/portfolio';
+import { getFeaturedProjectsAsync, getPortfolioCategoryLabel } from '@/data/portfolio';
 import { getClientNamesAsync } from '@/data/clients';
 import { getHomeContentAsync } from '@/data/home';
 import { getPageSeoAsync } from '@/data/page-seo';
@@ -97,7 +97,7 @@ const seo = await getPageSeoAsync('home', locale);
           />
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           <div class="absolute bottom-0 left-0 right-0 p-6">
-            <p class="text-[12px] font-medium uppercase tracking-[2px] text-muted mb-2">{project.category}</p>
+            <p class="text-[12px] font-medium uppercase tracking-[2px] text-muted mb-2">{getPortfolioCategoryLabel(project.category, locale)}</p>
             <h3 class="text-[20px] font-bold italic">{project.title.en}</h3>
           </div>
         </a>

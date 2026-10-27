@@ -4,7 +4,7 @@ import HeroSection from '@/components/sections/HeroSection.astro';
 import CustomCursor from '@/components/organisms/CustomCursor.astro';
 import VideoLightbox from '@/components/organisms/VideoLightbox.astro';
 import { t } from '@/lib/i18n';
-import { getPortfolioProjectsAsync, getPortfolioCategoriesAsync } from '@/data/portfolio';
+import { getPortfolioProjectsAsync, getPortfolioCategoriesAsync, getPortfolioCategoryLabel } from '@/data/portfolio';
 import { getVimeoEmbedUrl } from '@/lib/vimeo';
 import { getPageSeoAsync } from '@/data/page-seo';
 
@@ -17,10 +17,10 @@ const categories = await getPortfolioCategoriesAsync();
 
 // Filters derived from real WP categories — a new category in WordPress
 // shows up here on its own, no code changes. "All" always first.
-// Category names come from WP terms and are shared across locales.
+// WP terms only have Spanish names: the key stays the WP name, the label is translated.
 const filters = [
   { key: 'all', label: p.FILTER_ALL },
-  ...categories.map((category) => ({ key: category, label: category })),
+  ...categories.map((category) => ({ key: category, label: getPortfolioCategoryLabel(category, locale) })),
 ];
 
 // Título y descripción para Google, editables en wp-admin (fase 3).
@@ -84,7 +84,7 @@ const seo = await getPageSeoAsync('portfolio', locale);
               </div>
             )}
             <div class="absolute bottom-0 left-0 right-0 p-6">
-              <p class="text-[12px] font-medium uppercase tracking-[2px] text-muted mb-2">{project.category}</p>
+              <p class="text-[12px] font-medium uppercase tracking-[2px] text-muted mb-2">{getPortfolioCategoryLabel(project.category, locale)}</p>
               <h3 class="text-[20px] font-bold italic text-white">{project.title.en}</h3>
             </div>
           </Tag>

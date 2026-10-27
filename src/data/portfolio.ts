@@ -16,21 +16,36 @@ export type { PortfolioProject };
 
 const FALLBACK_IMAGE = '/hero.jpg';
 
-// Mock data — espejo del contenido real de WP (scripts/obliq-portfolio-reset.php).
-// 11 vídeos reales del cliente, 6 categorías, títulos provisionales.
+// Mock data — espejo del contenido real de WP (10 proyectos, 6 categorías).
+// Los títulos son nombres propios: el mismo en ES y EN.
 const mockProjects: PortfolioProject[] = [
-  { title: { es: 'Proyecto Gastro 1', en: 'Project Gastro 1' }, category: 'Gastro', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1209481160', featured: true },
-  { title: { es: 'Proyecto Gastro 2', en: 'Project Gastro 2' }, category: 'Gastro', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1209450532/6da71b05b3', featured: false },
-  { title: { es: 'Proyecto Marcas 1', en: 'Project Brands 1' }, category: 'Marcas', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1209641919/eed26bbdd6', featured: true },
-  { title: { es: 'Proyecto Marcas 2', en: 'Project Brands 2' }, category: 'Marcas', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1209456791/de3e459c53', featured: false },
-  { title: { es: 'Proyecto Marcas 3', en: 'Project Brands 3' }, category: 'Marcas', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1147316237/c1a2479df5', featured: false },
-  { title: { es: 'Proyecto Branded content 1', en: 'Project Branded content 1' }, category: 'Branded content', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1209451032', featured: false },
-  { title: { es: 'Proyecto Entrevistas 1', en: 'Project Interviews 1' }, category: 'Entrevistas', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1172559496/6c29294452', featured: false },
-  { title: { es: 'Proyecto Entrevistas 2', en: 'Project Interviews 2' }, category: 'Entrevistas', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1161036538/4fcc5767cd', featured: false },
-  { title: { es: 'Proyecto Eventos 1', en: 'Project Events 1' }, category: 'Eventos', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1127528944', featured: false },
-  { title: { es: 'Proyecto Spots 1', en: 'Project Spots 1' }, category: 'Spots', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1163689471/f05ec68da4', featured: true },
-  { title: { es: 'Proyecto Spots 2', en: 'Project Spots 2' }, category: 'Spots', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1209452284/640faaaa6f', featured: false },
+  { title: { es: 'FRANKFURT STARS', en: 'FRANKFURT STARS' }, category: 'Gastro', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1209481160', featured: true },
+  { title: { es: 'ONAMI', en: 'ONAMI' }, category: 'Gastro', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1209450532/6da71b05b3', featured: false },
+  { title: { es: 'SIDONNIS', en: 'SIDONNIS' }, category: 'Marcas', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1209641919/eed26bbdd6', featured: true },
+  { title: { es: 'LINDA VUELA A RIO', en: 'LINDA VUELA A RIO' }, category: 'Marcas', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1209456791/de3e459c53', featured: false },
+  { title: { es: 'DESAFÍO Y AVENTURA', en: 'DESAFÍO Y AVENTURA' }, category: 'Marcas', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1147316237/c1a2479df5', featured: false },
+  { title: { es: 'MARÍA REUS', en: 'MARÍA REUS' }, category: 'Branded content', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1209451032', featured: false },
+  { title: { es: 'FORBES x FORD', en: 'FORBES x FORD' }, category: 'Entrevistas', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1172559496/6c29294452', featured: false },
+  { title: { es: 'FORBES x EVOLVING', en: 'FORBES x EVOLVING' }, category: 'Entrevistas', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1161036538/4fcc5767cd', featured: false },
+  { title: { es: 'PREMIOS YUMMY', en: 'PREMIOS YUMMY' }, category: 'Eventos', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1127528944', featured: false },
+  { title: { es: 'CYL GAME SHOW', en: 'CYL GAME SHOW' }, category: 'Spots', image: FALLBACK_IMAGE, vimeoUrl: 'https://vimeo.com/1163689471/f05ec68da4', featured: true },
 ];
+
+/**
+ * Nombre visible de una categoría. Los términos de WP solo tienen nombre en
+ * castellano, así que la versión inglesa se traduce aquí. Una categoría que no
+ * esté en el mapa (creada después en WP) sale con su nombre de WP. El nombre
+ * de WP sigue siendo la clave del filtro (`data-category`); solo cambia la etiqueta.
+ */
+const CATEGORY_LABELS_EN: Record<string, string> = {
+  Marcas: 'Brands',
+  Entrevistas: 'Interviews',
+  Eventos: 'Events',
+};
+
+export function getPortfolioCategoryLabel(category: string, locale: string): string {
+  return locale === 'en' ? (CATEGORY_LABELS_EN[category] ?? category) : category;
+}
 
 /** Sync access to mock projects */
 export const projects = mockProjects;
